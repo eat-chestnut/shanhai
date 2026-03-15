@@ -1,0 +1,35 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="shanhai"
+config/features=PackedStringArray("4.5", "Mobile")
+config/icon="res://icon.svg"
+run/main_scene="res://scenes/app_root.tscn"
+
+[autoload]
+
+GameApi="*res://autoload/game_api.gd"
+GameData="*res://autoload/game_data.gd"
+PlayerState="*res://autoload/player_state.gd"
+UiState="*res://autoload/ui_state.gd"
+BattleState="*res://autoload/battle_state.gd"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep_width"
+
+[rendering]
+
+renderer/rendering_method="mobile"

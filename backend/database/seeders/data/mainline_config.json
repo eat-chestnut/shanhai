@@ -1,0 +1,44 @@
+{
+  "chapter_config": [
+    {
+      "chapter_id": "chapter_01",
+      "chapter_name": "奉命巡山",
+      "unlock_level": 1
+    }
+  ],
+  "node_config": [
+    {
+      "node_id": "node_01",
+      "chapter_id": "chapter_01",
+      "node_name": "鹤山将启",
+      "unlock_condition": {
+        "level": 1
+      },
+      "difficulty_ids": [
+        "easy",
+        "normal",
+        "hard"
+      ]
+    }
+  ],
+  "difficulty_config": [
+    {
+      "difficulty_id": "easy",
+      "node_id": "node_01",
+      "recommended_power": 100,
+      "first_clear_reward_group_id": "reward_node01_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "node_01",
+      "recommended_power": 220,
+      "first_clear_reward_group_id": "reward_node01_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "node_01",
+      "recommended_power": 420,
+      "first_clear_reward_group_id": "reward_node01_hard"
+    }
+  ]
+}

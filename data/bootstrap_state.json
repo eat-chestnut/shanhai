@@ -1,0 +1,130 @@
+{
+  "player": {
+    "player_id": 10001,
+    "class_id": "class_jingang",
+    "level": 1,
+    "exp": 0,
+    "hp": 850,
+    "max_hp": 850,
+    "gold": 500,
+    "inventory": [
+      {"item_id": "gem_green", "count": 2},
+      {"item_id": "affix_guard", "count": 1},
+      {"item_id": "refine_tiger", "count": 1}
+    ],
+    "equipment_summary": {
+      "equip_ids": ["equip_sword_01", "equip_armor_01"],
+      "set_counts": [{"set_id": "set_zhaoyao_20", "equipped_count": 2}],
+      "talisman_star_links": [],
+      "equipped_boss_core_ids": [],
+      "equipped_gem_ids": ["gem_green"],
+      "blue_affix_ids": ["affix_guard"],
+      "purple_refinement_ids": ["refine_tiger"]
+    }
+  },
+  "character_classes": [
+    {"class_id": "class_jingang", "class_name": "金刚", "class_desc": "近战职业，擅守能冲阵。", "role_type": "melee", "is_open": true},
+    {"class_id": "class_lingyu", "class_name": "灵羽", "class_desc": "远程职业，当前版本暂未开放。", "role_type": "ranged", "is_open": false},
+    {"class_id": "class_fulu", "class_name": "符箓", "class_desc": "法术职业，当前版本暂未开放。", "role_type": "magic", "is_open": false}
+  ],
+  "hall_features": [
+    {"feature_id": "feat_trial", "feature_name": "宗门试炼", "feature_type": "daily_task", "unlock_condition": {"level": 1}, "jump_target": {"page": "trial"}},
+    {"feature_id": "feat_shop", "feature_name": "宗门贡献商店", "feature_type": "shop", "unlock_condition": {"level": 1}, "jump_target": {"page": "shop"}},
+    {"feature_id": "feat_mainline", "feature_name": "巡厄主线", "feature_type": "mainline", "unlock_condition": {"level": 1}, "jump_target": {"page": "mainline"}},
+    {"feature_id": "feat_dungeon", "feature_name": "宗门副本", "feature_type": "dungeon", "unlock_condition": {"level": 5}, "jump_target": {"page": "dungeon"}}
+  ],
+  "chapters": [
+    {
+      "chapter_id": "chapter_01",
+      "chapter_name": "奉命巡山",
+      "unlock_level": 1,
+      "nodes": [
+        {
+          "node_id": "node_01",
+          "node_name": "鹤山将启",
+          "unlock_condition": {"level": 1},
+          "difficulties": [
+            {"difficulty_id": "easy", "recommended_power": 100, "first_clear_reward_group_id": "reward_node01_easy"},
+            {"difficulty_id": "normal", "recommended_power": 220, "first_clear_reward_group_id": "reward_node01_normal"},
+            {"difficulty_id": "hard", "recommended_power": 420, "first_clear_reward_group_id": "reward_node01_hard"}
+          ]
+        }
+      ]
+    }
+  ],
+  "dungeons": [
+    {"dungeon_id": "dungeon_gem", "dungeon_name": "灵玉副本", "unlock_level": 5},
+    {"dungeon_id": "dungeon_seal", "dungeon_name": "灵印副本", "unlock_level": 10},
+    {"dungeon_id": "dungeon_refine", "dungeon_name": "淬灵副本", "unlock_level": 15}
+  ],
+  "dungeon_difficulties": [
+    {"difficulty_id": "easy", "dungeon_id": "dungeon_gem", "recommended_power": 100},
+    {"difficulty_id": "normal", "dungeon_id": "dungeon_gem", "recommended_power": 200},
+    {"difficulty_id": "easy", "dungeon_id": "dungeon_seal", "recommended_power": 180},
+    {"difficulty_id": "normal", "dungeon_id": "dungeon_seal", "recommended_power": 320},
+    {"difficulty_id": "hard", "dungeon_id": "dungeon_refine", "recommended_power": 460}
+  ],
+  "monsters": [
+    {"monster_id": "mon_qingqiu_guard", "name": "青丘守卫", "base_hp": 500, "base_atk": 40, "is_boss": false},
+    {"monster_id": "mon_qingqiu_boss", "name": "青丘九尾狐", "base_hp": 3000, "base_atk": 120, "is_boss": true}
+  ],
+  "monster_drops": [
+    {"monster_id": "mon_qingqiu_guard", "item_id": "gem_green", "drop_rate": 0.5, "drop_kind": "normal"},
+    {"monster_id": "mon_qingqiu_boss", "item_id": "gem_blue", "drop_rate": 1.0, "drop_kind": "boss_fixed"},
+    {"monster_id": "mon_qingqiu_boss", "item_id": "boss_core_qingqiu", "drop_rate": 0.05, "drop_kind": "boss_core"}
+  ],
+  "equipment": [
+    {"equip_id": "equip_sword_01", "name": "铜剑", "type": "weapon", "level": 1, "base_atk": 12, "base_def": 0},
+    {"equip_id": "equip_armor_01", "name": "布甲", "type": "armor", "level": 1, "base_atk": 0, "base_def": 6}
+  ],
+  "equipment_sets": [
+    {"set_id": "set_zhaoyao_20", "level": 20, "pieces": ["equip_sword_01", "equip_armor_01"], "effects": [{"count": 2, "bonus_atk": 5, "bonus_def": 10}]}
+  ],
+  "gems": [
+    {"gem_id": "gem_green", "name": "绿宝石", "type": "attribute", "bonus_atk": 3, "bonus_boss_dmg": 0},
+    {"gem_id": "gem_blue", "name": "蓝宝石", "type": "boss_core", "bonus_atk": 0, "bonus_boss_dmg": 10}
+  ],
+  "blue_affixes": [
+    {"affix_id": "affix_guard", "name": "镇岳", "bonuses": {"bonus_def": 4, "bonus_hp": 40}},
+    {"affix_id": "affix_break", "name": "破锋", "bonuses": {"bonus_atk": 6}}
+  ],
+  "purple_refinements": [
+    {"refinement_id": "refine_tiger", "name": "虎啸洗练", "bonuses": {"bonus_atk": 8, "bonus_boss_dmg": 5}}
+  ],
+  "reward_groups": {
+    "reward_node01_easy": [
+      {"item_id": "gold", "count": 100},
+      {"item_id": "gem_green", "count": 1}
+    ],
+    "reward_node01_normal": [
+      {"item_id": "gold", "count": 180},
+      {"item_id": "gem_green", "count": 2}
+    ],
+    "reward_node01_hard": [
+      {"item_id": "gold", "count": 300},
+      {"item_id": "gem_blue", "count": 1}
+    ]
+  },
+  "encounters": {
+    "mainline": [
+      {
+        "node_id": "node_01",
+        "monster_ids": ["mon_qingqiu_guard", "mon_qingqiu_guard", "mon_qingqiu_boss"]
+      }
+    ],
+    "dungeons": [
+      {
+        "dungeon_id": "dungeon_gem",
+        "monster_ids": ["mon_qingqiu_guard", "mon_qingqiu_guard", "mon_qingqiu_boss"]
+      },
+      {
+        "dungeon_id": "dungeon_seal",
+        "monster_ids": ["mon_qingqiu_guard", "mon_qingqiu_boss"]
+      },
+      {
+        "dungeon_id": "dungeon_refine",
+        "monster_ids": ["mon_qingqiu_boss"]
+      }
+    ]
+  }
+}

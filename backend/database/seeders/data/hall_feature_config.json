@@ -1,0 +1,26 @@
+{
+  "hall_feature_config": [
+    {
+      "feature_id": "feat_trial",
+      "feature_name": "宗门试炼",
+      "feature_type": "daily_task",
+      "unlock_condition": {
+        "level": 1
+      },
+      "jump_target": {
+        "page": "trial"
+      }
+    },
+    {
+      "feature_id": "feat_shop",
+      "feature_name": "宗门贡献商店",
+      "feature_type": "shop",
+      "unlock_condition": {
+        "level": 1
+      },
+      "jump_target": {
+        "page": "shop"
+      }
+    }
+  ]
+}

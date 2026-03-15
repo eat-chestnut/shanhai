@@ -1,0 +1,37 @@
+{
+    "dungeon_config": [
+        {
+            "dungeon_id": "dungeon_test",
+            "dungeon_name": "测试副本",
+            "unlock_level": 1
+        }
+    ],
+    "dungeon_difficulty_config": [
+        {
+            "difficulty_id": "easy",
+            "dungeon_id": "dungeon_test",
+            "recommended_power": 100
+        }
+    ],
+    "monster_config": [
+        {
+            "monster_id": "mon_test_boss",
+            "name": "测试 Boss",
+            "base_hp": 2000,
+            "base_atk": 200,
+            "is_boss": true
+        }
+    ],
+    "monster_drop_config": [
+        {
+            "monster_id": "mon_test_boss",
+            "item_id": "gem_gold",
+            "drop_rate": 1
+        },
+        {
+            "monster_id": "mon_test_boss",
+            "item_id": "boss_core_test",
+            "drop_rate": 0.05
+        }
+    ]
+}

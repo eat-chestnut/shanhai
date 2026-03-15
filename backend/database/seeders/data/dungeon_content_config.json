@@ -1,0 +1,61 @@
+{
+  "dungeon_config": [
+    {
+      "dungeon_id": "dungeon_gem",
+      "dungeon_name": "灵玉副本",
+      "unlock_level": 5
+    },
+    {
+      "dungeon_id": "dungeon_seal",
+      "dungeon_name": "灵印副本",
+      "unlock_level": 10
+    }
+  ],
+  "dungeon_difficulty_config": [
+    {
+      "difficulty_id": "easy",
+      "dungeon_id": "dungeon_gem",
+      "recommended_power": 100
+    },
+    {
+      "difficulty_id": "normal",
+      "dungeon_id": "dungeon_gem",
+      "recommended_power": 200
+    }
+  ],
+  "monster_config": [
+    {
+      "monster_id": "mon_qingqiu_guard",
+      "name": "青丘守卫",
+      "base_hp": 500,
+      "base_atk": 40,
+      "is_boss": false
+    },
+    {
+      "monster_id": "mon_qingqiu_boss",
+      "name": "青丘九尾狐",
+      "base_hp": 3000,
+      "base_atk": 120,
+      "is_boss": true
+    }
+  ],
+  "monster_drop_config": [
+    {
+      "monster_id": "mon_qingqiu_guard",
+      "item_id": "gem_green",
+      "drop_rate": 0.5
+    },
+    {
+      "monster_id": "mon_qingqiu_boss",
+      "item_id": "gem_blue",
+      "drop_rate": 1.0,
+      "drop_kind": "boss_fixed"
+    },
+    {
+      "monster_id": "mon_qingqiu_boss",
+      "item_id": "boss_core_qingqiu",
+      "drop_rate": 0.05,
+      "drop_kind": "boss_core"
+    }
+  ]
+}

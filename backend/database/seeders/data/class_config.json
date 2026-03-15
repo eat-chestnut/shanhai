@@ -1,0 +1,25 @@
+{
+  "class_config": [
+    {
+      "class_id": "class_jingang",
+      "class_name": "金刚",
+      "class_desc": "近战职业",
+      "role_type": "melee",
+      "is_open": true
+    },
+    {
+      "class_id": "class_lingyu",
+      "class_name": "灵羽",
+      "class_desc": "远程职业",
+      "role_type": "ranged",
+      "is_open": false
+    },
+    {
+      "class_id": "class_fulu",
+      "class_name": "符箓",
+      "class_desc": "法术职业",
+      "role_type": "magic",
+      "is_open": false
+    }
+  ]
+}

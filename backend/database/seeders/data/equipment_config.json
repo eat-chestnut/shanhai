@@ -1,0 +1,76 @@
+{
+  "equipment_config": [
+    {
+      "equip_id": "equip_sword_01",
+      "name": "铜剑",
+      "type": "weapon",
+      "level": 1,
+      "base_atk": 12,
+      "base_def": 0
+    },
+    {
+      "equip_id": "equip_armor_01",
+      "name": "布甲",
+      "type": "armor",
+      "level": 1,
+      "base_atk": 0,
+      "base_def": 6
+    }
+  ],
+  "equipment_set_config": [
+    {
+      "set_id": "set_zhaoyao_20",
+      "level": 20,
+      "pieces": [
+        "equip_sword_01",
+        "equip_armor_01",
+        "equip_boots_01",
+        "equip_subweapon_01"
+      ],
+      "effects": [
+        {
+          "count": 2,
+          "bonus_atk": 5
+        },
+        {
+          "count": 4,
+          "bonus_def": 10
+        }
+      ]
+    }
+  ],
+  "gem_config": [
+    {
+      "gem_id": "gem_green",
+      "name": "绿宝石",
+      "type": "attribute",
+      "bonus_atk": 3,
+      "bonus_boss_dmg": 0
+    },
+    {
+      "gem_id": "gem_blue",
+      "name": "蓝宝石",
+      "type": "boss_core",
+      "bonus_atk": 0,
+      "bonus_boss_dmg": 10
+    }
+  ],
+  "blue_affix_config": [
+    {
+      "affix_id": "blue_atk_flat",
+      "name": "蓝词条-攻击",
+      "bonuses": {
+        "bonus_atk": 5
+      }
+    }
+  ],
+  "purple_refinement_config": [
+    {
+      "refinement_id": "purple_refine_boss",
+      "name": "紫洗练-Boss伤害",
+      "bonuses": {
+        "bonus_boss_dmg": 8
+      }
+    }
+  ]
+}
