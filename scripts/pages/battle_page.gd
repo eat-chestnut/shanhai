@@ -21,6 +21,7 @@ var _enemies: Array = []
 var _defeated_monsters: Array = []
 var _battle_active := false
 var _battle_over := false
+var _battle_finishing := false
 var _elapsed := 0.0
 
 func _ready() -> void:
@@ -28,7 +29,7 @@ func _ready() -> void:
 	set_process(false)
 
 func activate() -> void:
-	call_deferred("_start_battle")
+	call_deferred("_prepare_and_start_battle")
 
 func deactivate() -> void:
 	_clear_battle()
@@ -40,36 +41,48 @@ func _process(delta: float) -> void:
 	_elapsed += delta
 	_timer_label.text = "耗时 %.1f 秒" % _elapsed
 	if _player != null and not _player.is_alive():
-		_finish_battle(false)
+		_queue_finish(false)
 		return
 	var alive_enemy_count := 0
 	for enemy in _enemies:
 		if enemy != null and enemy.is_alive():
 			alive_enemy_count += 1
 	if alive_enemy_count == 0 and _player != null:
-		_finish_battle(true)
+		_queue_finish(true)
 
-func _start_battle() -> void:
+func _prepare_and_start_battle() -> void:
 	if BattleState.current_context.is_empty():
 		return
 	await get_tree().process_frame
 	_clear_battle()
+	_context_label.text = "正在向后端申请巡厄战场..."
+	_append_log("巡厄准备中，优先校验正式运行态 battle prepare。")
+
+	var battle_payload := await BattleState.prepare_current_battle()
+	if battle_payload.is_empty():
+		_append_log("战斗准备失败。")
+		return
+
 	_battle_active = true
 	_battle_over = false
+	_battle_finishing = false
 	_elapsed = 0.0
 	set_process(true)
 
 	var context := BattleState.current_context
+	var player_snapshot: Dictionary = battle_payload.get("player_snapshot", {})
+	var enemy_group_snapshot: Dictionary = battle_payload.get("enemy_group_snapshot", {})
 	_context_label.text = _context_text(context)
 	_append_log("巡厄开始。方向键控制角色移动，进入攻击范围后将自动出手。")
 
 	var arena_bounds := Rect2(Vector2(60, 80), _arena_host.size - Vector2(120, 120))
-	var player_stats := PlayerState.get_total_stats()
+	var player_stats: Dictionary = player_snapshot.get("stats", PlayerState.get_total_stats())
+	var player_skills: Dictionary = player_snapshot.get("skills", {})
 	_player = PLAYER_SCENE.instantiate()
 	_player.global_position = Vector2(arena_bounds.position.x + 90.0, arena_bounds.get_center().y)
 	_arena_root.add_child(_player)
 	_player.setup_actor({
-		"display_name": GameData.get_character_class_name(str(PlayerState.player.get("class_id", ""))),
+		"display_name": GameData.get_character_class_name(str(player_snapshot.get("class_id", PlayerState.player.get("class_id", "")))),
 		"body_color": Color("d7a04f"),
 		"max_hp": float(player_stats.get("max_hp", 850)),
 		"attack": float(player_stats.get("atk", 30)),
@@ -81,58 +94,60 @@ func _start_battle() -> void:
 		"boss_damage_bonus": float(player_stats.get("boss_dmg", 0)),
 		"attack_speed_bonus": float(player_stats.get("attack_speed_bonus", 0.0)),
 		"arena_bounds": arena_bounds,
-		"class_id": str(PlayerState.player.get("class_id", "")),
-		"resource_name": PlayerState.get_resource_name(),
-		"resource_max": float(PlayerState.get_max_energy()),
-		"active_skills": PlayerState.get_runtime_skills("active"),
-		"passive_skills": PlayerState.get_runtime_skills("passive")
+		"class_id": str(player_snapshot.get("class_id", PlayerState.player.get("class_id", ""))),
+		"resource_name": str(player_snapshot.get("resource_name", PlayerState.get_resource_name())),
+		"resource_max": float(player_snapshot.get("max_energy", PlayerState.get_max_energy())),
+		"active_skills": player_skills.get("active", PlayerState.get_runtime_skills("active")),
+		"passive_skills": player_skills.get("passive", PlayerState.get_runtime_skills("passive"))
 	})
 	_player.attacked.connect(_on_actor_attacked)
 	_player.combat_event.connect(_append_log)
 	_player.died.connect(_on_actor_died)
 	_player.skill_state_changed.connect(_on_skill_state_changed)
 
-	var enemy_ids := BattleState.build_monster_ids()
-	for index in enemy_ids.size():
-		var monster_data := GameData.get_monster(str(enemy_ids[index]))
-		if monster_data.is_empty():
-			continue
+	var monsters: Array = enemy_group_snapshot.get("monsters", [])
+	for index in monsters.size():
+		var enemy_snapshot: Dictionary = monsters[index]
+		var enemy_stats: Dictionary = enemy_snapshot.get("stats", {})
 		var enemy = ENEMY_SCENE.instantiate()
-		var difficulty_multiplier := _difficulty_multiplier(str(context.get("difficulty_id", "easy")))
 		enemy.global_position = Vector2(arena_bounds.end.x - 90.0 - float(index * 58), arena_bounds.position.y + 130.0 + float(index % 3) * 180.0)
 		_arena_root.add_child(enemy)
 		enemy.setup_actor({
-			"display_name": str(monster_data.get("name", "怪物")),
-			"body_color": ShanhaiStyle.BOSS if bool(monster_data.get("is_boss", false)) else Color("9f5449"),
-			"max_hp": float(monster_data.get("base_hp", 400)) * difficulty_multiplier,
-			"attack": float(monster_data.get("base_atk", 35)) * (0.88 + difficulty_multiplier * 0.12),
-			"defense": 10.0 * difficulty_multiplier,
-			"move_speed": 130.0 if bool(monster_data.get("is_boss", false)) else 118.0,
-			"attack_range": 78.0 if bool(monster_data.get("is_boss", false)) else 68.0,
-			"attack_interval": 1.45 if bool(monster_data.get("is_boss", false)) else 1.7,
-			"aggro_range": 230.0 if bool(monster_data.get("is_boss", false)) else 190.0,
-			"is_boss": bool(monster_data.get("is_boss", false)),
+			"display_name": str(enemy_snapshot.get("name", "怪物")),
+			"body_color": ShanhaiStyle.BOSS if bool(enemy_snapshot.get("is_boss", false)) else Color("9f5449"),
+			"max_hp": float(enemy_stats.get("max_hp", 400)),
+			"attack": float(enemy_stats.get("attack", 35)),
+			"defense": float(enemy_stats.get("defense", 10)),
+			"move_speed": float(enemy_stats.get("move_speed", 118.0)),
+			"attack_range": float(enemy_stats.get("attack_range", 68.0)),
+			"attack_interval": float(enemy_stats.get("attack_interval", 1.7)),
+			"aggro_range": float(enemy_stats.get("aggro_range", 190.0)),
+			"is_boss": bool(enemy_snapshot.get("is_boss", false)),
 			"arena_bounds": arena_bounds,
-			"skill_profile": _boss_skill_profile(monster_data)
+			"skill_profile": enemy_snapshot.get("skill_profile", {}).duplicate(true)
 		})
 		enemy.player_actor = _player
 		enemy.attacked.connect(_on_actor_attacked)
 		enemy.combat_event.connect(_append_log)
 		enemy.died.connect(_on_actor_died)
-		enemy.set_meta("monster_id", str(monster_data.get("monster_id", "")))
+		enemy.set_meta("monster_id", str(enemy_snapshot.get("monster_id", "")))
 		_enemies.append(enemy)
 
 	_player.enemies = _enemies
 	_power_label.text = "当前战力 %d / 建议 %d" % [PlayerState.get_power(), int(context.get("recommended_power", 0))]
 	_on_skill_state_changed([], float(PlayerState.get_max_energy()), float(PlayerState.get_max_energy()), PlayerState.get_resource_name())
 
-func _finish_battle(victory: bool) -> void:
-	if _battle_over:
+func _queue_finish(victory: bool) -> void:
+	if _battle_finishing:
 		return
+	_battle_finishing = true
 	_battle_over = true
 	_battle_active = false
 	set_process(false)
-	BattleState.finish_battle(victory, _defeated_monsters, _elapsed)
+	call_deferred("_finish_battle_async", victory)
+
+func _finish_battle_async(victory: bool) -> void:
+	await BattleState.finish_battle(victory, _defeated_monsters, _elapsed)
 	emit_signal("battle_finished")
 
 func _on_actor_attacked(attacker, target, damage: int) -> void:
@@ -159,6 +174,7 @@ func _append_log(message: String) -> void:
 func _clear_battle() -> void:
 	_battle_active = false
 	_battle_over = false
+	_battle_finishing = false
 	_elapsed = 0.0
 	_defeated_monsters.clear()
 	_enemies.clear()
@@ -172,19 +188,6 @@ func _clear_battle() -> void:
 	if _arena_root != null:
 		for child in _arena_root.get_children():
 			child.queue_free()
-
-func _difficulty_multiplier(difficulty_id: String) -> float:
-	match difficulty_id:
-		"easy":
-			return 1.0
-		"normal":
-			return 1.35
-		"hard":
-			return 1.75
-		"nightmare":
-			return 2.15
-		_:
-			return 1.0
 
 func _context_text(context: Dictionary) -> String:
 	if str(context.get("mode", "")) == "mainline":
@@ -208,34 +211,6 @@ func _on_skill_state_changed(skill_states: Array, current_resource: float, max_r
 			suffix
 		])
 	_skill_label.text = "主动技能：%s" % " / ".join(parts)
-
-func _boss_skill_profile(monster_data: Dictionary) -> Dictionary:
-	var monster_id := str(monster_data.get("monster_id", ""))
-	if monster_id == "mon_new_boss":
-		return {
-			"name": "雷狱震落",
-			"cooldown": 5.5,
-			"burst_ratio": 0.4,
-			"control_name": "雷缚",
-			"control_duration": 1.6,
-			"dot_name": "感电",
-			"dot_ratio": 0.24,
-			"dot_duration": 4.0,
-			"self_hot_name": "雷兽回潮",
-			"self_hot_ratio": 0.08
-		}
-	if bool(monster_data.get("is_boss", false)):
-		return {
-			"name": "狐火震慑",
-			"cooldown": 6.0,
-			"burst_ratio": 0.22,
-			"control_name": "震慑",
-			"control_duration": 1.2,
-			"dot_name": "妖火",
-			"dot_ratio": 0.2,
-			"dot_duration": 4.0
-		}
-	return {}
 
 func _build_ui() -> void:
 	if get_child_count() > 0:
@@ -295,7 +270,7 @@ func _build_ui() -> void:
 	footer.add_child(footer_box)
 
 	var hint := Label.new()
-	hint.text = "战斗机制：自动普攻与职业技能会轮流施放，Boss 具备独立技能，DOT/HOT/控制与 Buff/Debuff 会持续结算。"
+	hint.text = "战斗机制：实时表现仍由客户端负责，正式运行态会优先走后端 prepare / settle 校验奖励与进度。"
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ShanhaiStyle.apply_body(hint, true, 16)
 	footer_box.add_child(hint)

@@ -44,10 +44,11 @@ func refresh(_result: Dictionary = {}) -> void:
 
 	var context: Dictionary = result.get("context", {})
 	var summary := Label.new()
-	summary.text = "%s\n耗时 %.1f 秒\n%s" % [
+	summary.text = "%s\n耗时 %.1f 秒\n%s%s" % [
 		_context_name(context),
 		float(result.get("elapsed_seconds", 0.0)),
-		"首通奖励已发放。" if bool(result.get("first_clear", false)) else "已按常规掉落结算。"
+		"首通奖励已发放。" if bool(result.get("first_clear", false)) else "已按常规掉落结算。",
+		"\n当前为本地 fallback 结算。" if bool(result.get("used_fallback", false)) else ""
 	]
 	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ShanhaiStyle.apply_body(summary, false, 18)
@@ -58,7 +59,7 @@ func refresh(_result: Dictionary = {}) -> void:
 	ShanhaiStyle.apply_heading(rewards_heading, 24)
 	_content.add_child(rewards_heading)
 
-	var rewards: Array = result.get("rewards", [])
+	var rewards: Array = result.get("all_rewards", result.get("rewards", []))
 	if rewards.is_empty():
 		var none := Label.new()
 		none.text = "本次没有获得额外奖励。"

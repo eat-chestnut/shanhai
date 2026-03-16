@@ -146,5 +146,5 @@ func _switch_screen(screen: String) -> void:
 			page.call("deactivate")
 
 func _on_class_confirmed(class_id: String) -> void:
-	PlayerState.select_class(class_id)
+	await GameData.commit_class_selection(class_id)
 	UiState.navigate_to(UiState.SCREEN_HALL)

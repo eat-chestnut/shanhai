@@ -1,0 +1,528 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\MonsterDropKind;
+use App\Exceptions\ApiException;
+use App\Models\BattleRecord;
+use App\Models\DungeonDifficulty;
+use App\Models\MainlineDifficulty;
+use App\Models\Monster;
+use App\Models\MonsterDrop;
+use App\Models\PlayerProfile;
+use App\Repositories\Contracts\BattleRuntimeRepositoryInterface;
+use App\Repositories\Contracts\PlayerRuntimeRepositoryInterface;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class BattleRuntimeService
+{
+    public function __construct(
+        private readonly BattleRuntimeRepositoryInterface $battleRuntimeRepository,
+        private readonly PlayerRuntimeRepositoryInterface $playerRuntimeRepository,
+        private readonly PlayerRuntimeService $playerRuntimeService,
+        private readonly StageRuntimeService $stageRuntimeService,
+        private readonly DungeonRuntimeService $dungeonRuntimeService,
+    ) {}
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function prepare(PlayerProfile $playerProfile, array $payload): array
+    {
+        if ((string) ($playerProfile->class_id ?? '') === '') {
+            throw new ApiException('请先选择职业', 40032, 400);
+        }
+
+        $sourceType = (string) $payload['source_type'];
+        $sourceId = (string) $payload['source_id'];
+        $difficultyId = (string) $payload['difficulty_id'];
+        $sourceContext = $this->resolveSourceContext($playerProfile, $sourceType, $sourceId, $difficultyId);
+        $playerSnapshot = $this->playerRuntimeService->buildPlayerSnapshot($playerProfile);
+        $battleSeed = random_int(100000, 99999999);
+        $enemyGroupSnapshot = $this->buildEnemyGroupSnapshot($sourceType, $sourceId, $difficultyId);
+        $battleId = (string) Str::uuid();
+        $battleMapId = sprintf('map_%s_%s', $sourceType, $sourceId);
+
+        $this->battleRuntimeRepository->create([
+            'battle_id' => $battleId,
+            'player_id' => (int) $playerProfile->player_id,
+            'source_type' => $sourceType,
+            'source_id' => $sourceId,
+            'difficulty_id' => $difficultyId,
+            'status' => 'prepared',
+            'battle_map_id' => $battleMapId,
+            'battle_seed' => $battleSeed,
+            'request_snapshot' => $sourceContext,
+            'player_snapshot' => $playerSnapshot,
+            'enemy_group_snapshot' => $enemyGroupSnapshot,
+        ]);
+
+        return [
+            'battle_id' => $battleId,
+            'source_type' => $sourceType,
+            'source_id' => $sourceId,
+            'difficulty_id' => $difficultyId,
+            'battle_map_id' => $battleMapId,
+            'battle_seed' => $battleSeed,
+            'player_snapshot' => $playerSnapshot,
+            'enemy_group_snapshot' => $enemyGroupSnapshot,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function settle(PlayerProfile $playerProfile, array $payload): array
+    {
+        return DB::transaction(function () use ($playerProfile, $payload): array {
+            $battleRecord = $this->battleRuntimeRepository->findByBattleIdForUpdate((string) $payload['battle_id']);
+
+            if (! $battleRecord || (int) $battleRecord->player_id !== (int) $playerProfile->player_id) {
+                throw new ApiException('battle_id 无效', 40441, 404);
+            }
+
+            if ($battleRecord->status === 'settled') {
+                throw new ApiException('battle_id 已结算', 40941, 409);
+            }
+
+            $lockedProfile = $this->playerRuntimeRepository->getProfileForUpdate((int) $playerProfile->player_id);
+
+            if (! $lockedProfile) {
+                throw new ApiException('玩家不存在', 40442, 404);
+            }
+
+            $normalizedResult = $this->normalizeBattleResult((string) $payload['result']);
+            $isVictory = $normalizedResult === 'victory';
+            $normalRewards = $isVictory
+                ? $this->rollMonsterDrops($battleRecord)
+                : [];
+            $progressUpdate = $this->updateProgress($lockedProfile, $battleRecord, $isVictory);
+            $firstClearRewards = $progressUpdate['first_clear_rewards'] ?? [];
+            unset($progressUpdate['first_clear_rewards']);
+
+            $allRewards = $this->mergeRewards(array_merge($normalRewards, $firstClearRewards));
+            $rewardApplyResult = $this->applyRewards($lockedProfile, $allRewards);
+            $updatedProfile = $rewardApplyResult['player_profile'];
+            $initPayload = $this->playerRuntimeService->getInitPayload($updatedProfile);
+
+            $battleRecord = $this->battleRuntimeRepository->update($battleRecord, [
+                'status' => 'settled',
+                'result' => $normalizedResult,
+                'duration' => max((int) round((float) $payload['duration']), 0),
+                'cleared_wave' => max((int) $payload['cleared_wave'], 0),
+                'settle_payload' => $payload['client_summary'] ?? [],
+                'rewards' => $normalRewards,
+                'first_clear_rewards' => $firstClearRewards,
+                'settled_at' => Carbon::now(),
+            ]);
+
+            return [
+                'battle_id' => $battleRecord->battle_id,
+                'result' => $normalizedResult,
+                'rewards' => $normalRewards,
+                'first_clear_rewards' => $firstClearRewards,
+                'all_rewards' => $allRewards,
+                'progress_update' => $progressUpdate,
+                'inventory_update' => [
+                    'items' => $initPayload['inventory'],
+                    'changed_items' => $rewardApplyResult['item_rewards'],
+                ],
+                'currencies_update' => [
+                    'gold' => (int) $updatedProfile->gold,
+                    'jade' => (int) $updatedProfile->jade,
+                    'contribution' => (int) $updatedProfile->contribution,
+                    'delta' => $rewardApplyResult['currency_delta'],
+                ],
+                'player' => $initPayload['player'],
+                'stage_progress' => $initPayload['stage_progress'],
+                'dungeon_progress' => $initPayload['dungeon_progress'],
+            ];
+        });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolveSourceContext(PlayerProfile $playerProfile, string $sourceType, string $sourceId, string $difficultyId): array
+    {
+        if ($sourceType === 'stage') {
+            $sourceContext = $this->stageRuntimeService->assertStageAccess($playerProfile, $sourceId, $difficultyId);
+            /** @var MainlineDifficulty $difficulty */
+            $difficulty = $sourceContext['difficulty'];
+
+            return [
+                'source_type' => 'stage',
+                'chapter_id' => $sourceContext['chapter']->chapter_id,
+                'chapter_name' => $sourceContext['chapter']->chapter_name,
+                'node_id' => $sourceContext['node']->node_id,
+                'node_name' => $sourceContext['node']->node_name,
+                'difficulty_id' => $difficulty->difficulty_id,
+                'recommended_power' => (int) $difficulty->recommended_power,
+                'first_clear_reward_group_id' => $difficulty->first_clear_reward_group_id,
+            ];
+        }
+
+        if ($sourceType === 'dungeon') {
+            $sourceContext = $this->dungeonRuntimeService->assertDungeonAccess($playerProfile, $sourceId, $difficultyId);
+            /** @var DungeonDifficulty $difficulty */
+            $difficulty = $sourceContext['difficulty'];
+
+            return [
+                'source_type' => 'dungeon',
+                'dungeon_id' => $sourceContext['dungeon']->dungeon_id,
+                'dungeon_name' => $sourceContext['dungeon']->dungeon_name,
+                'difficulty_id' => $difficulty->difficulty_id,
+                'recommended_power' => (int) $difficulty->recommended_power,
+                'first_clear_reward_group_id' => $difficulty->first_clear_reward_group_id,
+            ];
+        }
+
+        throw new ApiException('参数错误', 42201, 422);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildEnemyGroupSnapshot(string $sourceType, string $sourceId, string $difficultyId): array
+    {
+        $monsterIds = $this->resolveEncounterMonsterIds($sourceType, $sourceId);
+        $difficultyMultiplier = $this->difficultyMultiplier($difficultyId);
+        $monsterMap = Monster::query()
+            ->whereIn('monster_id', $monsterIds)
+            ->get()
+            ->mapWithKeys(static fn (Monster $monster): array => [
+                $monster->monster_id => $monster,
+            ]);
+        $monsters = [];
+
+        foreach ($monsterIds as $monsterId) {
+            /** @var Monster|null $monster */
+            $monster = $monsterMap->get($monsterId);
+
+            if (! $monster) {
+                continue;
+            }
+
+            $monsters[] = [
+                'monster_id' => $monster->monster_id,
+                'name' => $monster->name,
+                'is_boss' => (bool) $monster->is_boss,
+                'stats' => [
+                    'max_hp' => (int) round((int) $monster->base_hp * $difficultyMultiplier),
+                    'attack' => (int) round((int) $monster->base_atk * (0.88 + $difficultyMultiplier * 0.12)),
+                    'defense' => (int) round(10 * $difficultyMultiplier),
+                    'move_speed' => (float) ($monster->is_boss ? 130.0 : 118.0),
+                    'attack_range' => (float) ($monster->is_boss ? 78.0 : 68.0),
+                    'attack_interval' => (float) ($monster->is_boss ? 1.45 : 1.7),
+                    'aggro_range' => (float) ($monster->is_boss ? 230.0 : 190.0),
+                ],
+                'skill_profile' => $this->buildBossSkillProfile($monster),
+            ];
+        }
+
+        return [
+            'monster_group_id' => sprintf('%s_%s_%s', $sourceType, $sourceId, $difficultyId),
+            'monsters' => $monsters,
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function resolveEncounterMonsterIds(string $sourceType, string $sourceId): array
+    {
+        $encounterConfig = config(sprintf('game_runtime.encounters.%s', $sourceType), []);
+        $monsterIds = $encounterConfig[$sourceId] ?? [];
+
+        if (is_array($monsterIds) && $monsterIds !== []) {
+            return array_values(array_filter($monsterIds, static fn ($monsterId): bool => (string) $monsterId !== ''));
+        }
+
+        return Monster::query()
+            ->orderBy('monster_id')
+            ->limit(3)
+            ->pluck('monster_id')
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function rollMonsterDrops(BattleRecord $battleRecord): array
+    {
+        $enemyGroupSnapshot = $battleRecord->enemy_group_snapshot ?? [];
+        $monsters = $enemyGroupSnapshot['monsters'] ?? [];
+        $monsterIds = array_values(array_filter(array_map(
+            static fn (array $monster): string => (string) ($monster['monster_id'] ?? ''),
+            is_array($monsters) ? $monsters : [],
+        )));
+        $dropDefinitions = MonsterDrop::query()
+            ->whereIn('monster_id', $monsterIds)
+            ->orderBy('monster_id')
+            ->orderByRaw("CASE drop_kind WHEN 'boss_fixed' THEN 0 WHEN 'boss_core' THEN 1 ELSE 2 END")
+            ->orderBy('item_id')
+            ->get();
+        $rewards = [];
+
+        foreach ($dropDefinitions as $dropDefinition) {
+            $dropRate = (float) $dropDefinition->drop_rate;
+            $dropKind = (string) $dropDefinition->drop_kind;
+            $guaranteed = $dropKind === MonsterDropKind::BossFixed->value || $dropRate >= 0.999;
+
+            if ($guaranteed || $this->deterministicRoll($battleRecord->battle_seed, $dropDefinition->monster_id, $dropDefinition->item_id) <= $dropRate) {
+                $rewards[] = [
+                    'item_id' => $dropDefinition->item_id,
+                    'count' => 1,
+                ];
+            }
+        }
+
+        return $this->mergeRewards($rewards);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function updateProgress(PlayerProfile $playerProfile, BattleRecord $battleRecord, bool $isVictory): array
+    {
+        if ($battleRecord->source_type === 'stage') {
+            $chapterId = (string) ($battleRecord->request_snapshot['chapter_id'] ?? '');
+            $nodeId = (string) ($battleRecord->request_snapshot['node_id'] ?? '');
+            $difficultyId = (string) $battleRecord->difficulty_id;
+            $existing = $this->playerRuntimeRepository->findStageProgress($playerProfile->player_id, $nodeId, $difficultyId);
+            $isFirstClearNow = $isVictory && ! (bool) ($existing?->is_first_clear ?? false);
+            $progress = $existing;
+
+            if ($isVictory) {
+                $progress = $this->playerRuntimeRepository->upsertStageProgress(
+                    [
+                        'player_id' => $playerProfile->player_id,
+                        'chapter_id' => $chapterId,
+                        'node_id' => $nodeId,
+                        'difficulty_id' => $difficultyId,
+                    ],
+                    [
+                        'is_first_clear' => true,
+                        'clear_count' => (int) ($existing?->clear_count ?? 0) + 1,
+                    ],
+                );
+
+                $this->playerRuntimeRepository->updateProfile($playerProfile, [
+                    'current_chapter_id' => $chapterId,
+                    'current_node_id' => $nodeId,
+                ]);
+            }
+
+            return [
+                'source_type' => 'stage',
+                'chapter_id' => $chapterId,
+                'node_id' => $nodeId,
+                'difficulty_id' => $difficultyId,
+                'is_first_clear_now' => $isFirstClearNow,
+                'clear_count' => (int) ($progress?->clear_count ?? $existing?->clear_count ?? 0),
+                'first_clear_rewards' => $isFirstClearNow
+                    ? $this->resolveRewardGroupItems((string) ($battleRecord->request_snapshot['first_clear_reward_group_id'] ?? ''))
+                    : [],
+            ];
+        }
+
+        $dungeonId = (string) ($battleRecord->request_snapshot['dungeon_id'] ?? '');
+        $difficultyId = (string) $battleRecord->difficulty_id;
+        $existing = $this->playerRuntimeRepository->findDungeonProgress($playerProfile->player_id, $dungeonId, $difficultyId);
+        $isFirstClearNow = $isVictory && ! (bool) ($existing?->is_first_clear ?? false);
+        $clearCount = (int) ($existing?->clear_count ?? 0) + ($isVictory ? 1 : 0);
+        $dailyCount = (int) ($existing?->daily_count ?? 0) + 1;
+        $progress = $this->playerRuntimeRepository->upsertDungeonProgress(
+            [
+                'player_id' => $playerProfile->player_id,
+                'dungeon_id' => $dungeonId,
+                'difficulty_id' => $difficultyId,
+            ],
+            [
+                'is_first_clear' => $isVictory ? true : (bool) ($existing?->is_first_clear ?? false),
+                'clear_count' => $clearCount,
+                'daily_count' => $dailyCount,
+            ],
+        );
+
+        return [
+            'source_type' => 'dungeon',
+            'dungeon_id' => $dungeonId,
+            'difficulty_id' => $difficultyId,
+            'is_first_clear_now' => $isFirstClearNow,
+            'clear_count' => (int) $progress->clear_count,
+            'daily_count' => (int) $progress->daily_count,
+            'first_clear_rewards' => $isFirstClearNow
+                ? $this->resolveRewardGroupItems((string) ($battleRecord->request_snapshot['first_clear_reward_group_id'] ?? ''))
+                : [],
+        ];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rewards
+     * @return array<string, mixed>
+     */
+    private function applyRewards(PlayerProfile $playerProfile, array $rewards): array
+    {
+        $currencyDelta = [
+            'gold' => 0,
+            'jade' => 0,
+            'contribution' => 0,
+        ];
+        $itemRewards = [];
+
+        foreach ($rewards as $reward) {
+            $itemId = (string) ($reward['item_id'] ?? '');
+            $count = max((int) ($reward['count'] ?? 0), 0);
+
+            if ($itemId === '' || $count <= 0) {
+                continue;
+            }
+
+            if (array_key_exists($itemId, $currencyDelta)) {
+                $currencyDelta[$itemId] += $count;
+
+                continue;
+            }
+
+            $this->playerRuntimeRepository->incrementItemCount($playerProfile->player_id, $itemId, $count);
+            $itemRewards[] = [
+                'item_id' => $itemId,
+                'count' => $count,
+            ];
+        }
+
+        $playerProfile = $this->playerRuntimeRepository->updateProfile($playerProfile, [
+            'gold' => (int) $playerProfile->gold + $currencyDelta['gold'],
+            'jade' => (int) $playerProfile->jade + $currencyDelta['jade'],
+            'contribution' => (int) $playerProfile->contribution + $currencyDelta['contribution'],
+        ]);
+        $playerProfile = $this->playerRuntimeService->syncComputedFields($playerProfile);
+
+        return [
+            'player_profile' => $playerProfile,
+            'item_rewards' => $itemRewards,
+            'currency_delta' => $currencyDelta,
+        ];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rewards
+     * @return list<array<string, mixed>>
+     */
+    private function mergeRewards(array $rewards): array
+    {
+        $counts = [];
+
+        foreach ($rewards as $reward) {
+            $itemId = (string) ($reward['item_id'] ?? '');
+            $count = max((int) ($reward['count'] ?? 0), 0);
+
+            if ($itemId === '' || $count <= 0) {
+                continue;
+            }
+
+            $counts[$itemId] = ($counts[$itemId] ?? 0) + $count;
+        }
+
+        ksort($counts);
+
+        return collect($counts)
+            ->map(static fn (int $count, string $itemId): array => [
+                'item_id' => $itemId,
+                'count' => $count,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function resolveRewardGroupItems(string $rewardGroupId): array
+    {
+        $rewardGroups = config('game_runtime.reward_groups', []);
+        $items = $rewardGroups[$rewardGroupId] ?? [];
+
+        if (! is_array($items)) {
+            return [];
+        }
+
+        return $this->mergeRewards(array_map(
+            static fn (array $entry): array => [
+                'item_id' => (string) ($entry['item_id'] ?? ''),
+                'count' => max((int) ($entry['count'] ?? 0), 0),
+            ],
+            $items,
+        ));
+    }
+
+    private function difficultyMultiplier(string $difficultyId): float
+    {
+        return match ($difficultyId) {
+            'easy' => 1.0,
+            'normal' => 1.35,
+            'hard' => 1.75,
+            'nightmare' => 2.15,
+            default => 1.0,
+        };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildBossSkillProfile(Monster $monster): array
+    {
+        if (! $monster->is_boss) {
+            return [];
+        }
+
+        if ($monster->monster_id === 'mon_new_boss') {
+            return [
+                'name' => '雷狱震落',
+                'cooldown' => 5.5,
+                'burst_ratio' => 0.4,
+                'control_name' => '雷缚',
+                'control_duration' => 1.6,
+                'dot_name' => '感电',
+                'dot_ratio' => 0.24,
+                'dot_duration' => 4.0,
+                'self_hot_name' => '雷兽回潮',
+                'self_hot_ratio' => 0.08,
+            ];
+        }
+
+        return [
+            'name' => '狐火震慑',
+            'cooldown' => 6.0,
+            'burst_ratio' => 0.22,
+            'control_name' => '震慑',
+            'control_duration' => 1.2,
+            'dot_name' => '妖火',
+            'dot_ratio' => 0.2,
+            'dot_duration' => 4.0,
+        ];
+    }
+
+    private function deterministicRoll(int $battleSeed, string $monsterId, string $itemId): float
+    {
+        $hash = hash('sha256', implode('|', [$battleSeed, $monsterId, $itemId]));
+        $sample = hexdec(substr($hash, 0, 8));
+
+        return $sample / 0xFFFFFFFF;
+    }
+
+    private function normalizeBattleResult(string $result): string
+    {
+        $normalized = strtolower(trim($result));
+
+        return match ($normalized) {
+            'win', 'clear', 'success', 'victory' => 'victory',
+            default => 'defeat',
+        };
+    }
+}

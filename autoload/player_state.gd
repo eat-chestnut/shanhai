@@ -8,12 +8,18 @@ var _inventory_counts: Dictionary = {}
 func load_from_dict(source: Dictionary) -> void:
 	player = {
 		"player_id": int(source.get("player_id", 10001)),
+		"nickname": str(source.get("nickname", "巡厄弟子 %s" % int(source.get("player_id", 10001)))),
 		"class_id": str(source.get("class_id", "")),
 		"level": int(source.get("level", 1)),
 		"exp": int(source.get("exp", 0)),
 		"hp": int(source.get("hp", 850)),
 		"max_hp": int(source.get("max_hp", 850)),
+		"power": int(source.get("power", 0)),
 		"gold": int(source.get("gold", 500)),
+		"jade": int(source.get("jade", 0)),
+		"contribution": int(source.get("contribution", 0)),
+		"current_chapter_id": str(source.get("current_chapter_id", "")),
+		"current_node_id": str(source.get("current_node_id", "")),
 		"max_energy": int(source.get("max_energy", 100)),
 		"skill_points": int(source.get("skill_points", 0)),
 		"skill_levels": _normalize_skill_levels(source.get("skill_levels", {})),
@@ -23,6 +29,8 @@ func load_from_dict(source: Dictionary) -> void:
 	for entry in source.get("inventory", []):
 		add_item(str(entry.get("item_id", "")), int(entry.get("count", 0)), false)
 	_prime_skill_levels(player.get("class_id", ""))
+	if int(player.get("power", 0)) <= 0:
+		player["power"] = int(get_total_stats().get("power", 0))
 	emit_signal("changed")
 
 func select_class(class_id: String) -> void:
@@ -55,7 +63,7 @@ func get_resource_name() -> String:
 			return "灵力"
 
 func get_player_name() -> String:
-	return "巡厄弟子 %s" % str(player.get("player_id", 10001))
+	return str(player.get("nickname", "巡厄弟子 %s" % str(player.get("player_id", 10001))))
 
 func get_equipment_summary() -> Dictionary:
 	return player.get("equipment_summary", {}).duplicate(true)
@@ -183,6 +191,9 @@ func get_total_stats() -> Dictionary:
 	}
 
 func get_power() -> int:
+	var runtime_power := int(player.get("power", 0))
+	if runtime_power > 0:
+		return runtime_power
 	return int(get_total_stats().get("power", 0))
 
 func add_item(item_id: String, count: int = 1, notify: bool = true) -> void:
@@ -196,17 +207,24 @@ func apply_rewards(rewards: Array) -> void:
 	for reward in rewards:
 		var item_id := str(reward.get("item_id", ""))
 		var count := int(reward.get("count", 0))
-		if item_id == "gold":
-			player["gold"] = int(player.get("gold", 0)) + count
-		elif item_id == "skill_point":
-			player["skill_points"] = get_skill_points() + count
-		else:
-			add_item(item_id, count, false)
+		match item_id:
+			"gold":
+				player["gold"] = int(player.get("gold", 0)) + count
+			"jade":
+				player["jade"] = int(player.get("jade", 0)) + count
+			"contribution":
+				player["contribution"] = int(player.get("contribution", 0)) + count
+			"skill_point":
+				player["skill_points"] = get_skill_points() + count
+			_:
+				add_item(item_id, count, false)
 	restore_hp()
 	emit_signal("changed")
 
 func restore_hp() -> void:
-	player["hp"] = int(get_total_stats().get("max_hp", player.get("max_hp", 850)))
+	var stats := get_total_stats()
+	player["hp"] = int(stats.get("max_hp", player.get("max_hp", 850)))
+	player["power"] = int(stats.get("power", player.get("power", 0)))
 
 func get_inventory_entries() -> Array:
 	var entries: Array = []

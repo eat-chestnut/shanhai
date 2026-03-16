@@ -19,8 +19,11 @@ func _ready() -> void:
 	_build_ui()
 	GameData.changed.connect(refresh)
 	PlayerState.changed.connect(refresh)
-	UiState.selection_changed.connect(refresh)
+	UiState.selection_changed.connect(_on_selection_changed)
 	refresh()
+
+func activate() -> void:
+	call_deferred("_refresh_runtime_selection")
 
 func refresh() -> void:
 	if _content == null:
@@ -58,7 +61,7 @@ func _rebuild_chapters() -> void:
 		var button := Button.new()
 		var chapter_id := str(chapter.get("chapter_id", ""))
 		button.text = "%s\n解锁 Lv.%d" % [chapter.get("chapter_name", "章节"), int(chapter.get("unlock_level", 1))]
-		button.disabled = PlayerState.get_level() < int(chapter.get("unlock_level", 1))
+		button.disabled = not bool(chapter.get("is_unlocked", PlayerState.get_level() >= int(chapter.get("unlock_level", 1))))
 		ShanhaiStyle.apply_button(button, chapter_id == str(UiState.selection.get("chapter_id", "")))
 		button.pressed.connect(_on_chapter_pressed.bind(chapter_id))
 		_chapter_row.add_child(button)
@@ -78,7 +81,7 @@ func _rebuild_difficulties() -> void:
 		card.configure(
 			difficulty,
 			difficulty_id == str(UiState.selection.get("difficulty_id", "")),
-			PlayerState.get_level() >= int(node.get("unlock_condition", {}).get("level", 1)),
+			bool(difficulty.get("is_unlocked", PlayerState.get_level() >= int(node.get("unlock_condition", {}).get("level", 1)))),
 			PlayerState.get_power()
 		)
 		card.pressed.connect(_on_difficulty_pressed.bind(difficulty_id))
@@ -96,7 +99,7 @@ func _update_summary() -> void:
 		PlayerState.get_power(),
 		_reward_preview(str(difficulty.get("first_clear_reward_group_id", "")))
 	]
-	_start_button.disabled = node.is_empty() or difficulty.is_empty()
+	_start_button.disabled = node.is_empty() or difficulty.is_empty() or not bool(node.get("is_unlocked", true)) or not bool(difficulty.get("is_unlocked", true))
 
 func _on_node_selected(node: Dictionary) -> void:
 	UiState.set_selection("node_id", str(node.get("node_id", "")))
@@ -109,6 +112,16 @@ func _on_chapter_pressed(chapter_id: String) -> void:
 
 func _on_difficulty_pressed(difficulty_id: String) -> void:
 	UiState.set_selection("difficulty_id", difficulty_id)
+
+func _on_selection_changed() -> void:
+	refresh()
+	call_deferred("_refresh_runtime_selection")
+
+func _refresh_runtime_selection() -> void:
+	var node_id := str(UiState.selection.get("node_id", ""))
+	if node_id.is_empty():
+		return
+	await GameData.load_stage_runtime_for_selection(node_id)
 
 func _reward_preview(group_id: String) -> String:
 	var rewards := GameData.get_reward_group_items(group_id)

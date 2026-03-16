@@ -21,7 +21,12 @@ func configure(nodes: Array, selected_node_id: String) -> void:
 		var node: Dictionary = nodes[index]
 		var button := Button.new()
 		var payload := node.duplicate(true)
-		button.text = str(node.get("node_name", "未命名节点"))
+		var is_unlocked := bool(node.get("is_unlocked", true))
+		button.text = "%s%s" % [
+			str(node.get("node_name", "未命名节点")),
+			"" if is_unlocked else "\n未解锁"
+		]
+		button.disabled = not is_unlocked
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var is_selected := str(node.get("node_id", "")) == selected_node_id
 		ShanhaiStyle.apply_button(button, is_selected)
