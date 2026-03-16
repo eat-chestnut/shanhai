@@ -171,7 +171,7 @@ class StageRuntimeService
             ->get()
             ->values();
         $nodeIndex = $orderedNodes->search(static fn (MainlineNode $entry): bool => $entry->node_id === $nodeId);
-        $chapterUnlocked = (int) $playerProfile->level >= (int) $chapter->unlock_level;
+        $chapterUnlocked = $this->isChapterUnlocked($playerProfile, $chapter, $progress);
         $nodeUnlocked = $this->isNodeUnlocked(
             $playerProfile,
             $orderedNodes,

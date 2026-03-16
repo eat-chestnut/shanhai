@@ -63,7 +63,7 @@ func _rebuild_chapters() -> void:
 		var button := Button.new()
 		var chapter_id := str(chapter.get("chapter_id", ""))
 		button.text = "%s\n解锁 Lv.%d" % [chapter.get("chapter_name", "章节"), int(chapter.get("unlock_level", 1))]
-		button.disabled = not bool(chapter.get("is_unlocked", PlayerState.get_level() >= int(chapter.get("unlock_level", 1))))
+		button.disabled = not bool(chapter.get("is_unlocked", false))
 		ShanhaiStyle.apply_button(button, chapter_id == str(UiState.selection.get("chapter_id", "")))
 		button.pressed.connect(_on_chapter_pressed.bind(chapter_id))
 		_chapter_row.add_child(button)
@@ -83,7 +83,7 @@ func _rebuild_difficulties() -> void:
 		card.configure(
 			difficulty,
 			difficulty_id == str(UiState.selection.get("difficulty_id", "")),
-			bool(difficulty.get("is_unlocked", PlayerState.get_level() >= int(node.get("unlock_condition", {}).get("level", 1)))),
+			bool(difficulty.get("is_unlocked", false)),
 			PlayerState.get_power()
 		)
 		card.pressed.connect(_on_difficulty_pressed.bind(difficulty_id))
