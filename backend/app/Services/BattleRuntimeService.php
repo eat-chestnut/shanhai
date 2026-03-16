@@ -192,6 +192,21 @@ class BattleRuntimeService
                 'difficulty_id' => $difficulty->difficulty_id,
                 'recommended_power' => (int) $difficulty->recommended_power,
                 'first_clear_reward_group_id' => $difficulty->first_clear_reward_group_id,
+                'dungeon_spawn_rule' => [
+                    'normal_monster_ids' => $difficulty->normal_monster_ids ?? [],
+                    'elite_monster_ids' => $difficulty->elite_monster_ids ?? [],
+                    'boss_monster_id' => $difficulty->boss_monster_id,
+                    'normal_spawn_interval' => (int) ($difficulty->normal_spawn_interval ?? 3),
+                    'normal_spawn_count' => (int) ($difficulty->normal_spawn_count ?? 2),
+                    'normal_alive_limit' => (int) ($difficulty->normal_alive_limit ?? 6),
+                    'elite_spawn_interval' => (int) ($difficulty->elite_spawn_interval ?? 6),
+                    'elite_spawn_count' => (int) ($difficulty->elite_spawn_count ?? 1),
+                    'elite_alive_limit' => (int) ($difficulty->elite_alive_limit ?? 1),
+                    'normal_kill_to_spawn_elite' => (int) ($difficulty->normal_kill_to_spawn_elite ?? 12),
+                    'elite_kill_to_spawn_boss' => (int) ($difficulty->elite_kill_to_spawn_boss ?? 3),
+                    'stop_spawn_after_boss_appears' => (bool) ($difficulty->stop_spawn_after_boss_appears ?? true),
+                    'clear_on_boss_killed' => (bool) ($difficulty->clear_on_boss_killed ?? true),
+                ],
             ];
         }
 
@@ -425,6 +440,27 @@ class BattleRuntimeService
         $isFirstClearNow = $isVictory && ! (bool) ($existing?->is_first_clear ?? false);
         $clearCount = (int) ($existing?->clear_count ?? 0) + ($isVictory ? 1 : 0);
         $dailyCount = (int) ($existing?->daily_count ?? 0) + 1;
+        
+        // 检查是否击杀了Boss
+        $spawnRule = $battleRecord->request_snapshot['dungeon_spawn_rule'] ?? [];
+        $bossMonsterId = $spawnRule['boss_monster_id'] ?? '';
+        $clearOnBossKilled = $spawnRule['clear_on_boss_killed'] ?? true;
+        
+        $bossKilled = false;
+        if ($isVictory && $bossMonsterId && $clearOnBossKilled) {
+            // 检查战斗记录中是否包含Boss击杀信息
+            $clientSummary = $payload['client_summary'] ?? [];
+            $killedMonsters = $clientSummary['killed_monsters'] ?? [];
+            $bossKilled = in_array($bossMonsterId, $killedMonsters);
+        }
+        
+        // 如果Boss被击杀且配置为Boss击杀后通关，则强制胜利
+        if ($bossKilled) {
+            $isVictory = true;
+            $isFirstClearNow = $isFirstClearNow || ! (bool) ($existing?->is_first_clear ?? false);
+            $clearCount = (int) ($existing?->clear_count ?? 0) + 1;
+        }
+        
         $progress = $this->playerRuntimeRepository->upsertDungeonProgress(
             [
                 'player_id' => $playerProfile->player_id,
@@ -446,6 +482,7 @@ class BattleRuntimeService
             'is_first_clear_now' => $isFirstClearNow,
             'clear_count' => (int) $progress->clear_count,
             'daily_count' => (int) $progress->daily_count,
+            'boss_killed' => $bossKilled,
             'first_clear_rewards' => $isFirstClearNow
                 ? $this->resolveRewardGroupItems((string) ($battleRecord->request_snapshot['first_clear_reward_group_id'] ?? ''))
                 : [],

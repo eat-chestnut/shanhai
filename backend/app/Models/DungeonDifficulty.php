@@ -12,16 +12,19 @@ class DungeonDifficulty extends Model
         'dungeon_id',
         'recommended_power',
         'first_clear_reward_group_id',
-        'normal_monster_pool',
-        'elite_monster_pool',
-        'boss_monster_pool',
+        'normal_monster_ids',
         'normal_spawn_interval',
         'normal_spawn_count',
-        'max_normal_on_screen',
-        'elite_trigger_kills',
-        'boss_trigger_elite_kills',
-        'stop_spawning_after_boss',
-        'clear_dungeon_after_boss',
+        'normal_alive_limit',
+        'elite_monster_ids',
+        'elite_spawn_interval',
+        'elite_spawn_count',
+        'elite_alive_limit',
+        'boss_monster_id',
+        'normal_kill_to_spawn_elite',
+        'elite_kill_to_spawn_boss',
+        'stop_spawn_after_boss_appears',
+        'clear_on_boss_killed',
     ];
 
     /**
@@ -30,11 +33,10 @@ class DungeonDifficulty extends Model
     protected function casts(): array
     {
         return [
-            'normal_monster_pool' => 'array',
-            'elite_monster_pool' => 'array',
-            'boss_monster_pool' => 'array',
-            'stop_spawning_after_boss' => 'boolean',
-            'clear_dungeon_after_boss' => 'boolean',
+            'normal_monster_ids' => 'array',
+            'elite_monster_ids' => 'array',
+            'stop_spawn_after_boss_appears' => 'boolean',
+            'clear_on_boss_killed' => 'boolean',
         ];
     }
 
