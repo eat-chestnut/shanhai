@@ -25,6 +25,7 @@ class BattleRuntimeService
         private readonly StageRuntimeService $stageRuntimeService,
         private readonly DungeonRuntimeService $dungeonRuntimeService,
         private readonly ChallengeService $challengeService,
+        private readonly ScriptureRuntimeService $scriptureRuntimeService,
         private readonly InventoryService $inventoryService,
     ) {}
 
@@ -40,11 +41,13 @@ class BattleRuntimeService
 
         $sourceType = (string) $payload['source_type'];
         $sourceId = (string) $payload['source_id'];
-        $difficultyId = (string) $payload['difficulty_id'];
-        $sourceContext = $this->resolveSourceContext($playerProfile, $sourceType, $sourceId, $difficultyId);
+        $difficultyId = (string) ($payload['difficulty_id'] ?? '');
+        $worldLevel = (int) ($payload['world_level'] ?? 0);
+        $sourceContext = $this->resolveSourceContext($playerProfile, $sourceType, $sourceId, $difficultyId, $worldLevel);
         $playerSnapshot = $this->playerRuntimeService->buildPlayerSnapshot($playerProfile);
         $battleSeed = random_int(100000, 99999999);
-        $enemyGroupSnapshot = $this->buildEnemyGroupSnapshot($playerProfile, $sourceType, $sourceId, $difficultyId);
+        $enemyGroupSnapshot = $this->buildEnemyGroupSnapshot($playerProfile, $sourceType, $sourceId, $difficultyId, $worldLevel, $sourceContext);
+        $battleRulesSnapshot = (array) ($sourceContext['battle_rules_snapshot'] ?? []);
         $battleId = (string) Str::uuid();
         $battleMapId = sprintf('map_%s_%s', $sourceType, $sourceId);
 
@@ -54,6 +57,7 @@ class BattleRuntimeService
             'source_type' => $sourceType,
             'source_id' => $sourceId,
             'difficulty_id' => $difficultyId,
+            'world_level' => $worldLevel > 0 ? $worldLevel : null,
             'status' => 'prepared',
             'battle_map_id' => $battleMapId,
             'battle_seed' => $battleSeed,
@@ -62,16 +66,24 @@ class BattleRuntimeService
             'enemy_group_snapshot' => $enemyGroupSnapshot,
         ]);
 
-        return [
+        $response = [
             'battle_id' => $battleId,
             'source_type' => $sourceType,
             'source_id' => $sourceId,
-            'difficulty_id' => $difficultyId,
             'battle_map_id' => $battleMapId,
             'battle_seed' => $battleSeed,
             'player_snapshot' => $playerSnapshot,
             'enemy_group_snapshot' => $enemyGroupSnapshot,
+            'battle_rules_snapshot' => $battleRulesSnapshot,
         ];
+
+        if ($sourceType === 'scripture') {
+            $response['world_level'] = $worldLevel;
+        } else {
+            $response['difficulty_id'] = $difficultyId;
+        }
+
+        return $response;
     }
 
     /**
@@ -161,7 +173,7 @@ class BattleRuntimeService
     /**
      * @return array<string, mixed>
      */
-    private function resolveSourceContext(PlayerProfile $playerProfile, string $sourceType, string $sourceId, string $difficultyId): array
+    private function resolveSourceContext(PlayerProfile $playerProfile, string $sourceType, string $sourceId, string $difficultyId, int $worldLevel): array
     {
         if ($sourceType === 'stage') {
             $sourceContext = $this->stageRuntimeService->assertStageAccess($playerProfile, $sourceId, $difficultyId);
@@ -229,14 +241,47 @@ class BattleRuntimeService
             ];
         }
 
+        if ($sourceType === 'scripture') {
+            $sourceContext = $this->scriptureRuntimeService->assertScriptureBattleAccess($playerProfile, $sourceId, $worldLevel);
+            $scripture = $sourceContext['scripture'];
+            $tier = $sourceContext['tier'];
+
+            return [
+                'source_type' => 'scripture',
+                'scripture_id' => $scripture->scripture_id,
+                'scripture_name' => $scripture->scripture_name,
+                'scripture_group' => $scripture->scripture_group,
+                'world_level' => $worldLevel,
+                'current_world_level' => (int) $sourceContext['current_world_level'],
+                'max_unlocked_world_level' => (int) $sourceContext['max_unlocked_world_level'],
+                'normal_monster_ids' => array_values($tier->normal_monster_ids ?? []),
+                'elite_monster_ids' => array_values($tier->elite_monster_ids ?? []),
+                'boss_monster_ids' => array_values($tier->boss_monster_ids ?? []),
+                'extra_drop_tags' => array_values($tier->extra_drop_tags ?? []),
+                'battle_rules_snapshot' => [
+                    'hp_scale' => (float) $tier->hp_scale,
+                    'atk_scale' => (float) $tier->atk_scale,
+                    'def_scale' => (float) $tier->def_scale,
+                    'reward_scale' => (float) $tier->reward_scale,
+                    'gold_scale' => (float) $tier->gold_scale,
+                    'extra_drop_tags' => array_values($tier->extra_drop_tags ?? []),
+                ],
+            ];
+        }
+
         throw new ApiException('参数错误', 42201, 422);
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function buildEnemyGroupSnapshot(PlayerProfile $playerProfile, string $sourceType, string $sourceId, string $difficultyId): array
+    private function buildEnemyGroupSnapshot(PlayerProfile $playerProfile, string $sourceType, string $sourceId, string $difficultyId, int $worldLevel, array $sourceContext = []): array
     {
+        if ($sourceType === 'scripture') {
+            return $this->scriptureRuntimeService
+                ->buildBattlePayload((string) ($sourceContext['scripture_id'] ?? $sourceId), $worldLevel)['enemy_group_snapshot'];
+        }
+
         $encounter = $this->resolveEncounterDefinition($sourceType, $sourceId, $difficultyId);
         $monsterIds = $encounter['monster_ids'];
         $difficultyMultiplier = $this->difficultyMultiplier($difficultyId);
@@ -433,6 +478,23 @@ class BattleRuntimeService
             return $this->challengeService->settleChallenge($playerProfile, $battleRecord, $isVictory);
         }
 
+        if ($battleRecord->source_type === 'scripture') {
+            $progressState = $this->scriptureRuntimeService->getProgressState(
+                $playerProfile,
+                (string) ($battleRecord->request_snapshot['scripture_id'] ?? $battleRecord->source_id),
+            );
+
+            return [
+                'source_type' => 'scripture',
+                'scripture_id' => (string) ($battleRecord->request_snapshot['scripture_id'] ?? $battleRecord->source_id),
+                'world_level' => (int) ($battleRecord->world_level ?? $battleRecord->request_snapshot['world_level'] ?? 0),
+                'current_world_level' => (int) $progressState['current_world_level'],
+                'max_unlocked_world_level' => (int) $progressState['max_unlocked_world_level'],
+                'first_clear_rewards' => [],
+                'weekly_rewards' => [],
+            ];
+        }
+
         $dungeonId = (string) ($battleRecord->request_snapshot['dungeon_id'] ?? '');
         $difficultyId = (string) $battleRecord->difficulty_id;
         $existing = $this->playerRuntimeRepository->findDungeonProgress($playerProfile->player_id, $dungeonId, $difficultyId);
@@ -506,6 +568,14 @@ class BattleRuntimeService
                     (string) $battleRecord->difficulty_id,
                 ),
             ));
+        }
+
+        if ($battleRecord->source_type === 'scripture') {
+            return $this->scriptureRuntimeService->resolveBattleRewards(
+                (string) ($battleRecord->request_snapshot['scripture_id'] ?? $battleRecord->source_id),
+                (int) ($battleRecord->world_level ?? $battleRecord->request_snapshot['world_level'] ?? 0),
+                (int) $battleRecord->battle_seed,
+            );
         }
 
         return $this->rollMonsterDrops($battleRecord);

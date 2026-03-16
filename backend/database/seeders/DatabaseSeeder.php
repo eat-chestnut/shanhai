@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             SkillSeeder::class,
             HallFeatureSeeder::class,
             MainlineConfigSeeder::class,
+            ScriptureDataSeeder::class,
             DungeonContentConfigSeeder::class,
             EquipmentConfigSeeder::class,
             TaskConfigSeeder::class,

@@ -9,6 +9,7 @@ var _buttons: Dictionary = {}
 var _tabs := [
 	{"screen": UiState.SCREEN_HALL, "label": "大厅"},
 	{"screen": UiState.SCREEN_MAINLINE, "label": "主线"},
+	{"screen": UiState.SCREEN_SCRIPTURE_LIST, "label": "经卷"},
 	{"screen": UiState.SCREEN_DUNGEON, "label": "副本"},
 	{"screen": UiState.SCREEN_TASK, "label": "任务"},
 	{"screen": UiState.SCREEN_SHOP, "label": "商店"},

@@ -4,6 +4,7 @@ signal changed
 signal loaded
 
 const LOCAL_BOOTSTRAP_PATH := "res://data/bootstrap_state.json"
+const SCRIPTURE_DATA_DIR := "res://backend/database/seeders/data"
 
 var raw_bootstrap: Dictionary = {}
 var character_classes: Array = []
@@ -23,6 +24,12 @@ var task_configs: Array = []
 var shop_items: Array = []
 var items: Array = []
 var rarity_configs: Array = []
+var scriptures: Array = []
+var scripture_chapter_bindings: Array = []
+var scripture_world_tiers: Array = []
+var scripture_upgrade_costs: Array = []
+var scripture_drop_tags: Array = []
+var scripture_monsters: Array = []
 var reward_groups: Dictionary = {}
 var encounters: Dictionary = {}
 var runtime_auth: Dictionary = {}
@@ -41,6 +48,8 @@ var runtime_stage_nodes: Dictionary = {}
 var runtime_stage_difficulties: Dictionary = {}
 var runtime_dungeon_list: Array = []
 var runtime_dungeon_details: Dictionary = {}
+var runtime_scripture_list: Dictionary = {}
+var runtime_scripture_details: Dictionary = {}
 var using_runtime_backend := false
 var last_runtime_error := ""
 var item_labels := {
@@ -75,6 +84,7 @@ func load_all(force_reload: bool = false) -> void:
 	var local_bootstrap := _load_local_bootstrap()
 	raw_bootstrap = local_bootstrap.duplicate(true)
 	_apply_bootstrap(local_bootstrap)
+	_load_local_scripture_data()
 	_clear_runtime_error()
 	PlayerState.load_from_dict(local_bootstrap.get("player", {}))
 
@@ -135,6 +145,8 @@ func refresh_runtime_state(emit_changed: bool = true) -> void:
 		runtime_dungeon_list = dungeon_list.duplicate(true)
 		_merge_runtime_dungeons(dungeon_list)
 
+	await load_scripture_runtime(false)
+
 	if emit_changed:
 		emit_signal("changed")
 
@@ -187,6 +199,60 @@ func load_dungeon_runtime_detail(dungeon_id: String) -> void:
 	_merge_runtime_dungeon_detail(detail)
 	_clear_runtime_error()
 	emit_signal("changed")
+
+func load_scripture_runtime(emit_changed: bool = true) -> void:
+	if using_runtime_backend:
+		var payload := await GameApi.fetch_scripture_list()
+		if not payload.is_empty():
+			runtime_scripture_list = payload.duplicate(true)
+			_clear_runtime_error()
+			if emit_changed:
+				emit_signal("changed")
+			return
+		_capture_api_error("经卷列表读取失败")
+
+	runtime_scripture_list = {
+		"scriptures": _build_local_scripture_list()
+	}
+	if emit_changed:
+		emit_signal("changed")
+
+func load_scripture_detail(scripture_id: String, emit_changed: bool = true) -> void:
+	if scripture_id.is_empty():
+		return
+
+	if using_runtime_backend:
+		var payload := await GameApi.fetch_scripture_detail(scripture_id)
+		if not payload.is_empty():
+			runtime_scripture_details[scripture_id] = payload.duplicate(true)
+			_clear_runtime_error()
+			if emit_changed:
+				emit_signal("changed")
+			return
+		_capture_api_error("经卷详情读取失败")
+
+	runtime_scripture_details[scripture_id] = _build_local_scripture_detail(scripture_id)
+	if emit_changed:
+		emit_signal("changed")
+
+func upgrade_scripture(scripture_id: String, target_world_level: int) -> bool:
+	if not using_runtime_backend:
+		_capture_api_error("当前未连接正式运行态后端")
+		emit_signal("changed")
+		return false
+
+	var payload := await GameApi.upgrade_scripture(scripture_id, target_world_level)
+	if payload.is_empty():
+		_capture_api_error("经卷升级失败")
+		emit_signal("changed")
+		return false
+
+	await refresh_runtime_state(false)
+	await load_scripture_runtime(false)
+	await load_scripture_detail(scripture_id, false)
+	_clear_runtime_error()
+	emit_signal("changed")
+	return true
 
 func load_equipment_runtime_detail(equipment_uid: String = "") -> void:
 	if not using_runtime_backend:
@@ -554,6 +620,53 @@ func get_challenge_detail(challenge_id: String) -> Dictionary:
 		return payload.duplicate(true)
 	return {}
 
+func get_scripture_entries() -> Array:
+	var scripture_payload = runtime_scripture_list.get("scriptures", [])
+	if scripture_payload is Array and not scripture_payload.is_empty():
+		return scripture_payload.duplicate(true)
+	return _build_local_scripture_list()
+
+func get_scripture(scripture_id: String) -> Dictionary:
+	return _find_first(scriptures, "scripture_id", scripture_id)
+
+func get_scripture_detail(scripture_id: String) -> Dictionary:
+	var payload = runtime_scripture_details.get(scripture_id, {})
+	if payload is Dictionary and not payload.is_empty():
+		return payload.duplicate(true)
+	return _build_local_scripture_detail(scripture_id)
+
+func get_scripture_tiers(scripture_id: String) -> Array:
+	var tiers := scripture_world_tiers.filter(func(entry: Dictionary) -> bool:
+		return str(entry.get("scripture_id", "")) == scripture_id
+	)
+	tiers.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if int(a.get("world_level_start", 0)) != int(b.get("world_level_start", 0)):
+			return int(a.get("world_level_start", 0)) < int(b.get("world_level_start", 0))
+		return int(a.get("world_level_end", 0)) < int(b.get("world_level_end", 0))
+	)
+	return tiers
+
+func get_scripture_tier(scripture_id: String, world_level: int) -> Dictionary:
+	for tier in get_scripture_tiers(scripture_id):
+		if world_level >= int(tier.get("world_level_start", 0)) and world_level <= int(tier.get("world_level_end", 0)):
+			return tier.duplicate(true)
+	return {}
+
+func get_scripture_upgrade_cost_entries(scripture_id: String) -> Array:
+	var costs := scripture_upgrade_costs.filter(func(entry: Dictionary) -> bool:
+		return str(entry.get("scripture_id", "")) == scripture_id
+	)
+	costs.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a.get("target_world_level", 0)) < int(b.get("target_world_level", 0))
+	)
+	return costs
+
+func get_scripture_drop_tag(drop_tag: String) -> Dictionary:
+	return _find_first(scripture_drop_tags, "drop_tag", drop_tag)
+
+func get_scripture_monster(monster_id: String) -> Dictionary:
+	return _find_first(scripture_monsters, "monster_id", monster_id)
+
 func get_challenge_encounter(challenge_id: String, floor_id: String) -> Array:
 	var detail := get_challenge_detail(challenge_id)
 	var challenge: Dictionary = detail.get("challenge", {})
@@ -675,6 +788,16 @@ func get_dungeon_encounter(dungeon_id: String, difficulty_id: String = "") -> Ar
 	var dungeon_encounters: Dictionary = encounters.get("dungeons", encounters.get("dungeon", {}))
 	return _resolve_encounter_ids(dungeon_encounters, dungeon_id, difficulty_id, _default_dungeon_encounter(dungeon_id))
 
+func _load_local_scripture_data() -> void:
+	scriptures = _load_repo_json_entries("%s/scriptures.json" % SCRIPTURE_DATA_DIR, "scriptures")
+	scripture_chapter_bindings = _load_repo_json_entries("%s/scripture_chapter_bindings.json" % SCRIPTURE_DATA_DIR, "bindings")
+	scripture_world_tiers = _load_repo_json_entries("%s/scripture_world_tiers.json" % SCRIPTURE_DATA_DIR, "tiers")
+	scripture_upgrade_costs = _load_repo_json_entries("%s/scripture_upgrade_costs.json" % SCRIPTURE_DATA_DIR, "upgrade_costs")
+	var item_and_drop_payload := _load_repo_json("%s/scripture_items_and_drop_tags.json" % SCRIPTURE_DATA_DIR)
+	scripture_drop_tags = _load_dict_entries(item_and_drop_payload.get("drop_tags", []))
+	scripture_monsters = _load_repo_json_entries("%s/scripture_monsters.json" % SCRIPTURE_DATA_DIR, "monsters")
+	_merge_scripture_items_into_catalog(_load_dict_entries(item_and_drop_payload.get("items", [])))
+
 func _load_local_bootstrap() -> Dictionary:
 	if not FileAccess.file_exists(LOCAL_BOOTSTRAP_PATH):
 		return {}
@@ -718,6 +841,8 @@ func _apply_bootstrap(source: Dictionary) -> void:
 	runtime_stage_difficulties.clear()
 	runtime_dungeon_list.clear()
 	runtime_dungeon_details.clear()
+	runtime_scripture_list.clear()
+	runtime_scripture_details.clear()
 	_fill_default_content()
 
 func _merge_remote_bundle(remote_bundle: Dictionary) -> void:
@@ -746,6 +871,7 @@ func _merge_remote_bundle(remote_bundle: Dictionary) -> void:
 		items = _normalize_item_catalog(remote_bundle.get("items", []))
 	if remote_bundle.has("rarity_configs"):
 		rarity_configs = _normalize_rarity_configs(remote_bundle.get("rarity_configs", []))
+	_merge_scripture_items_into_catalog()
 	_fill_default_content()
 
 func _apply_runtime_player_init(payload: Dictionary) -> void:
@@ -1081,6 +1207,86 @@ func _capture_api_error(default_message: String) -> void:
 
 func _clear_runtime_error() -> void:
 	last_runtime_error = ""
+
+func _load_repo_json(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if parsed is Dictionary:
+		return parsed
+	return {}
+
+func _load_repo_json_entries(path: String, key: String) -> Array:
+	return _load_dict_entries(_load_repo_json(path).get(key, []))
+
+func _load_dict_entries(source: Variant) -> Array:
+	var entries: Array = []
+	if source is Array:
+		for entry in source:
+			if entry is Dictionary:
+				entries.append(entry.duplicate(true))
+	return entries
+
+func _merge_scripture_items_into_catalog(extra_items: Array = []) -> void:
+	var item_map := {}
+	for entry in items:
+		if entry is Dictionary:
+			item_map[str(entry.get("item_id", ""))] = _normalize_item_entry(entry)
+
+	var source_items := extra_items if not extra_items.is_empty() else _load_dict_entries(_load_repo_json("%s/scripture_items_and_drop_tags.json" % SCRIPTURE_DATA_DIR).get("items", []))
+	for entry in source_items:
+		var item_id := str(entry.get("item_id", ""))
+		if item_id.is_empty():
+			continue
+		item_map[item_id] = _normalize_item_entry(entry)
+
+	items = item_map.values()
+	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return str(a.get("item_id", "")) < str(b.get("item_id", ""))
+	)
+
+func _build_local_scripture_list() -> Array:
+	var entries: Array = []
+	for scripture in scriptures:
+		if not bool(scripture.get("is_enabled", true)):
+			continue
+		entries.append({
+			"scripture_id": str(scripture.get("scripture_id", "")),
+			"scripture_name": str(scripture.get("scripture_name", "")),
+			"scripture_group": str(scripture.get("scripture_group", "")),
+			"is_unlocked": false,
+			"unlock_text": _build_local_scripture_unlock_text(scripture),
+			"current_world_level": 0,
+			"max_unlocked_world_level": 0
+		})
+	return entries
+
+func _build_local_scripture_detail(scripture_id: String) -> Dictionary:
+	var scripture := get_scripture(scripture_id)
+	if scripture.is_empty():
+		return {}
+	return {
+		"scripture_id": str(scripture.get("scripture_id", "")),
+		"scripture_name": str(scripture.get("scripture_name", "")),
+		"scripture_group": str(scripture.get("scripture_group", "")),
+		"current_world_level": 0,
+		"max_unlocked_world_level": 0,
+		"available_world_levels": [],
+		"tier_preview": get_scripture_tiers(scripture_id),
+		"upgrade_cost_preview": get_scripture_upgrade_cost_entries(scripture_id).slice(0, 1)
+	}
+
+func _build_local_scripture_unlock_text(scripture: Dictionary) -> String:
+	var unlock_condition: Dictionary = scripture.get("unlock_condition", {})
+	var parts: Array = []
+	var chapter_id := str(unlock_condition.get("clear_chapter_id", ""))
+	if not chapter_id.is_empty():
+		var chapter_name := str(get_chapter(chapter_id).get("chapter_name", chapter_id))
+		parts.append("通关%s" % chapter_name)
+	var player_level := int(unlock_condition.get("player_level", 0))
+	if player_level > 0:
+		parts.append("达到 Lv.%d" % player_level)
+	return "，".join(parts) + "后解锁" if not parts.is_empty() else "未解锁"
 
 func _find_first(source: Array, key: String, value: String) -> Dictionary:
 	for entry in source:

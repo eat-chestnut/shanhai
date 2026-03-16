@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\PlayerDungeonProgress;
 use App\Models\PlayerItem;
 use App\Models\PlayerProfile;
+use App\Models\PlayerScriptureProgress;
 use App\Models\PlayerStageProgress;
 use App\Repositories\Contracts\PlayerRuntimeRepositoryInterface;
 use Illuminate\Support\Collection;
@@ -155,5 +156,26 @@ class PlayerRuntimeRepository implements PlayerRuntimeRepositoryInterface
     public function upsertDungeonProgress(array $attributes, array $values): PlayerDungeonProgress
     {
         return PlayerDungeonProgress::query()->updateOrCreate($attributes, $values);
+    }
+
+    public function getScriptureProgress(int $playerId): Collection
+    {
+        return PlayerScriptureProgress::query()
+            ->where('player_id', $playerId)
+            ->orderBy('scripture_id')
+            ->get();
+    }
+
+    public function findScriptureProgress(int $playerId, string $scriptureId): ?PlayerScriptureProgress
+    {
+        return PlayerScriptureProgress::query()
+            ->where('player_id', $playerId)
+            ->where('scripture_id', $scriptureId)
+            ->first();
+    }
+
+    public function upsertScriptureProgress(array $attributes, array $values): PlayerScriptureProgress
+    {
+        return PlayerScriptureProgress::query()->updateOrCreate($attributes, $values);
     }
 }

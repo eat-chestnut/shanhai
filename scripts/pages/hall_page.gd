@@ -86,6 +86,7 @@ func _build_quick_links() -> Control:
 
 	for entry in [
 		{"screen": UiState.SCREEN_MAINLINE, "label": "进入主线章节"},
+		{"screen": UiState.SCREEN_SCRIPTURE_LIST, "label": "进入经卷回刷"},
 		{"screen": UiState.SCREEN_DUNGEON, "label": "进入宗门副本"},
 		{"screen": UiState.SCREEN_TASK, "label": "查看宗门任务"},
 		{"screen": UiState.SCREEN_SHOP, "label": "进入宗门商店"},

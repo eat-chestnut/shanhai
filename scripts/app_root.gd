@@ -9,6 +9,8 @@ const PAGE_SCENES := {
 	UiState.SCREEN_CLASS_SELECT: preload("res://scenes/pages/class_select_page.tscn"),
 	UiState.SCREEN_HALL: preload("res://scenes/pages/hall_page.tscn"),
 	UiState.SCREEN_MAINLINE: preload("res://scenes/pages/mainline_page.tscn"),
+	UiState.SCREEN_SCRIPTURE_LIST: preload("res://scenes/pages/scripture_list_page.tscn"),
+	UiState.SCREEN_SCRIPTURE_DETAIL: preload("res://scenes/pages/scripture_detail_page.tscn"),
 	UiState.SCREEN_DUNGEON: preload("res://scenes/pages/dungeon_page.tscn"),
 	UiState.SCREEN_TASK: preload("res://scenes/pages/task_page.tscn"),
 	UiState.SCREEN_SHOP: preload("res://scenes/pages/shop_page.tscn"),
@@ -112,6 +114,19 @@ func _instantiate_pages() -> void:
 
 	var mainline_page = _pages[UiState.SCREEN_MAINLINE]
 	mainline_page.start_battle.connect(func() -> void:
+		UiState.navigate_to(UiState.SCREEN_BATTLE)
+	)
+
+	var scripture_list_page = _pages[UiState.SCREEN_SCRIPTURE_LIST]
+	scripture_list_page.open_detail.connect(func(scripture_id: String) -> void:
+		UiState.navigate_to(UiState.SCREEN_SCRIPTURE_DETAIL, {"scripture_id": scripture_id})
+	)
+
+	var scripture_detail_page = _pages[UiState.SCREEN_SCRIPTURE_DETAIL]
+	scripture_detail_page.return_list.connect(func() -> void:
+		UiState.navigate_to(UiState.SCREEN_SCRIPTURE_LIST)
+	)
+	scripture_detail_page.start_battle.connect(func() -> void:
 		UiState.navigate_to(UiState.SCREEN_BATTLE)
 	)
 

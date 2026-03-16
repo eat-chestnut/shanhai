@@ -50,6 +50,24 @@ func start_challenge(challenge: Dictionary, floor: Dictionary) -> void:
 		"recommended_power": int(floor.get("recommended_power", 0))
 	})
 
+func start_scripture(scripture: Dictionary, world_level: int, tier: Dictionary) -> void:
+	set_context({
+		"mode": "scripture",
+		"scripture_id": scripture.get("scripture_id", ""),
+		"scripture_name": scripture.get("scripture_name", ""),
+		"scripture_group": scripture.get("scripture_group", ""),
+		"world_level": world_level,
+		"tier_data": tier.duplicate(true),
+		"battle_rules_snapshot": {
+			"hp_scale": float(tier.get("hp_scale", 1.0)),
+			"atk_scale": float(tier.get("atk_scale", 1.0)),
+			"def_scale": float(tier.get("def_scale", 1.0)),
+			"reward_scale": float(tier.get("reward_scale", 1.0)),
+			"gold_scale": float(tier.get("gold_scale", 1.0)),
+			"extra_drop_tags": tier.get("extra_drop_tags", []).duplicate(true)
+		}
+	})
+
 func set_context(context: Dictionary) -> void:
 	current_context = context.duplicate(true)
 	current_battle_payload = {}
@@ -60,12 +78,14 @@ func prepare_current_battle() -> Dictionary:
 	if current_context.is_empty():
 		return {}
 
-	var source_type := "stage" if str(current_context.get("mode", "")) == "mainline" else ("challenge" if str(current_context.get("mode", "")) == "challenge" else "dungeon")
-	var source_id := str(current_context.get("node_id", current_context.get("dungeon_id", current_context.get("challenge_id", ""))))
+	var mode := str(current_context.get("mode", ""))
+	var source_type := "stage" if mode == "mainline" else ("challenge" if mode == "challenge" else ("scripture" if mode == "scripture" else "dungeon"))
+	var source_id := str(current_context.get("node_id", current_context.get("dungeon_id", current_context.get("challenge_id", current_context.get("scripture_id", "")))))
 	var difficulty_id := str(current_context.get("difficulty_id", ""))
+	var world_level := int(current_context.get("world_level", 0))
 
 	if GameData.using_runtime_backend:
-		var payload := await GameApi.battle_prepare(source_type, source_id, difficulty_id)
+		var payload := await GameApi.battle_prepare(source_type, source_id, difficulty_id, world_level)
 		if not payload.is_empty():
 			current_battle_payload = payload.duplicate(true)
 			return current_battle_payload
@@ -75,7 +95,7 @@ func prepare_current_battle() -> Dictionary:
 
 	# Fallback only: prepare 接口失败时继续保留本地可玩战斗闭环。
 	if GameApi.can_use_transport_fallback() or not GameData.using_runtime_backend:
-		current_battle_payload = _build_local_prepare_payload(source_type, source_id, difficulty_id)
+		current_battle_payload = _build_local_prepare_payload(source_type, source_id, difficulty_id, world_level)
 		return current_battle_payload
 
 	return {}
@@ -114,6 +134,8 @@ func get_context_key() -> String:
 		return ""
 	if str(current_context.get("mode", "")) == "mainline":
 		return "%s::%s::%s" % [current_context.get("chapter_id", ""), current_context.get("node_id", ""), current_context.get("difficulty_id", "")]
+	if str(current_context.get("mode", "")) == "scripture":
+		return "%s::%d" % [current_context.get("scripture_id", ""), int(current_context.get("world_level", 0))]
 	if str(current_context.get("mode", "")) == "challenge":
 		return "%s::%s" % [current_context.get("challenge_id", ""), current_context.get("difficulty_id", "")]
 	return "%s::%s" % [current_context.get("dungeon_id", ""), current_context.get("difficulty_id", "")]
@@ -125,6 +147,13 @@ func build_monster_ids() -> Array:
 	var difficulty_id := str(current_context.get("difficulty_id", ""))
 	if str(current_context.get("mode", "")) == "mainline":
 		return GameData.get_mainline_encounter(str(current_context.get("node_id", "")), difficulty_id)
+	if str(current_context.get("mode", "")) == "scripture":
+		var tier: Dictionary = current_context.get("tier_data", {})
+		var monster_ids: Array = []
+		monster_ids.append_array(tier.get("normal_monster_ids", []))
+		monster_ids.append_array(tier.get("elite_monster_ids", []))
+		monster_ids.append_array(tier.get("boss_monster_ids", []))
+		return monster_ids
 	if str(current_context.get("mode", "")) == "challenge":
 		return GameData.get_challenge_encounter(str(current_context.get("challenge_id", "")), difficulty_id)
 	return GameData.get_dungeon_encounter(str(current_context.get("dungeon_id", "")), difficulty_id)
@@ -135,7 +164,7 @@ func get_player_snapshot() -> Dictionary:
 func get_enemy_group_snapshot() -> Dictionary:
 	return current_battle_payload.get("enemy_group_snapshot", {}).duplicate(true)
 
-func _build_local_prepare_payload(source_type: String, source_id: String, difficulty_id: String) -> Dictionary:
+func _build_local_prepare_payload(source_type: String, source_id: String, difficulty_id: String, world_level: int = 0) -> Dictionary:
 	var battle_id := "local_%s" % Time.get_unix_time_from_system()
 	var battle_seed := randi()
 	var player_stats := PlayerState.get_total_stats()
@@ -143,21 +172,26 @@ func _build_local_prepare_payload(source_type: String, source_id: String, diffic
 	var passive_skills := PlayerState.get_runtime_skills("passive")
 	var class_profile := PlayerState.get_class_profile()
 	var monsters: Array = []
+	var mode := str(current_context.get("mode", ""))
+	var tier_rules: Dictionary = current_context.get("battle_rules_snapshot", {})
 
 	for monster_id in build_monster_ids():
-		var monster_data := GameData.get_monster(str(monster_id))
+		var monster_data := GameData.get_scripture_monster(str(monster_id)) if source_type == "scripture" else GameData.get_monster(str(monster_id))
 		if monster_data.is_empty():
 			continue
 		var difficulty_multiplier := _difficulty_multiplier(difficulty_id)
+		var hp_scale := float(tier_rules.get("hp_scale", 1.0)) if source_type == "scripture" else difficulty_multiplier
+		var atk_scale := float(tier_rules.get("atk_scale", 1.0)) if source_type == "scripture" else (0.88 + difficulty_multiplier * 0.12)
+		var def_scale := float(tier_rules.get("def_scale", 1.0)) if source_type == "scripture" else difficulty_multiplier
 		monsters.append({
 			"monster_id": str(monster_data.get("monster_id", "")),
 			"name": str(monster_data.get("name", "怪物")),
 			"is_boss": bool(monster_data.get("is_boss", false)),
 			"stats": {
-				"max_hp": int(float(monster_data.get("base_hp", 400)) * difficulty_multiplier),
-				"attack": int(float(monster_data.get("base_atk", 35)) * (0.88 + difficulty_multiplier * 0.12)),
-				"defense": int(10.0 * difficulty_multiplier),
-				"move_speed": 130.0 if bool(monster_data.get("is_boss", false)) else 118.0,
+				"max_hp": int(float(monster_data.get("base_hp", 400)) * hp_scale),
+				"attack": int(float(monster_data.get("base_atk", 35)) * atk_scale),
+				"defense": int(float(monster_data.get("base_def", 10)) * def_scale),
+				"move_speed": float(monster_data.get("move_speed", 130.0 if bool(monster_data.get("is_boss", false)) else 118.0)),
 				"attack_range": 78.0 if bool(monster_data.get("is_boss", false)) else 68.0,
 				"attack_interval": 1.45 if bool(monster_data.get("is_boss", false)) else 1.7,
 				"aggro_range": 230.0 if bool(monster_data.get("is_boss", false)) else 190.0
@@ -165,11 +199,10 @@ func _build_local_prepare_payload(source_type: String, source_id: String, diffic
 			"skill_profile": _boss_skill_profile(monster_data)
 		})
 
-	return {
+	var payload := {
 		"battle_id": battle_id,
 		"source_type": source_type,
 		"source_id": source_id,
-		"difficulty_id": difficulty_id,
 		"battle_map_id": "local_map_%s_%s" % [source_type, source_id],
 		"battle_seed": battle_seed,
 		"player_snapshot": {
@@ -186,10 +219,19 @@ func _build_local_prepare_payload(source_type: String, source_id: String, diffic
 			}
 		},
 		"enemy_group_snapshot": {
-			"monster_group_id": "%s_%s_%s" % [source_type, source_id, difficulty_id],
+			"monster_group_id": "%s_%s_%s" % [source_type, source_id, str(world_level) if source_type == "scripture" else difficulty_id],
 			"monsters": monsters
 		}
 	}
+	if source_type == "scripture":
+		payload["world_level"] = world_level
+		payload["battle_rules_snapshot"] = tier_rules.duplicate(true)
+		payload["enemy_group_snapshot"]["normal_monster_ids"] = current_context.get("tier_data", {}).get("normal_monster_ids", []).duplicate(true)
+		payload["enemy_group_snapshot"]["elite_monster_ids"] = current_context.get("tier_data", {}).get("elite_monster_ids", []).duplicate(true)
+		payload["enemy_group_snapshot"]["boss_monster_ids"] = current_context.get("tier_data", {}).get("boss_monster_ids", []).duplicate(true)
+	else:
+		payload["difficulty_id"] = difficulty_id
+	return payload
 
 func _finish_battle_fallback(victory: bool, defeated_monsters: Array, elapsed_seconds: float) -> Dictionary:
 	var rewards: Array = []
@@ -202,8 +244,11 @@ func _finish_battle_fallback(victory: bool, defeated_monsters: Array, elapsed_se
 		first_clear_records[context_key] = true
 
 	if victory:
-		for monster in defeated_monsters:
-			rewards.append_array(_roll_monster_drops(str(monster.get("monster_id", ""))))
+		if str(current_context.get("mode", "")) == "scripture":
+			rewards.append_array(_roll_scripture_rewards())
+		else:
+			for monster in defeated_monsters:
+				rewards.append_array(_roll_monster_drops(str(monster.get("monster_id", ""))))
 
 	rewards = _decorate_rewards(_merge_rewards(rewards))
 	if victory:
@@ -257,6 +302,46 @@ func _roll_monster_drops(monster_id: String) -> Array:
 				"count": 1
 			})
 	return rewards
+
+func _roll_scripture_rewards() -> Array:
+	var rewards: Array = []
+	var tier: Dictionary = current_context.get("tier_data", {})
+	var reward_scale: float = float(tier.get("reward_scale", 1.0))
+	for drop_tag in tier.get("extra_drop_tags", []):
+		var tag: Dictionary = GameData.get_scripture_drop_tag(str(drop_tag))
+		if tag.is_empty():
+			continue
+		var entry: Dictionary = _pick_weighted_scripture_item(tag.get("items", []))
+		if entry.is_empty():
+			continue
+		var min_count: int = max(int(entry.get("min", 1)), 1)
+		var max_count: int = max(int(entry.get("max", min_count)), min_count)
+		var rolled_count: int = _rng.randi_range(min_count, max_count)
+		var final_count: int = max(int(round(rolled_count * (reward_scale if reward_scale > 0.0 else 1.0))), 1)
+		rewards.append({
+			"item_id": str(entry.get("item_id", "")),
+			"count": final_count
+		})
+	return _merge_rewards(rewards)
+
+func _pick_weighted_scripture_item(items: Variant) -> Dictionary:
+	if not (items is Array) or items.is_empty():
+		return {}
+	var total_weight := 0
+	for entry in items:
+		if entry is Dictionary:
+			total_weight += max(int(entry.get("weight", 0)), 0)
+	if total_weight <= 0:
+		return {}
+	var sample := _rng.randi_range(1, total_weight)
+	var cursor := 0
+	for entry in items:
+		if not (entry is Dictionary):
+			continue
+		cursor += max(int(entry.get("weight", 0)), 0)
+		if sample <= cursor:
+			return entry.duplicate(true)
+	return items[-1].duplicate(true) if items[-1] is Dictionary else {}
 
 func _merge_rewards(rewards: Array) -> Array:
 	var counts := {}

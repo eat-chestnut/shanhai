@@ -1,0 +1,64 @@
+{
+  "upgrade_costs": [
+    {
+      "scripture_id": "nanshan_1",
+      "target_world_level": 2,
+      "cost_items": [
+        {
+          "item_id": "nanshan_bone",
+          "count": 10
+        },
+        {
+          "item_id": "mountain_seal_fragment",
+          "count": 2
+        }
+      ],
+      "cost_gold": 500,
+      "required_player_level": 10
+    },
+    {
+      "scripture_id": "nanshan_1",
+      "target_world_level": 10,
+      "cost_items": [
+        {
+          "item_id": "nanshan_bone",
+          "count": 120
+        },
+        {
+          "item_id": "mountain_seal_fragment",
+          "count": 18
+        },
+        {
+          "item_id": "boss_core_fire",
+          "count": 1
+        }
+      ],
+      "cost_gold": 12000,
+      "required_player_level": 28
+    },
+    {
+      "scripture_id": "nanshan_1",
+      "target_world_level": 20,
+      "cost_items": [
+        {
+          "item_id": "nanshan_bone",
+          "count": 300
+        },
+        {
+          "item_id": "mountain_seal_fragment",
+          "count": 60
+        },
+        {
+          "item_id": "boss_core_fire",
+          "count": 3
+        },
+        {
+          "item_id": "boss_core_shadow",
+          "count": 1
+        }
+      ],
+      "cost_gold": 48000,
+      "required_player_level": 48
+    }
+  ]
+}

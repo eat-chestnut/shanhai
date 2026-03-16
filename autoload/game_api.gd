@@ -95,6 +95,28 @@ func fetch_stage_difficulty_list(node_id: String, fallback: Array = []) -> Array
 		return difficulties.duplicate(true)
 	return fallback.duplicate(true)
 
+func fetch_scripture_list() -> Dictionary:
+	return await _request_api_data("/scripture/list", HTTPClient.METHOD_GET, {}, true)
+
+func fetch_scripture_detail(scripture_id: String) -> Dictionary:
+	return await _request_api_data(
+		"/scripture/detail?scripture_id=%s" % scripture_id.uri_encode(),
+		HTTPClient.METHOD_GET,
+		{},
+		true
+	)
+
+func upgrade_scripture(scripture_id: String, target_world_level: int) -> Dictionary:
+	return await _request_api_data(
+		"/scripture/upgrade",
+		HTTPClient.METHOD_POST,
+		{
+			"scripture_id": scripture_id,
+			"target_world_level": target_world_level
+		},
+		true
+	)
+
 func fetch_dungeon_list(fallback: Array) -> Array:
 	var data := await _request_api_data("/dungeon/list", HTTPClient.METHOD_GET, {}, true)
 	var dungeons = data.get("dungeons", [])
@@ -207,17 +229,16 @@ func fetch_challenge_detail(challenge_id: String) -> Dictionary:
 		true
 	)
 
-func battle_prepare(source_type: String, source_id: String, difficulty_id: String) -> Dictionary:
-	return await _request_api_data(
-		"/battle/prepare",
-		HTTPClient.METHOD_POST,
-		{
-			"source_type": source_type,
-			"source_id": source_id,
-			"difficulty_id": difficulty_id
-		},
-		true
-	)
+func battle_prepare(source_type: String, source_id: String, difficulty_id: String = "", world_level: int = 0) -> Dictionary:
+	var payload := {
+		"source_type": source_type,
+		"source_id": source_id
+	}
+	if not difficulty_id.is_empty():
+		payload["difficulty_id"] = difficulty_id
+	if world_level > 0:
+		payload["world_level"] = world_level
+	return await _request_api_data("/battle/prepare", HTTPClient.METHOD_POST, payload, true)
 
 func battle_settle(payload: Dictionary) -> Dictionary:
 	return await _request_api_data("/battle/settle", HTTPClient.METHOD_POST, payload, true)

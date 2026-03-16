@@ -4,6 +4,7 @@ namespace App\Filament\Resources\MainlineChapters\Schemas;
 
 use App\Models\MainlineChapter;
 use App\Models\MainlineDifficulty;
+use App\Models\Scripture;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section as FormSection;
@@ -28,6 +29,21 @@ class MainlineChapterForm
                             ->label('章节名称')
                             ->required()
                             ->maxLength(100),
+                        Select::make('scripture_id')
+                            ->label('所属经卷')
+                            ->searchable()
+                            ->preload()
+                            ->native(false)
+                            ->placeholder('无所属经卷')
+                            ->options(fn (): array => Scripture::query()
+                                ->where('is_enabled', true)
+                                ->orderBy('sort_order')
+                                ->orderBy('scripture_id')
+                                ->get()
+                                ->mapWithKeys(static fn (Scripture $scripture): array => [
+                                    $scripture->scripture_id => "{$scripture->scripture_id} / {$scripture->scripture_name}",
+                                ])
+                                ->all()),
                         TextInput::make('unlock_level')
                             ->label('开启等级')
                             ->required()

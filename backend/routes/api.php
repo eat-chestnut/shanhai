@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\PlayerRuntimeController;
 use App\Http\Controllers\Api\RarityConfigsController;
 use App\Http\Controllers\Api\ShopRuntimeController;
 use App\Http\Controllers\Api\SkillController;
+use App\Http\Controllers\Api\ScriptureRuntimeController;
 use App\Http\Controllers\Api\StageRuntimeController;
 use App\Http\Controllers\Api\TaskRuntimeController;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +41,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('stage/chapter/list', [StageRuntimeController::class, 'chapterList']);
         Route::get('stage/node/detail', [StageRuntimeController::class, 'nodeDetail']);
         Route::get('stage/difficulty/list', [StageRuntimeController::class, 'difficultyList']);
+        Route::get('scripture/list', [ScriptureRuntimeController::class, 'list']);
+        Route::get('scripture/detail', [ScriptureRuntimeController::class, 'detail']);
+        Route::post('scripture/upgrade', [ScriptureRuntimeController::class, 'upgrade']);
         Route::get('dungeon/list', [DungeonRuntimeController::class, 'list']);
         Route::get('dungeon/detail', [DungeonRuntimeController::class, 'detail']);
         Route::get('inventory/list', [InventoryRuntimeController::class, 'index']);

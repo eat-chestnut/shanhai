@@ -184,6 +184,8 @@ func _clear_battle() -> void:
 func _context_text(context: Dictionary) -> String:
 	if str(context.get("mode", "")) == "mainline":
 		return "%s / %s / %s" % [context.get("chapter_name", "主线"), context.get("node_name", "节点"), context.get("difficulty_id", "")]
+	if str(context.get("mode", "")) == "scripture":
+		return "%s / 世界等级 %d" % [context.get("scripture_name", "经卷"), int(context.get("world_level", 0))]
 	if str(context.get("mode", "")) == "challenge":
 		return "%s / %s" % [context.get("challenge_name", "挑战"), context.get("floor_name", context.get("difficulty_id", ""))]
 	return "%s / %s" % [context.get("dungeon_name", "副本"), context.get("difficulty_id", "")]
@@ -247,22 +249,27 @@ func _on_enemy_spawn_requested(monster_id: String, count: int, source_actor, are
 	_player.enemies = _enemies
 
 func _build_spawn_snapshot(monster_id: String) -> Dictionary:
-	var monster := GameData.get_monster(monster_id)
+	var is_scripture := str(BattleState.current_context.get("mode", "")) == "scripture"
+	var monster := GameData.get_scripture_monster(monster_id) if is_scripture else GameData.get_monster(monster_id)
 	var difficulty_multiplier := _difficulty_multiplier(str(BattleState.current_battle_payload.get("difficulty_id", BattleState.current_context.get("difficulty_id", "easy"))))
 	var behavior_profile: Dictionary = monster.get("behavior_profile", {})
+	var tier_rules: Dictionary = BattleState.current_context.get("battle_rules_snapshot", {})
+	var hp_scale := float(tier_rules.get("hp_scale", 1.0)) if is_scripture else difficulty_multiplier
+	var atk_scale := float(tier_rules.get("atk_scale", 1.0)) if is_scripture else (0.88 + difficulty_multiplier * 0.12)
+	var def_scale := float(tier_rules.get("def_scale", 1.0)) if is_scripture else difficulty_multiplier
 	return {
 		"monster_id": monster_id,
 		"name": str(monster.get("name", monster_id)),
 		"is_boss": bool(monster.get("is_boss", false)),
 		"skill_profile": behavior_profile.duplicate(true),
 		"stats": {
-			"max_hp": int(float(monster.get("base_hp", 400)) * difficulty_multiplier * float(behavior_profile.get("hp_ratio", 1.0))),
-			"attack": int(float(monster.get("base_atk", 35)) * (0.88 + difficulty_multiplier * 0.12) * float(behavior_profile.get("attack_ratio", 1.0))),
-			"defense": int(float(behavior_profile.get("base_defense", 10)) * difficulty_multiplier),
-			"move_speed": float(behavior_profile.get("move_speed", 118.0)),
-			"attack_range": float(behavior_profile.get("attack_range", 68.0)),
-			"attack_interval": float(behavior_profile.get("attack_interval", 1.7)),
-			"aggro_range": float(behavior_profile.get("aggro_range", 190.0))
+			"max_hp": int(float(monster.get("base_hp", 400)) * hp_scale * float(behavior_profile.get("hp_ratio", 1.0))),
+			"attack": int(float(monster.get("base_atk", 35)) * atk_scale * float(behavior_profile.get("attack_ratio", 1.0))),
+			"defense": int(float(monster.get("base_def", behavior_profile.get("base_defense", 10))) * def_scale),
+			"move_speed": float(monster.get("move_speed", behavior_profile.get("move_speed", 118.0))),
+			"attack_range": float(behavior_profile.get("attack_range", 78.0 if bool(monster.get("is_boss", false)) else 68.0)),
+			"attack_interval": float(behavior_profile.get("attack_interval", 1.45 if bool(monster.get("is_boss", false)) else 1.7)),
+			"aggro_range": float(behavior_profile.get("aggro_range", 230.0 if bool(monster.get("is_boss", false)) else 190.0))
 		}
 	}
 

@@ -271,6 +271,9 @@ func get_inventory_entries() -> Array:
 	)
 	return entries
 
+func get_item_count(item_id: String) -> int:
+	return int(_inventory_counts.get(item_id, 0))
+
 func is_feature_unlocked(feature: Dictionary) -> bool:
 	var unlock_condition: Dictionary = feature.get("unlock_condition", {})
 	return get_level() >= int(unlock_condition.get("level", 1))

@@ -26,6 +26,10 @@ class MainlineChaptersTable
                     ->label('章节名称')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('scripture_id')
+                    ->label('所属经卷')
+                    ->placeholder('无')
+                    ->sortable(),
                 TextColumn::make('unlock_level')
                     ->label('开启等级')
                     ->sortable(),

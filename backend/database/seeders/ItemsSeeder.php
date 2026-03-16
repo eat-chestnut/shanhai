@@ -16,6 +16,10 @@ class ItemsSeeder extends Seeder
             $items->put($item['item_id'], $item);
         }
 
+        foreach ($this->scriptureItems() as $item) {
+            $items->put($item['item_id'], $item);
+        }
+
         foreach ($this->equipmentItems() as $item) {
             $items->put($item['item_id'], $item);
         }
@@ -71,6 +75,29 @@ class ItemsSeeder extends Seeder
             $this->item('skill_book_thunder', '雷系技能书', 'consumable', 'rare', 'icon_thunder_book', '用于技能成长的雷系秘籍。'),
             $this->item('talisman_cloud', '青云护符', 'talisman', 'rare', 'icon_talisman_cloud', '可用于护符养成与词条展示。'),
         ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function scriptureItems(): array
+    {
+        $payload = $this->readJsonFile('scripture_items_and_drop_tags.json');
+
+        return collect($payload['items'] ?? [])
+            ->filter(static fn (mixed $entry): bool => is_array($entry))
+            ->map(static fn (array $entry): array => [
+                'item_id' => (string) ($entry['item_id'] ?? ''),
+                'item_name' => (string) ($entry['item_name'] ?? ''),
+                'item_type' => (string) ($entry['item_type'] ?? ''),
+                'rarity' => (string) ($entry['rarity'] ?? 'common'),
+                'icon' => (string) ($entry['icon'] ?? ''),
+                'desc' => (string) ($entry['desc'] ?? ''),
+                'is_enabled' => (bool) ($entry['is_enabled'] ?? true),
+            ])
+            ->filter(static fn (array $entry): bool => $entry['item_id'] !== '')
+            ->values()
+            ->all();
     }
 
     /**
@@ -241,7 +268,14 @@ class ItemsSeeder extends Seeder
             }
         }
 
-        foreach (['dungeon_content_config.json', 'task_config.json', 'shop_item_config.json', 'challenge_config.json'] as $file) {
+        foreach ([
+            'dungeon_content_config.json',
+            'task_config.json',
+            'shop_item_config.json',
+            'challenge_config.json',
+            'scripture_upgrade_costs.json',
+            'scripture_items_and_drop_tags.json',
+        ] as $file) {
             $this->collectItemIdsFromValue($this->readJsonFile($file), $itemIds);
         }
 

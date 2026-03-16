@@ -5,6 +5,7 @@ namespace App\Repositories\Contracts;
 use App\Models\PlayerDungeonProgress;
 use App\Models\PlayerItem;
 use App\Models\PlayerProfile;
+use App\Models\PlayerScriptureProgress;
 use App\Models\PlayerStageProgress;
 use Illuminate\Support\Collection;
 
@@ -43,4 +44,10 @@ interface PlayerRuntimeRepositoryInterface
     public function findDungeonProgress(int $playerId, string $dungeonId, string $difficultyId): ?PlayerDungeonProgress;
 
     public function upsertDungeonProgress(array $attributes, array $values): PlayerDungeonProgress;
+
+    public function getScriptureProgress(int $playerId): Collection;
+
+    public function findScriptureProgress(int $playerId, string $scriptureId): ?PlayerScriptureProgress;
+
+    public function upsertScriptureProgress(array $attributes, array $values): PlayerScriptureProgress;
 }

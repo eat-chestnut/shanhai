@@ -10,6 +10,7 @@ class MainlineChapter extends Model
     protected $fillable = [
         'chapter_id',
         'chapter_name',
+        'scripture_id',
         'unlock_level',
         'sort_order',
         'required_previous_chapter',

@@ -7,6 +7,8 @@ signal selection_changed
 const SCREEN_CLASS_SELECT := "class_select"
 const SCREEN_HALL := "hall"
 const SCREEN_MAINLINE := "mainline"
+const SCREEN_SCRIPTURE_LIST := "scripture_list"
+const SCREEN_SCRIPTURE_DETAIL := "scripture_detail"
 const SCREEN_DUNGEON := "dungeon"
 const SCREEN_TASK := "task"
 const SCREEN_SHOP := "shop"
@@ -22,7 +24,9 @@ var selection := {
 	"chapter_id": "",
 	"node_id": "",
 	"difficulty_id": "",
-	"dungeon_id": ""
+	"dungeon_id": "",
+	"scripture_id": "",
+	"world_level": 0
 }
 
 func navigate_to(screen: String, payload: Dictionary = {}) -> void:
@@ -50,6 +54,10 @@ func _update_title() -> void:
 			current_title = "山海宗门大厅"
 		SCREEN_MAINLINE:
 			current_title = "主线巡厄"
+		SCREEN_SCRIPTURE_LIST:
+			current_title = "经卷回刷"
+		SCREEN_SCRIPTURE_DETAIL:
+			current_title = "经卷详情"
 		SCREEN_DUNGEON:
 			current_title = "宗门副本"
 		SCREEN_TASK:

@@ -1,0 +1,15 @@
+{
+  "scriptures": [
+    {
+      "scripture_id": "nanshan_1",
+      "scripture_name": "南山经",
+      "scripture_group": "五藏山经",
+      "sort_order": 1,
+      "unlock_condition": {
+        "clear_chapter_id": "epilogue",
+        "player_level": 20
+      },
+      "is_enabled": true
+    }
+  ]
+}
