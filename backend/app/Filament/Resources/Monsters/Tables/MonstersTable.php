@@ -27,6 +27,10 @@ class MonstersTable
                     ->label('name')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('combat_role')
+                    ->label('combat_role')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('base_hp')
                     ->label('base_hp')
                     ->numeric()
@@ -39,6 +43,10 @@ class MonstersTable
                     ->label('is_boss')
                     ->boolean()
                     ->sortable(),
+                TextColumn::make('behavior_profile.patterns')
+                    ->label('behavior_profile.patterns')
+                    ->formatStateUsing(static fn (mixed $state): string => is_array($state) ? (string) count($state).' patterns' : '-')
+                    ->toggleable(),
             ])
             ->filters([
                 TernaryFilter::make('is_boss')

@@ -127,7 +127,7 @@ class PlayerRuntimeRepository implements PlayerRuntimeRepositoryInterface
         return PlayerDungeonProgress::query()
             ->where('player_id', $playerId)
             ->orderBy('dungeon_id')
-            ->orderByRaw("CASE difficulty_id WHEN 'easy' THEN 0 WHEN 'normal' THEN 1 WHEN 'hard' THEN 2 WHEN 'nightmare' THEN 3 ELSE 99 END")
+            ->orderByRaw("CASE difficulty_id WHEN 'easy' THEN 0 WHEN 'normal' THEN 1 WHEN 'hard' THEN 2 WHEN 'nightmare' THEN 3 WHEN 'epic' THEN 4 ELSE 99 END")
             ->orderBy('difficulty_id')
             ->get();
     }

@@ -40,7 +40,8 @@ func _sync_defaults() -> void:
 	if difficulties.is_empty():
 		return
 	if str(UiState.selection.get("difficulty_id", "")).is_empty():
-		UiState.set_selection("difficulty_id", str(difficulties[0].get("difficulty_id", "")))
+		var dungeon := GameData.get_dungeon(str(UiState.selection.get("dungeon_id", "")))
+		UiState.set_selection("difficulty_id", str(dungeon.get("current_tier", difficulties[0].get("difficulty_id", ""))))
 
 func _rebuild_dungeons() -> void:
 	for child in _dungeon_row.get_children():
@@ -85,11 +86,13 @@ func _update_summary() -> void:
 		if str(difficulty.get("difficulty_id", "")) == str(UiState.selection.get("difficulty_id", "")):
 			selected_difficulty = difficulty
 			break
-	_summary_label.text = "副本：%s\n说明：%s\n主要产出：%s\n建议战力：%d\n首通奖励：%s\n剩余次数：%d / %d%s" % [
+	_summary_label.text = "副本：%s\n说明：%s\n当前层级：%s\n主要产出：%s\n建议战力：%d\n建议：%s\n首通奖励：%s\n剩余次数：%d / %d%s" % [
 		dungeon.get("dungeon_name", "未选择"),
 		dungeon.get("dungeon_desc", "暂无说明"),
-		_main_reward_text(dungeon.get("main_rewards", [])),
+		selected_difficulty.get("tier_label", dungeon.get("current_tier", "未定")),
+		_main_reward_text(selected_difficulty.get("main_rewards", dungeon.get("main_rewards", []))),
 		int(selected_difficulty.get("recommended_power", 0)),
+		selected_difficulty.get("recommendation_text", dungeon.get("suggestion_text", "可尝试挑战")),
 		_reward_preview(str(selected_difficulty.get("first_clear_reward_group_id", ""))),
 		max(int(dungeon.get("daily_limit", 0)) - int(dungeon.get("daily_count", 0)), 0),
 		int(dungeon.get("daily_limit", 0)),

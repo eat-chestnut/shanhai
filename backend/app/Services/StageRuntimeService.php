@@ -49,6 +49,12 @@ class StageRuntimeService
                         'is_unlocked' => $nodeUnlocked,
                         'clear_count' => (int) ($nodeProgressSummary?->clear_count ?? 0),
                         'is_current' => $playerProfile->current_node_id === $node->node_id,
+                        'progress_state' => $this->resolveNodeProgressState(
+                            $playerProfile,
+                            $node->node_id,
+                            $nodeUnlocked,
+                            (int) ($nodeProgressSummary?->clear_count ?? 0),
+                        ),
                     ];
                 }
 
@@ -86,6 +92,12 @@ class StageRuntimeService
                 'unlock_condition' => $node->unlock_condition ?? ['level' => 1],
                 'difficulty_ids' => $node->difficulty_ids ?? [],
                 'is_unlocked' => (bool) $difficultyStates['node_unlocked'],
+                'progress_state' => $this->resolveNodeProgressState(
+                    $playerProfile,
+                    $node->node_id,
+                    (bool) $difficultyStates['node_unlocked'],
+                    (int) collect($difficulties)->max('clear_count'),
+                ),
                 'difficulties' => $difficulties,
             ],
         ];
@@ -215,6 +227,11 @@ class StageRuntimeService
                 'is_unlocked' => $nodeUnlocked && $previousCleared,
                 'is_first_clear' => (bool) ($progressRecord?->is_first_clear ?? false),
                 'clear_count' => (int) ($progressRecord?->clear_count ?? 0),
+                'progress_state' => $this->resolveDifficultyProgressState(
+                    $nodeUnlocked && $previousCleared,
+                    (int) ($progressRecord?->clear_count ?? 0),
+                    $playerProfile->current_node_id === $nodeId && $difficulty->difficulty_id === ($node->difficulty_ids[0] ?? ''),
+                ),
             ];
         }
 
@@ -242,9 +259,20 @@ class StageRuntimeService
         }
 
         $levelRequirement = (int) (($node->unlock_condition ?? [])['level'] ?? 1);
+        $clearNodeId = (string) (($node->unlock_condition ?? [])['clear_node_id'] ?? (($node->unlock_condition ?? [])['conditions']['clear_node_id'] ?? ''));
 
         if ((int) $playerProfile->level < $levelRequirement) {
             return false;
+        }
+
+        if ($clearNodeId !== '') {
+            $requiredClear = $progress
+                ->where('node_id', $clearNodeId)
+                ->first(fn ($entry): bool => (int) $entry->clear_count > 0);
+
+            if ($requiredClear === null) {
+                return false;
+            }
         }
 
         if ($nodeIndex <= 0) {
@@ -262,5 +290,39 @@ class StageRuntimeService
             ->first(fn ($entry): bool => (int) $entry->clear_count > 0);
 
         return $previousCleared !== null || $playerProfile->current_node_id === $node->node_id;
+    }
+
+    private function resolveNodeProgressState(PlayerProfile $playerProfile, string $nodeId, bool $isUnlocked, int $clearCount): string
+    {
+        if (! $isUnlocked) {
+            return 'locked';
+        }
+
+        if ($clearCount > 0) {
+            return 'cleared';
+        }
+
+        if ($playerProfile->current_node_id === $nodeId) {
+            return 'current';
+        }
+
+        return 'available';
+    }
+
+    private function resolveDifficultyProgressState(bool $isUnlocked, int $clearCount, bool $isCurrent): string
+    {
+        if (! $isUnlocked) {
+            return 'locked';
+        }
+
+        if ($clearCount > 0) {
+            return 'cleared';
+        }
+
+        if ($isCurrent) {
+            return 'current';
+        }
+
+        return 'available';
     }
 }

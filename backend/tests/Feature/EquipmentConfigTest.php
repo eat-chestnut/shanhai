@@ -31,14 +31,17 @@ class EquipmentConfigTest extends TestCase
             'path' => database_path('seeders/data/equipment_config.json'),
         ])->assertExitCode(0);
 
-        $this->assertDatabaseCount('equipment', 4);
-        $this->assertDatabaseCount('equipment_sets', 2);
-        $this->assertDatabaseCount('gems', 4);
-        $this->assertDatabaseCount('blue_affixes', 2);
-        $this->assertDatabaseCount('purple_refinements', 2);
+        $this->assertDatabaseCount('equipment', 18);
+        $this->assertDatabaseCount('equipment_sets', 5);
+        $this->assertDatabaseCount('gems', 6);
+        $this->assertDatabaseCount('blue_affixes', 5);
+        $this->assertDatabaseCount('purple_refinements', 5);
         $this->assertDatabaseHas('gems', [
             'gem_id' => 'gem_purple',
             'bonus_boss_dmg' => 15,
+        ]);
+        $this->assertDatabaseHas('equipment_sets', [
+            'set_id' => 'set_abyss_60',
         ]);
     }
 

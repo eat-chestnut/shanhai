@@ -39,13 +39,15 @@ func _sync_defaults() -> void:
 	if GameData.chapters.is_empty():
 		return
 	if str(UiState.selection.get("chapter_id", "")).is_empty():
-		UiState.set_selection("chapter_id", str(GameData.chapters[0].get("chapter_id", "")))
+		var current_chapter := GameData.chapters.filter(func(entry: Dictionary) -> bool: return bool(entry.get("is_current", false)))
+		UiState.set_selection("chapter_id", str((current_chapter[0] if not current_chapter.is_empty() else GameData.chapters[0]).get("chapter_id", "")))
 	var chapter := GameData.get_chapter(str(UiState.selection.get("chapter_id", "")))
 	var nodes: Array = chapter.get("nodes", [])
 	if nodes.is_empty():
 		return
 	if str(UiState.selection.get("node_id", "")).is_empty():
-		UiState.set_selection("node_id", str(nodes[0].get("node_id", "")))
+		var current_nodes := nodes.filter(func(entry: Dictionary) -> bool: return str(entry.get("progress_state", "")) == "current")
+		UiState.set_selection("node_id", str((current_nodes[0] if not current_nodes.is_empty() else nodes[0]).get("node_id", "")))
 	var node := GameData.get_mainline_node(str(UiState.selection.get("node_id", "")))
 	var difficulties: Array = node.get("difficulties", [])
 	if difficulties.is_empty():
@@ -92,11 +94,13 @@ func _update_summary() -> void:
 	var node := GameData.get_mainline_node(str(UiState.selection.get("node_id", "")))
 	var difficulty := GameData.get_difficulty_for_node(str(UiState.selection.get("node_id", "")), str(UiState.selection.get("difficulty_id", "")))
 	var recommended_power := int(difficulty.get("recommended_power", 0))
-	_summary_label.text = "当前章节：%s\n节点：%s\n建议战力：%d  当前战力：%d\n首通奖励：%s" % [
+	_summary_label.text = "当前章节：%s\n节点：%s  ·  状态：%s\n建议战力：%d  当前战力：%d\n难度状态：%s\n首通奖励：%s" % [
 		chapter.get("chapter_name", "未选章节"),
 		node.get("node_name", "未选节点"),
+		_node_state_text(str(node.get("progress_state", "available"))),
 		recommended_power,
 		PlayerState.get_power(),
+		_node_state_text(str(difficulty.get("progress_state", "available"))),
 		_reward_preview(str(difficulty.get("first_clear_reward_group_id", "")))
 	]
 	_start_button.disabled = node.is_empty() or difficulty.is_empty() or not bool(node.get("is_unlocked", true)) or not bool(difficulty.get("is_unlocked", true))
@@ -141,6 +145,17 @@ func _on_start_pressed() -> void:
 		return
 	BattleState.start_mainline(chapter, node, difficulty)
 	emit_signal("start_battle")
+
+func _node_state_text(progress_state: String) -> String:
+	match progress_state:
+		"cleared":
+			return "已通关"
+		"current":
+			return "当前推进"
+		"available":
+			return "已解锁"
+		_:
+			return "未解锁"
 
 func _build_ui() -> void:
 	if get_child_count() > 0:

@@ -10,9 +10,11 @@ class Monster extends Model
     protected $fillable = [
         'monster_id',
         'name',
+        'combat_role',
         'base_hp',
         'base_atk',
         'is_boss',
+        'behavior_profile',
     ];
 
     /**
@@ -22,6 +24,7 @@ class Monster extends Model
     {
         return [
             'is_boss' => 'boolean',
+            'behavior_profile' => 'array',
         ];
     }
 

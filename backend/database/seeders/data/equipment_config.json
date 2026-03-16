@@ -1,140 +1,95 @@
 {
   "equipment_config": [
-    {
-      "equip_id": "equip_bow_01",
-      "name": "长弓",
-      "type": "weapon",
-      "level": 5,
-      "base_atk": 25,
-      "base_def": 0
-    },
-    {
-      "equip_id": "equip_staff_01",
-      "name": "法杖",
-      "type": "weapon",
-      "level": 5,
-      "base_atk": 30,
-      "base_def": 0
-    },
-    {
-      "equip_id": "equip_sword_01",
-      "name": "铜剑",
-      "type": "weapon",
-      "level": 1,
-      "base_atk": 12,
-      "base_def": 0
-    },
-    {
-      "equip_id": "equip_armor_01",
-      "name": "布甲",
-      "type": "armor",
-      "level": 1,
-      "base_atk": 0,
-      "base_def": 6
-    }
+    {"equip_id": "equip_sword_01", "name": "铜剑", "type": "weapon", "level": 1, "base_atk": 12, "base_def": 0},
+    {"equip_id": "equip_armor_01", "name": "布甲", "type": "armor", "level": 1, "base_atk": 0, "base_def": 6},
+    {"equip_id": "equip_bow_01", "name": "长弓", "type": "weapon", "level": 5, "base_atk": 25, "base_def": 0},
+    {"equip_id": "equip_staff_01", "name": "法杖", "type": "weapon", "level": 5, "base_atk": 30, "base_def": 0},
+
+    {"equip_id": "equip_warblade_30", "name": "镇岳战刃", "type": "weapon", "level": 30, "base_atk": 72, "base_def": 0},
+    {"equip_id": "equip_plate_30", "name": "覆岳战甲", "type": "armor", "level": 30, "base_atk": 0, "base_def": 42},
+    {"equip_id": "equip_greaves_30", "name": "踏岭战靴", "type": "boots", "level": 30, "base_atk": 12, "base_def": 20},
+    {"equip_id": "equip_talisman_30", "name": "镇岳兵符", "type": "accessory", "level": 30, "base_atk": 22, "base_def": 10},
+
+    {"equip_id": "equip_tempest_bow_30", "name": "裂风长弓", "type": "weapon", "level": 30, "base_atk": 78, "base_def": 0},
+    {"equip_id": "equip_feather_coat_30", "name": "追羽披风", "type": "armor", "level": 30, "base_atk": 8, "base_def": 28},
+    {"equip_id": "equip_feather_boots_30", "name": "逐云履", "type": "boots", "level": 30, "base_atk": 16, "base_def": 14},
+    {"equip_id": "equip_wind_ring_30", "name": "裂空羽环", "type": "accessory", "level": 30, "base_atk": 24, "base_def": 8},
+
+    {"equip_id": "equip_seal_staff_30", "name": "烬符法杖", "type": "weapon", "level": 30, "base_atk": 82, "base_def": 0},
+    {"equip_id": "equip_talisman_robe_30", "name": "灵符法袍", "type": "armor", "level": 30, "base_atk": 6, "base_def": 30},
+    {"equip_id": "equip_spirit_crown_30", "name": "玄意法冠", "type": "helmet", "level": 30, "base_atk": 18, "base_def": 16},
+    {"equip_id": "equip_seal_charm_30", "name": "天火灵契", "type": "accessory", "level": 30, "base_atk": 26, "base_def": 6},
+
+    {"equip_id": "equip_abyss_blade", "name": "玄渊断刃", "type": "weapon", "level": 60, "base_atk": 132, "base_def": 0},
+    {"equip_id": "equip_abyss_robe", "name": "玄渊法衣", "type": "armor", "level": 60, "base_atk": 24, "base_def": 58}
   ],
   "equipment_set_config": [
     {
       "set_id": "set_zhaoyao_20",
       "level": 20,
-      "pieces": [
-        "equip_sword_01",
-        "equip_armor_01",
-        "equip_boots_01",
-        "equip_subweapon_01"
-      ],
+      "pieces": ["equip_sword_01", "equip_armor_01", "equip_greaves_30", "equip_talisman_30"],
       "effects": [
-        {
-          "count": 2,
-          "bonus_atk": 5
-        },
-        {
-          "count": 4,
-          "bonus_def": 10
-        }
+        {"count": 2, "bonus_atk": 5},
+        {"count": 4, "bonus_def": 10}
       ]
     },
     {
       "set_id": "set_warrior_40",
       "level": 40,
-      "pieces": [
-        "equip_sword_01",
-        "equip_armor_01"
-      ],
+      "pieces": ["equip_warblade_30", "equip_plate_30", "equip_greaves_30", "equip_talisman_30"],
       "effects": [
-        {
-          "count": 2,
-          "bonus_atk": 10
-        },
-        {
-          "count": 4,
-          "bonus_def": 15
-        }
+        {"count": 2, "bonus_atk": 14, "bonus_def": 8},
+        {"count": 4, "bonus_def": 20, "bonus_hp": 220, "bonus_damage_ratio": 0.04}
+      ]
+    },
+    {
+      "set_id": "set_lingfeng_40",
+      "level": 40,
+      "pieces": ["equip_tempest_bow_30", "equip_feather_coat_30", "equip_feather_boots_30", "equip_wind_ring_30"],
+      "effects": [
+        {"count": 2, "bonus_atk": 18, "bonus_attack_speed": 0.06},
+        {"count": 4, "bonus_atk": 26, "bonus_damage_ratio": 0.08}
+      ]
+    },
+    {
+      "set_id": "set_tianfu_40",
+      "level": 40,
+      "pieces": ["equip_seal_staff_30", "equip_talisman_robe_30", "equip_spirit_crown_30", "equip_seal_charm_30"],
+      "effects": [
+        {"count": 2, "bonus_atk": 20, "bonus_boss_dmg": 8},
+        {"count": 4, "bonus_atk": 30, "bonus_damage_ratio": 0.1}
+      ]
+    },
+    {
+      "set_id": "set_abyss_60",
+      "level": 60,
+      "pieces": ["equip_abyss_blade", "equip_abyss_robe", "equip_spirit_crown_30", "equip_wind_ring_30"],
+      "effects": [
+        {"count": 2, "bonus_atk": 34, "bonus_def": 24},
+        {"count": 4, "bonus_atk": 48, "bonus_boss_dmg": 18, "bonus_damage_ratio": 0.12}
       ]
     }
   ],
   "gem_config": [
-    {
-      "gem_id": "gem_green",
-      "name": "绿宝石",
-      "type": "attribute",
-      "bonus_atk": 3,
-      "bonus_boss_dmg": 0
-    },
-    {
-      "gem_id": "gem_blue",
-      "name": "蓝宝石",
-      "type": "boss_core",
-      "bonus_atk": 0,
-      "bonus_boss_dmg": 10
-    },
-    {
-      "gem_id": "gem_yellow",
-      "name": "黄宝石",
-      "type": "attribute",
-      "bonus_atk": 5,
-      "bonus_boss_dmg": 0
-    },
-    {
-      "gem_id": "gem_purple",
-      "name": "紫宝石",
-      "type": "boss_core",
-      "bonus_atk": 0,
-      "bonus_boss_dmg": 15
-    }
+    {"gem_id": "gem_green", "name": "绿宝石", "type": "attribute", "bonus_atk": 3, "bonus_boss_dmg": 0},
+    {"gem_id": "gem_blue", "name": "蓝宝石", "type": "boss_core", "bonus_atk": 0, "bonus_boss_dmg": 10},
+    {"gem_id": "gem_yellow", "name": "黄宝石", "type": "attribute", "bonus_atk": 5, "bonus_boss_dmg": 0},
+    {"gem_id": "gem_purple", "name": "紫宝石", "type": "boss_core", "bonus_atk": 0, "bonus_boss_dmg": 15},
+    {"gem_id": "gem_orange", "name": "橙曜石", "type": "attribute", "bonus_atk": 9, "bonus_boss_dmg": 0},
+    {"gem_id": "boss_core_abyss", "name": "玄渊妖核", "type": "boss_core", "bonus_atk": 0, "bonus_boss_dmg": 24}
   ],
   "blue_affix_config": [
-    {
-      "affix_id": "blue_atk_flat",
-      "name": "蓝词条-攻击",
-      "bonuses": {
-        "bonus_atk": 5
-      }
-    },
-    {
-      "affix_id": "blue_hp_guard",
-      "name": "蓝词条-护体",
-      "bonuses": {
-        "bonus_def": 4,
-        "bonus_hp": 45
-      }
-    }
+    {"affix_id": "blue_atk_flat", "name": "蓝词条-攻击", "bonuses": {"bonus_atk": 5}},
+    {"affix_id": "blue_hp_guard", "name": "蓝词条-护体", "bonuses": {"bonus_def": 4, "bonus_hp": 45}},
+    {"affix_id": "blue_combo_hawk", "name": "蓝词条-连射", "bonuses": {"bonus_atk": 8, "bonus_attack_speed": 0.04}},
+    {"affix_id": "blue_guard_wall", "name": "蓝词条-壁垒", "bonuses": {"bonus_def": 10, "bonus_hp": 90}},
+    {"affix_id": "blue_spell_focus", "name": "蓝词条-灵咒", "bonuses": {"bonus_atk": 10, "bonus_damage_ratio": 0.05}}
   ],
   "purple_refinement_config": [
-    {
-      "refinement_id": "purple_refine_boss",
-      "name": "紫洗练-Boss伤害",
-      "bonuses": {
-        "bonus_boss_dmg": 8
-      }
-    },
-    {
-      "refinement_id": "purple_refine_atk",
-      "name": "紫洗练-攻击",
-      "bonuses": {
-        "bonus_atk": 10,
-        "bonus_hp": 30
-      }
-    }
+    {"refinement_id": "purple_refine_boss", "name": "紫洗练-Boss伤害", "bonuses": {"bonus_boss_dmg": 8}},
+    {"refinement_id": "purple_refine_atk", "name": "紫洗练-攻击", "bonuses": {"bonus_atk": 10, "bonus_hp": 30}},
+    {"refinement_id": "purple_refine_spellburst", "name": "紫洗练-符爆", "bonuses": {"bonus_atk": 16, "bonus_damage_ratio": 0.08}},
+    {"refinement_id": "purple_refine_hunter", "name": "紫洗练-猎风", "bonuses": {"bonus_atk": 12, "bonus_attack_speed": 0.06, "bonus_boss_dmg": 6}},
+    {"refinement_id": "purple_refine_guardian", "name": "紫洗练-镇岳", "bonuses": {"bonus_def": 16, "bonus_hp": 160, "bonus_damage_ratio": 0.04}}
   ]
 }

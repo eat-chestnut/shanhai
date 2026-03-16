@@ -56,7 +56,12 @@ class DungeonContentConfigService
                 'dungeon_config' => ['required', 'array', 'min:1'],
                 'dungeon_config.*.dungeon_id' => ['required', 'string', 'max:100', 'distinct'],
                 'dungeon_config.*.dungeon_name' => ['required', 'string', 'max:100'],
+                'dungeon_config.*.dungeon_desc' => ['nullable', 'string'],
                 'dungeon_config.*.unlock_level' => ['required', 'integer', 'min:1'],
+                'dungeon_config.*.main_rewards' => ['nullable', 'array'],
+                'dungeon_config.*.main_rewards.*' => ['string', 'max:100'],
+                'dungeon_config.*.daily_limit' => ['nullable', 'integer', 'min:1'],
+                'dungeon_config.*.unlock_stage_node_id' => ['nullable', 'string', 'max:100'],
                 'dungeon_difficulty_config' => ['required', 'array', 'min:1'],
                 'dungeon_difficulty_config.*.difficulty_id' => ['required', 'string', 'max:100'],
                 'dungeon_difficulty_config.*.dungeon_id' => ['required', 'string', 'max:100'],
@@ -65,9 +70,11 @@ class DungeonContentConfigService
                 'monster_config' => ['required', 'array', 'min:1'],
                 'monster_config.*.monster_id' => ['required', 'string', 'max:100', 'distinct'],
                 'monster_config.*.name' => ['required', 'string', 'max:100'],
+                'monster_config.*.combat_role' => ['nullable', 'string', 'max:100'],
                 'monster_config.*.base_hp' => ['required', 'integer', 'min:0'],
                 'monster_config.*.base_atk' => ['required', 'integer', 'min:0'],
                 'monster_config.*.is_boss' => ['required', 'boolean'],
+                'monster_config.*.behavior_profile' => ['nullable', 'array'],
                 'monster_drop_config' => ['required', 'array', 'min:1'],
                 'monster_drop_config.*.monster_id' => ['required', 'string', 'max:100'],
                 'monster_drop_config.*.item_id' => ['required', 'string', 'max:100'],
@@ -154,7 +161,14 @@ class DungeonContentConfigService
             static fn (array $dungeon): array => [
                 'dungeon_id' => $dungeon['dungeon_id'],
                 'dungeon_name' => $dungeon['dungeon_name'],
+                'dungeon_desc' => $dungeon['dungeon_desc'] ?? null,
                 'unlock_level' => (int) $dungeon['unlock_level'],
+                'main_rewards' => json_encode(
+                    array_values($dungeon['main_rewards'] ?? []),
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                ),
+                'daily_limit' => (int) ($dungeon['daily_limit'] ?? 3),
+                'unlock_stage_node_id' => $dungeon['unlock_stage_node_id'] ?? null,
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
             ],
@@ -175,9 +189,16 @@ class DungeonContentConfigService
             static fn (array $monster): array => [
                 'monster_id' => $monster['monster_id'],
                 'name' => $monster['name'],
+                'combat_role' => $monster['combat_role'] ?? null,
                 'base_hp' => (int) $monster['base_hp'],
                 'base_atk' => (int) $monster['base_atk'],
                 'is_boss' => (bool) $monster['is_boss'],
+                'behavior_profile' => ! array_key_exists('behavior_profile', $monster) || $monster['behavior_profile'] === null
+                    ? null
+                    : json_encode(
+                        $monster['behavior_profile'],
+                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                    ),
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
             ],
@@ -231,7 +252,11 @@ class DungeonContentConfigService
             ->map(static fn (Dungeon $dungeon): array => [
                 'dungeon_id' => $dungeon->dungeon_id,
                 'dungeon_name' => $dungeon->dungeon_name,
+                'dungeon_desc' => $dungeon->dungeon_desc,
                 'unlock_level' => (int) $dungeon->unlock_level,
+                'main_rewards' => array_values($dungeon->main_rewards ?? []),
+                'daily_limit' => (int) $dungeon->daily_limit,
+                'unlock_stage_node_id' => $dungeon->unlock_stage_node_id,
             ])
             ->all();
 
@@ -248,9 +273,11 @@ class DungeonContentConfigService
             ->map(static fn (Monster $monster): array => [
                 'monster_id' => $monster->monster_id,
                 'name' => $monster->name,
+                'combat_role' => $monster->combat_role,
                 'base_hp' => (int) $monster->base_hp,
                 'base_atk' => (int) $monster->base_atk,
                 'is_boss' => (bool) $monster->is_boss,
+                'behavior_profile' => $monster->behavior_profile ?? [],
             ])
             ->all();
 

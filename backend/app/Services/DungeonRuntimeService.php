@@ -116,21 +116,24 @@ class DungeonRuntimeService
                 return $this->normalizeDailyProgressRecord($progress);
             })
             ->values();
-        $meta = $this->getDungeonRuntimeMeta($dungeon->dungeon_id);
-        $isUnlocked = (int) $playerProfile->level >= (int) $dungeon->unlock_level;
-        $dailyLimit = (int) ($meta['daily_limit'] ?? config('game_runtime.daily_dungeon_limit', 3));
+        $meta = $this->resolveDungeonMeta($playerProfile, $dungeon);
+        $isUnlocked = (bool) $meta['is_unlocked'];
+        $dailyLimit = (int) $meta['daily_limit'];
         $dailyCount = (int) $progressRecords->sum('daily_count');
         $payload = [
             'dungeon_id' => $dungeon->dungeon_id,
             'dungeon_name' => $dungeon->dungeon_name,
             'unlock_level' => (int) $dungeon->unlock_level,
             'is_unlocked' => $isUnlocked,
-            'unlock_text' => $isUnlocked ? '已解锁' : sprintf('达到 Lv.%d 解锁', (int) $dungeon->unlock_level),
-            'dungeon_desc' => (string) ($meta['dungeon_desc'] ?? '暂无说明'),
+            'unlock_text' => (string) $meta['unlock_text'],
+            'dungeon_desc' => (string) $meta['dungeon_desc'],
             'main_rewards' => array_values($meta['main_rewards'] ?? []),
             'daily_count' => $dailyCount,
             'daily_limit' => $dailyLimit,
             'remaining_count' => max($dailyLimit - $dailyCount, 0),
+            'current_tier' => 'easy',
+            'is_recommended' => true,
+            'suggestion_text' => '可前往试炼。',
         ];
 
         if (! $includeDifficulties) {
@@ -139,11 +142,13 @@ class DungeonRuntimeService
 
         $difficulties = DungeonDifficulty::query()
             ->where('dungeon_id', $dungeon->dungeon_id)
-            ->orderByRaw("CASE difficulty_id WHEN 'easy' THEN 0 WHEN 'normal' THEN 1 WHEN 'hard' THEN 2 WHEN 'nightmare' THEN 3 ELSE 99 END")
+            ->orderByRaw("CASE difficulty_id WHEN 'easy' THEN 0 WHEN 'normal' THEN 1 WHEN 'hard' THEN 2 WHEN 'nightmare' THEN 3 WHEN 'epic' THEN 4 ELSE 99 END")
             ->orderBy('difficulty_id')
             ->get();
         $difficultyPayloads = [];
         $firstClearState = [];
+        $highestUnlockedDifficultyId = 'easy';
+        $highestClearedDifficultyId = '';
 
         foreach ($difficulties as $index => $difficulty) {
             $progressRecord = $progressRecords->first(
@@ -161,24 +166,78 @@ class DungeonRuntimeService
 
             $isFirstClear = (bool) ($progressRecord?->is_first_clear ?? false);
             $firstClearState[$difficulty->difficulty_id] = $isFirstClear;
+            $difficultyUnlocked = $isUnlocked && $previousCleared;
+
+            if ($difficultyUnlocked) {
+                $highestUnlockedDifficultyId = $difficulty->difficulty_id;
+            }
+
+            if ((int) ($progressRecord?->clear_count ?? 0) > 0) {
+                $highestClearedDifficultyId = $difficulty->difficulty_id;
+            }
+
+            $mainRewards = $this->resolveDifficultyRewards(
+                $dungeon,
+                $difficulty,
+                $meta['main_rewards'] ?? [],
+            );
+            $recommendedPower = (int) $difficulty->recommended_power;
+            $powerGap = (int) $playerProfile->power - $recommendedPower;
 
             $difficultyPayloads[] = [
                 'difficulty_id' => $difficulty->difficulty_id,
                 'dungeon_id' => $difficulty->dungeon_id,
-                'recommended_power' => (int) $difficulty->recommended_power,
+                'recommended_power' => $recommendedPower,
                 'first_clear_reward_group_id' => $difficulty->first_clear_reward_group_id,
-                'is_unlocked' => $isUnlocked && $previousCleared,
+                'is_unlocked' => $difficultyUnlocked,
                 'is_first_clear' => $isFirstClear,
                 'clear_count' => (int) ($progressRecord?->clear_count ?? 0),
                 'daily_count' => (int) ($progressRecord?->daily_count ?? 0),
+                'tier_label' => $this->difficultyLabel($difficulty->difficulty_id),
+                'main_rewards' => $mainRewards,
+                'is_recommended' => $powerGap >= -max((int) round($recommendedPower * 0.08), 20),
+                'recommendation_text' => $powerGap >= 0
+                    ? '战力已达标，可稳定挑战。'
+                    : sprintf('建议再提升 %d 战力。', abs($powerGap)),
             ];
         }
 
         $payload['difficulties'] = $difficultyPayloads;
         $payload['recommended_power'] = (int) ($difficultyPayloads[0]['recommended_power'] ?? 0);
         $payload['first_clear_state'] = $firstClearState;
+        $payload['current_tier'] = $highestClearedDifficultyId !== '' ? $highestClearedDifficultyId : $highestUnlockedDifficultyId;
+        $currentTierPayload = collect($difficultyPayloads)->firstWhere('difficulty_id', $payload['current_tier']);
+        $payload['is_recommended'] = is_array($currentTierPayload) ? (bool) ($currentTierPayload['is_recommended'] ?? true) : true;
+        $payload['suggestion_text'] = is_array($currentTierPayload) ? (string) ($currentTierPayload['recommendation_text'] ?? '可前往试炼。') : '可前往试炼。';
 
         return $payload;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolveDungeonMeta(PlayerProfile $playerProfile, Dungeon $dungeon): array
+    {
+        $configMeta = $this->getDungeonRuntimeMeta($dungeon->dungeon_id);
+        $unlockStageNodeId = (string) ($dungeon->unlock_stage_node_id ?: ($configMeta['unlock_stage_node_id'] ?? ''));
+        $levelUnlocked = (int) $playerProfile->level >= (int) $dungeon->unlock_level;
+        $stageUnlocked = $unlockStageNodeId === '' || $this->isStageNodeCleared((int) $playerProfile->player_id, $unlockStageNodeId);
+        $isUnlocked = $levelUnlocked && $stageUnlocked;
+        $unlockText = '已解锁';
+
+        if (! $levelUnlocked) {
+            $unlockText = sprintf('达到 Lv.%d 解锁', (int) $dungeon->unlock_level);
+        } elseif (! $stageUnlocked) {
+            $unlockText = sprintf('通关主线 %s 后解锁', $unlockStageNodeId);
+        }
+
+        return [
+            'is_unlocked' => $isUnlocked,
+            'unlock_text' => $unlockText,
+            'dungeon_desc' => (string) ($dungeon->dungeon_desc ?: ($configMeta['dungeon_desc'] ?? '暂无说明')),
+            'main_rewards' => array_values($dungeon->main_rewards ?? $configMeta['main_rewards'] ?? []),
+            'daily_limit' => max((int) ($dungeon->daily_limit ?: ($configMeta['daily_limit'] ?? config('game_runtime.daily_dungeon_limit', 3))), 1),
+        ];
     }
 
     /**
@@ -189,6 +248,45 @@ class DungeonRuntimeService
         $meta = config(sprintf('game_runtime.dungeon_runtime.%s', $dungeonId), []);
 
         return is_array($meta) ? $meta : [];
+    }
+
+    /**
+     * @param  list<string>  $dungeonMainRewards
+     * @return list<string>
+     */
+    private function resolveDifficultyRewards(Dungeon $dungeon, DungeonDifficulty $difficulty, array $dungeonMainRewards): array
+    {
+        $rewardGroups = config('game_runtime.reward_groups', []);
+        $groupRewards = $rewardGroups[$difficulty->first_clear_reward_group_id] ?? [];
+        $rewardIds = collect($groupRewards)
+            ->map(static fn (array $entry): string => (string) ($entry['item_id'] ?? ''))
+            ->filter()
+            ->values()
+            ->all();
+
+        if ($rewardIds !== []) {
+            return array_values(array_unique(array_merge($dungeonMainRewards, $rewardIds)));
+        }
+
+        return array_values($dungeonMainRewards);
+    }
+
+    private function difficultyLabel(string $difficultyId): string
+    {
+        return match ($difficultyId) {
+            'easy' => '初阶',
+            'normal' => '进阶',
+            'hard' => '险境',
+            'nightmare' => '噩梦',
+            default => strtoupper($difficultyId),
+        };
+    }
+
+    private function isStageNodeCleared(int $playerId, string $nodeId): bool
+    {
+        return $this->playerRuntimeRepository
+            ->getStageProgress($playerId)
+            ->contains(static fn ($progress): bool => $progress->node_id === $nodeId && (int) $progress->clear_count > 0);
     }
 
     private function normalizeDailyProgressRecord(PlayerDungeonProgress $progress): PlayerDungeonProgress

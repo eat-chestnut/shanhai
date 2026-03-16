@@ -198,7 +198,8 @@ class BattleRuntimeService
      */
     private function buildEnemyGroupSnapshot(string $sourceType, string $sourceId, string $difficultyId): array
     {
-        $monsterIds = $this->resolveEncounterMonsterIds($sourceType, $sourceId);
+        $encounter = $this->resolveEncounterDefinition($sourceType, $sourceId, $difficultyId);
+        $monsterIds = $encounter['monster_ids'];
         $difficultyMultiplier = $this->difficultyMultiplier($difficultyId);
         $monsterMap = Monster::query()
             ->whereIn('monster_id', $monsterIds)
@@ -220,42 +221,76 @@ class BattleRuntimeService
                 'monster_id' => $monster->monster_id,
                 'name' => $monster->name,
                 'is_boss' => (bool) $monster->is_boss,
-                'stats' => [
-                    'max_hp' => (int) round((int) $monster->base_hp * $difficultyMultiplier),
-                    'attack' => (int) round((int) $monster->base_atk * (0.88 + $difficultyMultiplier * 0.12)),
-                    'defense' => (int) round(10 * $difficultyMultiplier),
-                    'move_speed' => (float) ($monster->is_boss ? 130.0 : 118.0),
-                    'attack_range' => (float) ($monster->is_boss ? 78.0 : 68.0),
-                    'attack_interval' => (float) ($monster->is_boss ? 1.45 : 1.7),
-                    'aggro_range' => (float) ($monster->is_boss ? 230.0 : 190.0),
-                ],
+                'combat_role' => (string) ($monster->combat_role ?? ''),
+                'stats' => $this->buildMonsterCombatStats($monster, $difficultyMultiplier),
                 'skill_profile' => $this->buildBossSkillProfile($monster),
             ];
         }
 
         return [
-            'monster_group_id' => sprintf('%s_%s_%s', $sourceType, $sourceId, $difficultyId),
+            'monster_group_id' => (string) ($encounter['monster_group_id'] ?? sprintf('%s_%s_%s', $sourceType, $sourceId, $difficultyId)),
             'monsters' => $monsters,
         ];
     }
 
     /**
-     * @return list<string>
+     * @return array{monster_group_id:string,monster_ids:list<string>}
      */
-    private function resolveEncounterMonsterIds(string $sourceType, string $sourceId): array
+    private function resolveEncounterDefinition(string $sourceType, string $sourceId, string $difficultyId): array
     {
         $encounterConfig = config(sprintf('game_runtime.encounters.%s', $sourceType), []);
-        $monsterIds = $encounterConfig[$sourceId] ?? [];
 
-        if (is_array($monsterIds) && $monsterIds !== []) {
-            return array_values(array_filter($monsterIds, static fn ($monsterId): bool => (string) $monsterId !== ''));
+        if (isset($encounterConfig[$sourceId])) {
+            $sourceEncounter = $encounterConfig[$sourceId];
+
+            if (is_array($sourceEncounter) && isset($sourceEncounter[$difficultyId]) && is_array($sourceEncounter[$difficultyId])) {
+                $monsterIds = array_values(array_filter(
+                    $sourceEncounter[$difficultyId]['monster_ids'] ?? $sourceEncounter[$difficultyId],
+                    static fn ($monsterId): bool => (string) $monsterId !== '',
+                ));
+
+                if ($monsterIds !== []) {
+                    return [
+                        'monster_group_id' => (string) ($sourceEncounter[$difficultyId]['monster_group_id'] ?? sprintf('%s_%s_%s', $sourceType, $sourceId, $difficultyId)),
+                        'monster_ids' => $monsterIds,
+                    ];
+                }
+            }
+
+            if (is_array($sourceEncounter) && isset($sourceEncounter['default'])) {
+                $monsterIds = array_values(array_filter(
+                    $sourceEncounter['default']['monster_ids'] ?? $sourceEncounter['default'],
+                    static fn ($monsterId): bool => (string) $monsterId !== '',
+                ));
+
+                if ($monsterIds !== []) {
+                    return [
+                        'monster_group_id' => (string) ($sourceEncounter['default']['monster_group_id'] ?? sprintf('%s_%s_%s', $sourceType, $sourceId, $difficultyId)),
+                        'monster_ids' => $monsterIds,
+                    ];
+                }
+            }
+
+            if (is_array($sourceEncounter)) {
+                $monsterIds = array_values(array_filter($sourceEncounter, static fn ($monsterId): bool => is_string($monsterId) && $monsterId !== ''));
+
+                if ($monsterIds !== []) {
+                    return [
+                        'monster_group_id' => sprintf('%s_%s_%s', $sourceType, $sourceId, $difficultyId),
+                        'monster_ids' => $monsterIds,
+                    ];
+                }
+            }
         }
 
-        return Monster::query()
-            ->orderBy('monster_id')
-            ->limit(3)
-            ->pluck('monster_id')
-            ->all();
+        return [
+            'monster_group_id' => sprintf('%s_%s_%s', $sourceType, $sourceId, $difficultyId),
+            'monster_ids' => Monster::query()
+                ->orderBy('monster_id')
+                ->limit(3)
+                ->pluck('monster_id')
+                ->all(),
+        ];
     }
 
     /**
@@ -430,6 +465,7 @@ class BattleRuntimeService
             'normal' => 1.35,
             'hard' => 1.75,
             'nightmare' => 2.15,
+            'epic' => 2.55,
             default => 1.0,
         };
     }
@@ -439,6 +475,12 @@ class BattleRuntimeService
      */
     private function buildBossSkillProfile(Monster $monster): array
     {
+        $behaviorProfile = $monster->behavior_profile ?? [];
+
+        if (is_array($behaviorProfile) && $behaviorProfile !== []) {
+            return $behaviorProfile;
+        }
+
         if (! $monster->is_boss) {
             return [];
         }
@@ -467,6 +509,26 @@ class BattleRuntimeService
             'dot_name' => '妖火',
             'dot_ratio' => 0.2,
             'dot_duration' => 4.0,
+        ];
+    }
+
+    /**
+     * @return array<string, int|float>
+     */
+    private function buildMonsterCombatStats(Monster $monster, float $difficultyMultiplier): array
+    {
+        $profile = $monster->behavior_profile ?? [];
+        $hpRatio = (float) ($profile['hp_ratio'] ?? 1.0);
+        $attackRatio = (float) ($profile['attack_ratio'] ?? 1.0);
+
+        return [
+            'max_hp' => (int) round((int) $monster->base_hp * $difficultyMultiplier * $hpRatio),
+            'attack' => (int) round((int) $monster->base_atk * (0.88 + $difficultyMultiplier * 0.12) * $attackRatio),
+            'defense' => (int) round((float) ($profile['base_defense'] ?? 10) * $difficultyMultiplier),
+            'move_speed' => (float) ($profile['move_speed'] ?? ($monster->is_boss ? 130.0 : 118.0)),
+            'attack_range' => (float) ($profile['attack_range'] ?? ($monster->is_boss ? 78.0 : 68.0)),
+            'attack_interval' => (float) ($profile['attack_interval'] ?? ($monster->is_boss ? 1.45 : 1.7)),
+            'aggro_range' => (float) ($profile['aggro_range'] ?? ($monster->is_boss ? 230.0 : 190.0)),
         ];
     }
 

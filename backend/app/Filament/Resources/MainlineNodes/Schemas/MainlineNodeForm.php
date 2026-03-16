@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MainlineNodes\Schemas;
 
 use App\Models\MainlineChapter;
+use App\Models\MainlineNode;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
@@ -53,6 +54,18 @@ class MainlineNodeForm
                             ->numeric()
                             ->minValue(1)
                             ->default(1),
+                        Select::make('unlock_condition.clear_node_id')
+                            ->label('unlock_condition.clear_node_id')
+                            ->searchable()
+                            ->preload()
+                            ->native(false)
+                            ->options(fn (): array => MainlineNode::query()
+                                ->orderBy('node_id')
+                                ->get()
+                                ->mapWithKeys(static fn (MainlineNode $node): array => [
+                                    $node->node_id => "{$node->node_id} / {$node->node_name}",
+                                ])
+                                ->all()),
                         TagsInput::make('difficulty_ids')
                             ->label('difficulty_ids')
                             ->required()
@@ -65,6 +78,7 @@ class MainlineNodeForm
                             ->keyLabel('条件键')
                             ->valueLabel('条件值')
                             ->default([])
+                            ->helperText('可额外补充运营条件；clear_node_id 建议直接用上方关联选择。')
                             ->columnSpanFull(),
                     ]),
             ]);

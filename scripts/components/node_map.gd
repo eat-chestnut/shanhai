@@ -22,9 +22,10 @@ func configure(nodes: Array, selected_node_id: String) -> void:
 		var button := Button.new()
 		var payload := node.duplicate(true)
 		var is_unlocked := bool(node.get("is_unlocked", true))
+		var progress_state := str(node.get("progress_state", "available"))
 		button.text = "%s%s" % [
 			str(node.get("node_name", "未命名节点")),
-			"" if is_unlocked else "\n未解锁"
+			"\n%s" % _progress_text(progress_state)
 		]
 		button.disabled = not is_unlocked
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -59,3 +60,14 @@ func _build_ui() -> void:
 
 func _on_node_pressed(node: Dictionary) -> void:
 	emit_signal("node_selected", node)
+
+func _progress_text(progress_state: String) -> String:
+	match progress_state:
+		"cleared":
+			return "已通关"
+		"current":
+			return "当前推进"
+		"available":
+			return "已解锁"
+		_:
+			return "未解锁"

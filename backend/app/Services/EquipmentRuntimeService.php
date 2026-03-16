@@ -499,6 +499,8 @@ class EquipmentRuntimeService
         $bonusAtk = 0;
         $bonusDef = 0;
         $bonusBossDmg = 0;
+        $bonusAttackSpeed = 0.0;
+        $bonusDamageRatio = 0.0;
 
         foreach ($gemSlots as $slot) {
             $gemId = (string) ($slot['gem_id'] ?? '');
@@ -520,6 +522,14 @@ class EquipmentRuntimeService
             if ($key === 'bonus_def') {
                 $bonusDef += (int) $value;
             }
+
+            if ($key === 'bonus_attack_speed') {
+                $bonusAttackSpeed += (float) $value;
+            }
+
+            if ($key === 'bonus_damage_ratio') {
+                $bonusDamageRatio += (float) $value;
+            }
         }
 
         foreach (($purpleRefinement?->bonuses ?? []) as $key => $value) {
@@ -533,6 +543,14 @@ class EquipmentRuntimeService
 
             if ($key === 'bonus_boss_dmg') {
                 $bonusBossDmg += (int) $value;
+            }
+
+            if ($key === 'bonus_attack_speed') {
+                $bonusAttackSpeed += (float) $value;
+            }
+
+            if ($key === 'bonus_damage_ratio') {
+                $bonusDamageRatio += (float) $value;
             }
         }
 
@@ -556,6 +574,8 @@ class EquipmentRuntimeService
             'final_atk' => $finalAtk,
             'final_def' => $finalDef,
             'bonus_boss_dmg' => $bonusBossDmg,
+            'bonus_attack_speed' => $bonusAttackSpeed,
+            'bonus_damage_ratio' => $bonusDamageRatio,
             'gem_slots' => $gemSlots,
             'blue_affix' => $blueAffix ? [
                 'affix_id' => $blueAffix->affix_id,

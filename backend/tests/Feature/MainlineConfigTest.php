@@ -34,13 +34,13 @@ class MainlineConfigTest extends TestCase
             'path' => database_path('seeders/data/mainline_config.json'),
         ])->assertExitCode(0);
 
-        $this->assertDatabaseCount('mainline_chapters', 1);
-        $this->assertDatabaseCount('mainline_nodes', 1);
-        $this->assertDatabaseCount('mainline_difficulties', 3);
+        $this->assertDatabaseCount('mainline_chapters', 4);
+        $this->assertDatabaseCount('mainline_nodes', 12);
+        $this->assertDatabaseCount('mainline_difficulties', 31);
         $this->assertDatabaseHas('mainline_difficulties', [
-            'difficulty_id' => 'hard',
-            'node_id' => 'node_01',
-            'first_clear_reward_group_id' => 'reward_node01_hard',
+            'difficulty_id' => 'nightmare',
+            'node_id' => 'node_12',
+            'first_clear_reward_group_id' => 'reward_node12_nightmare',
         ]);
     }
 

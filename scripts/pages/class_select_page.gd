@@ -37,9 +37,13 @@ func refresh() -> void:
 		body.add_child(title)
 
 		var desc := Label.new()
-		var skill_names := GameData.get_skills_for_class(class_id).map(func(entry: Dictionary) -> String: return str(entry.get("skill_name", entry.get("skill_id", ""))))
-		desc.text = "%s\n专属技能：%s" % [
+		var skill_names := GameData.get_skills_for_class(class_id).map(
+			func(entry: Dictionary) -> String:
+				return "%s(Lv.%d)" % [entry.get("skill_name", entry.get("skill_id", "")), int(entry.get("unlock_level", 1))]
+		)
+		desc.text = "%s\n定位：%s\n专属技能：%s" % [
 			str(class_data.get("class_desc", "")),
+			str(class_data.get("role_type", "unknown")),
 			" / ".join(skill_names) if not skill_names.is_empty() else "待补充"
 		]
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

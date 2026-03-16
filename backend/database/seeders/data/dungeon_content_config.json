@@ -3,165 +3,294 @@
     {
       "dungeon_id": "dungeon_gem",
       "dungeon_name": "灵玉副本",
-      "unlock_level": 5
+      "dungeon_desc": "宗门灵脉孕玉之地，20 级后仍可通过更高层灵玉试炼补齐宝石成长。",
+      "unlock_level": 5,
+      "main_rewards": ["gem_green", "gem_yellow", "gem_orange", "gem_purple"],
+      "daily_limit": 3
     },
     {
       "dungeon_id": "dungeon_seal",
       "dungeon_name": "灵印副本",
-      "unlock_level": 10
+      "dungeon_desc": "灵印试炼稳定产出蓝词条提取材料与中期洗练辅材。",
+      "unlock_level": 10,
+      "main_rewards": ["material_seal_essence", "material_seal_crystal", "blue_combo_hawk"],
+      "daily_limit": 3,
+      "unlock_stage_node_id": "node_02"
     },
     {
       "dungeon_id": "dungeon_refine",
       "dungeon_name": "淬灵副本",
-      "unlock_level": 15
+      "dungeon_desc": "淬灵秘境掉落紫洗练消耗材料，是 30 级后成长循环的重要一环。",
+      "unlock_level": 15,
+      "main_rewards": ["material_refine_sand", "material_refine_crystal", "purple_refine_spellburst"],
+      "daily_limit": 2,
+      "unlock_stage_node_id": "node_04"
     },
     {
       "dungeon_id": "dungeon_new",
       "dungeon_name": "雷鸣谷",
-      "unlock_level": 20
+      "dungeon_desc": "雷鸣谷是中期进阶试炼，掉落升星石、技能书与 Boss 核心占位奖励。",
+      "unlock_level": 20,
+      "main_rewards": ["material_star_stone", "material_star_crystal", "skill_book_thunder", "boss_core_thunder"],
+      "daily_limit": 2,
+      "unlock_stage_node_id": "node_06"
     }
   ],
   "dungeon_difficulty_config": [
-    {
-      "difficulty_id": "easy",
-      "dungeon_id": "dungeon_gem",
-      "recommended_power": 100,
-      "first_clear_reward_group_id": "reward_dungeon_gem_easy"
-    },
-    {
-      "difficulty_id": "normal",
-      "dungeon_id": "dungeon_gem",
-      "recommended_power": 200,
-      "first_clear_reward_group_id": "reward_dungeon_gem_normal"
-    },
-    {
-      "difficulty_id": "hard",
-      "dungeon_id": "dungeon_gem",
-      "recommended_power": 360,
-      "first_clear_reward_group_id": "reward_dungeon_gem_hard"
-    },
-    {
-      "difficulty_id": "easy",
-      "dungeon_id": "dungeon_seal",
-      "recommended_power": 180,
-      "first_clear_reward_group_id": "reward_dungeon_seal_easy"
-    },
-    {
-      "difficulty_id": "normal",
-      "dungeon_id": "dungeon_seal",
-      "recommended_power": 320,
-      "first_clear_reward_group_id": "reward_dungeon_seal_normal"
-    },
-    {
-      "difficulty_id": "hard",
-      "dungeon_id": "dungeon_refine",
-      "recommended_power": 460,
-      "first_clear_reward_group_id": "reward_dungeon_refine_hard"
-    },
-    {
-      "difficulty_id": "nightmare",
-      "dungeon_id": "dungeon_refine",
-      "recommended_power": 720,
-      "first_clear_reward_group_id": "reward_dungeon_refine_nightmare"
-    },
-    {
-      "difficulty_id": "easy",
-      "dungeon_id": "dungeon_new",
-      "recommended_power": 200,
-      "first_clear_reward_group_id": "reward_dungeon_new_easy"
-    },
-    {
-      "difficulty_id": "normal",
-      "dungeon_id": "dungeon_new",
-      "recommended_power": 400,
-      "first_clear_reward_group_id": "reward_dungeon_new_normal"
-    },
-    {
-      "difficulty_id": "hard",
-      "dungeon_id": "dungeon_new",
-      "recommended_power": 800,
-      "first_clear_reward_group_id": "reward_dungeon_new_hard"
-    }
+    {"difficulty_id": "easy", "dungeon_id": "dungeon_gem", "recommended_power": 100, "first_clear_reward_group_id": "reward_dungeon_gem_easy"},
+    {"difficulty_id": "normal", "dungeon_id": "dungeon_gem", "recommended_power": 220, "first_clear_reward_group_id": "reward_dungeon_gem_normal"},
+    {"difficulty_id": "hard", "dungeon_id": "dungeon_gem", "recommended_power": 520, "first_clear_reward_group_id": "reward_dungeon_gem_hard"},
+    {"difficulty_id": "nightmare", "dungeon_id": "dungeon_gem", "recommended_power": 1560, "first_clear_reward_group_id": "reward_dungeon_gem_nightmare"},
+
+    {"difficulty_id": "easy", "dungeon_id": "dungeon_seal", "recommended_power": 180, "first_clear_reward_group_id": "reward_dungeon_seal_easy"},
+    {"difficulty_id": "normal", "dungeon_id": "dungeon_seal", "recommended_power": 420, "first_clear_reward_group_id": "reward_dungeon_seal_normal"},
+    {"difficulty_id": "hard", "dungeon_id": "dungeon_seal", "recommended_power": 1180, "first_clear_reward_group_id": "reward_dungeon_seal_hard"},
+    {"difficulty_id": "nightmare", "dungeon_id": "dungeon_seal", "recommended_power": 2480, "first_clear_reward_group_id": "reward_dungeon_seal_nightmare"},
+
+    {"difficulty_id": "normal", "dungeon_id": "dungeon_refine", "recommended_power": 460, "first_clear_reward_group_id": "reward_dungeon_refine_normal"},
+    {"difficulty_id": "hard", "dungeon_id": "dungeon_refine", "recommended_power": 960, "first_clear_reward_group_id": "reward_dungeon_refine_hard"},
+    {"difficulty_id": "nightmare", "dungeon_id": "dungeon_refine", "recommended_power": 2120, "first_clear_reward_group_id": "reward_dungeon_refine_nightmare"},
+
+    {"difficulty_id": "hard", "dungeon_id": "dungeon_new", "recommended_power": 1400, "first_clear_reward_group_id": "reward_dungeon_new_hard"},
+    {"difficulty_id": "nightmare", "dungeon_id": "dungeon_new", "recommended_power": 3120, "first_clear_reward_group_id": "reward_dungeon_new_nightmare"}
   ],
   "monster_config": [
     {
       "monster_id": "mon_qingqiu_guard",
       "name": "青丘守卫",
+      "combat_role": "vanguard",
       "base_hp": 500,
       "base_atk": 40,
-      "is_boss": false
+      "is_boss": false,
+      "behavior_profile": {
+        "move_speed": 122,
+        "attack_range": 70,
+        "aggro_range": 200
+      }
+    },
+    {
+      "monster_id": "mon_qingqiu_shaman",
+      "name": "青丘巫侍",
+      "combat_role": "caster",
+      "base_hp": 620,
+      "base_atk": 48,
+      "is_boss": false,
+      "behavior_profile": {
+        "move_speed": 116,
+        "attack_range": 118,
+        "attack_interval": 1.9,
+        "aggro_range": 220
+      }
     },
     {
       "monster_id": "mon_qingqiu_boss",
       "name": "青丘九尾狐",
+      "combat_role": "boss",
       "base_hp": 3000,
       "base_atk": 120,
-      "is_boss": true
+      "is_boss": true,
+      "behavior_profile": {
+        "move_speed": 132,
+        "attack_range": 82,
+        "aggro_range": 240,
+        "cooldown": 6.0,
+        "burst_ratio": 0.22,
+        "control_name": "震慑",
+        "control_duration": 1.2,
+        "dot_name": "妖火",
+        "dot_ratio": 0.2,
+        "dot_duration": 4.0,
+        "patterns": [
+          {"skill_name": "狐火圆阵", "pattern_type": "area_burst", "cooldown": 6.0, "burst_ratio": 0.28, "telegraph": "狐火圆阵即将落下", "radius": 120, "phase_threshold": 1.0},
+          {"skill_name": "狐尾贯魂", "pattern_type": "line_strike", "cooldown": 8.0, "burst_ratio": 0.35, "telegraph": "狐尾即将直线横扫", "phase_threshold": 0.55}
+        ]
+      }
     },
     {
       "monster_id": "mon_new_guard",
       "name": "雷鸣护卫",
+      "combat_role": "skirmisher",
       "base_hp": 600,
       "base_atk": 50,
-      "is_boss": false
+      "is_boss": false,
+      "behavior_profile": {
+        "move_speed": 128,
+        "attack_range": 78,
+        "aggro_range": 210
+      }
+    },
+    {
+      "monster_id": "mon_thunder_archer",
+      "name": "惊雷羽侍",
+      "combat_role": "ranged",
+      "base_hp": 720,
+      "base_atk": 58,
+      "is_boss": false,
+      "behavior_profile": {
+        "move_speed": 136,
+        "attack_range": 132,
+        "attack_interval": 1.55,
+        "aggro_range": 250
+      }
     },
     {
       "monster_id": "mon_new_boss",
       "name": "雷鸣灵兽",
+      "combat_role": "boss",
       "base_hp": 3500,
       "base_atk": 180,
-      "is_boss": true
+      "is_boss": true,
+      "behavior_profile": {
+        "move_speed": 136,
+        "attack_range": 86,
+        "aggro_range": 246,
+        "cooldown": 5.5,
+        "burst_ratio": 0.4,
+        "control_name": "雷缚",
+        "control_duration": 1.6,
+        "dot_name": "感电",
+        "dot_ratio": 0.24,
+        "dot_duration": 4.0,
+        "self_hot_name": "雷兽回潮",
+        "self_hot_ratio": 0.08,
+        "patterns": [
+          {"skill_name": "雷狱震落", "pattern_type": "area_burst", "cooldown": 5.5, "burst_ratio": 0.42, "telegraph": "雷狱圆阵即将爆发", "radius": 136, "phase_threshold": 1.0},
+          {"skill_name": "裂雷贯线", "pattern_type": "line_strike", "cooldown": 7.0, "burst_ratio": 0.34, "telegraph": "裂雷将在前方直线贯穿", "phase_threshold": 0.75},
+          {"skill_name": "雷翼唤侍", "pattern_type": "summon", "cooldown": 12.0, "summon_monster_id": "mon_thunder_archer", "summon_count": 2, "telegraph": "雷鸣灵兽正在唤来侍从", "phase_threshold": 0.55}
+        ]
+      }
+    },
+    {
+      "monster_id": "mon_seal_keeper",
+      "name": "镇印执守",
+      "combat_role": "vanguard",
+      "base_hp": 980,
+      "base_atk": 72,
+      "is_boss": false,
+      "behavior_profile": {
+        "move_speed": 118,
+        "attack_range": 74,
+        "aggro_range": 208
+      }
+    },
+    {
+      "monster_id": "mon_seal_boss",
+      "name": "灵印镇司",
+      "combat_role": "boss",
+      "base_hp": 4200,
+      "base_atk": 150,
+      "is_boss": true,
+      "behavior_profile": {
+        "move_speed": 126,
+        "attack_range": 90,
+        "aggro_range": 236,
+        "cooldown": 6.2,
+        "burst_ratio": 0.32,
+        "control_name": "镇印锁脉",
+        "control_duration": 1.4,
+        "patterns": [
+          {"skill_name": "封脉雷印", "pattern_type": "area_burst", "cooldown": 6.2, "burst_ratio": 0.34, "telegraph": "地面印阵正在汇聚", "radius": 124, "phase_threshold": 1.0},
+          {"skill_name": "印锁长鞭", "pattern_type": "line_strike", "cooldown": 8.4, "burst_ratio": 0.3, "telegraph": "印锁将沿直线抽击", "phase_threshold": 0.6}
+        ]
+      }
+    },
+    {
+      "monster_id": "mon_refine_spirit",
+      "name": "淬灵残魄",
+      "combat_role": "caster",
+      "base_hp": 1200,
+      "base_atk": 88,
+      "is_boss": false,
+      "behavior_profile": {
+        "move_speed": 118,
+        "attack_range": 126,
+        "attack_interval": 1.75,
+        "aggro_range": 236
+      }
+    },
+    {
+      "monster_id": "mon_refine_boss",
+      "name": "焚灵主",
+      "combat_role": "boss",
+      "base_hp": 5600,
+      "base_atk": 188,
+      "is_boss": true,
+      "behavior_profile": {
+        "move_speed": 130,
+        "attack_range": 88,
+        "aggro_range": 244,
+        "cooldown": 5.8,
+        "burst_ratio": 0.36,
+        "dot_name": "焚魄",
+        "dot_ratio": 0.26,
+        "dot_duration": 5.0,
+        "patterns": [
+          {"skill_name": "焚灵火雨", "pattern_type": "area_burst", "cooldown": 5.8, "burst_ratio": 0.32, "telegraph": "火雨将在范围内倾泻", "radius": 140, "phase_threshold": 1.0},
+          {"skill_name": "焚灵召影", "pattern_type": "summon", "cooldown": 11.0, "summon_monster_id": "mon_refine_spirit", "summon_count": 2, "telegraph": "焚灵主正在召影", "phase_threshold": 0.68}
+        ]
+      }
+    },
+    {
+      "monster_id": "mon_abyss_guard",
+      "name": "玄渊守卫",
+      "combat_role": "vanguard",
+      "base_hp": 1800,
+      "base_atk": 118,
+      "is_boss": false,
+      "behavior_profile": {
+        "move_speed": 124,
+        "attack_range": 82,
+        "aggro_range": 228
+      }
+    },
+    {
+      "monster_id": "mon_abyss_lord",
+      "name": "玄渊厄主",
+      "combat_role": "boss",
+      "base_hp": 8600,
+      "base_atk": 260,
+      "is_boss": true,
+      "behavior_profile": {
+        "move_speed": 138,
+        "attack_range": 92,
+        "aggro_range": 260,
+        "cooldown": 5.2,
+        "burst_ratio": 0.45,
+        "control_name": "玄锁",
+        "control_duration": 1.8,
+        "patterns": [
+          {"skill_name": "玄渊压界", "pattern_type": "area_burst", "cooldown": 5.2, "burst_ratio": 0.45, "telegraph": "玄渊之力正在压缩场地", "radius": 154, "phase_threshold": 1.0},
+          {"skill_name": "厄潮裂界", "pattern_type": "line_strike", "cooldown": 7.6, "burst_ratio": 0.4, "telegraph": "厄潮会撕开一条直线裂缝", "phase_threshold": 0.7},
+          {"skill_name": "渊卫再临", "pattern_type": "summon", "cooldown": 10.8, "summon_monster_id": "mon_abyss_guard", "summon_count": 2, "telegraph": "玄渊厄主正在召回守卫", "phase_threshold": 0.42}
+        ]
+      }
     }
   ],
   "monster_drop_config": [
-    {
-      "monster_id": "mon_qingqiu_guard",
-      "item_id": "gem_green",
-      "drop_rate": 0.5
-    },
-    {
-      "monster_id": "mon_qingqiu_boss",
-      "item_id": "gem_blue",
-      "drop_rate": 1.0,
-      "drop_kind": "boss_fixed"
-    },
-    {
-      "monster_id": "mon_qingqiu_boss",
-      "item_id": "boss_core_qingqiu",
-      "drop_rate": 0.05,
-      "drop_kind": "boss_core"
-    },
-    {
-      "monster_id": "mon_new_guard",
-      "item_id": "gem_yellow",
-      "drop_rate": 0.6
-    },
-    {
-      "monster_id": "mon_new_guard",
-      "item_id": "material_star_stone",
-      "drop_rate": 0.35
-    },
-    {
-      "monster_id": "mon_new_boss",
-      "item_id": "gem_purple",
-      "drop_rate": 1.0,
-      "drop_kind": "boss_fixed"
-    },
-    {
-      "monster_id": "mon_new_boss",
-      "item_id": "skill_book_thunder",
-      "drop_rate": 0.3
-    },
-    {
-      "monster_id": "mon_new_boss",
-      "item_id": "talisman_cloud",
-      "drop_rate": 0.18
-    },
-    {
-      "monster_id": "mon_new_boss",
-      "item_id": "boss_core_thunder",
-      "drop_rate": 0.05,
-      "drop_kind": "boss_core"
-    }
+    {"monster_id": "mon_qingqiu_guard", "item_id": "gem_green", "drop_rate": 0.5},
+    {"monster_id": "mon_qingqiu_shaman", "item_id": "gem_yellow", "drop_rate": 0.35},
+    {"monster_id": "mon_qingqiu_boss", "item_id": "gem_blue", "drop_rate": 1.0, "drop_kind": "boss_fixed"},
+    {"monster_id": "mon_qingqiu_boss", "item_id": "boss_core_qingqiu", "drop_rate": 0.05, "drop_kind": "boss_core"},
+
+    {"monster_id": "mon_new_guard", "item_id": "gem_yellow", "drop_rate": 0.6},
+    {"monster_id": "mon_new_guard", "item_id": "material_star_stone", "drop_rate": 0.35},
+    {"monster_id": "mon_thunder_archer", "item_id": "skill_book_thunder", "drop_rate": 0.28},
+    {"monster_id": "mon_new_boss", "item_id": "gem_purple", "drop_rate": 1.0, "drop_kind": "boss_fixed"},
+    {"monster_id": "mon_new_boss", "item_id": "skill_book_thunder", "drop_rate": 0.4},
+    {"monster_id": "mon_new_boss", "item_id": "material_star_crystal", "drop_rate": 0.3},
+    {"monster_id": "mon_new_boss", "item_id": "boss_core_thunder", "drop_rate": 0.05, "drop_kind": "boss_core"},
+
+    {"monster_id": "mon_seal_keeper", "item_id": "material_seal_essence", "drop_rate": 0.55},
+    {"monster_id": "mon_seal_boss", "item_id": "material_seal_crystal", "drop_rate": 1.0, "drop_kind": "boss_fixed"},
+    {"monster_id": "mon_seal_boss", "item_id": "blue_combo_hawk", "drop_rate": 0.2},
+
+    {"monster_id": "mon_refine_spirit", "item_id": "material_refine_sand", "drop_rate": 0.6},
+    {"monster_id": "mon_refine_boss", "item_id": "material_refine_crystal", "drop_rate": 1.0, "drop_kind": "boss_fixed"},
+    {"monster_id": "mon_refine_boss", "item_id": "purple_refine_spellburst", "drop_rate": 0.18},
+
+    {"monster_id": "mon_abyss_guard", "item_id": "gem_orange", "drop_rate": 0.35},
+    {"monster_id": "mon_abyss_lord", "item_id": "boss_core_abyss", "drop_rate": 0.05, "drop_kind": "boss_core"},
+    {"monster_id": "mon_abyss_lord", "item_id": "equip_abyss_blade", "drop_rate": 0.12},
+    {"monster_id": "mon_abyss_lord", "item_id": "equip_abyss_robe", "drop_rate": 0.12}
   ]
 }

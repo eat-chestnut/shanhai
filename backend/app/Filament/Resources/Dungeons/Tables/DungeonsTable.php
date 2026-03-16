@@ -25,9 +25,24 @@ class DungeonsTable
                     ->label('dungeon_name')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('dungeon_desc')
+                    ->label('dungeon_desc')
+                    ->limit(32)
+                    ->toggleable(),
                 TextColumn::make('unlock_level')
                     ->label('unlock_level')
                     ->sortable(),
+                TextColumn::make('daily_limit')
+                    ->label('daily_limit')
+                    ->sortable(),
+                TextColumn::make('main_rewards')
+                    ->label('main_rewards')
+                    ->formatStateUsing(static fn (mixed $state): string => is_array($state) ? implode(', ', $state) : (string) $state)
+                    ->wrap()
+                    ->toggleable(),
+                TextColumn::make('unlock_stage_node_id')
+                    ->label('unlock_stage_node_id')
+                    ->toggleable(),
             ])
             ->filters([
                 //

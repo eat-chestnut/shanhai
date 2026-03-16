@@ -5,6 +5,7 @@ signal skill_state_changed(skill_states: Array, current_resource: float, max_res
 
 var enemies: Array = []
 var class_id := ""
+var class_profile: Dictionary = {}
 var resource_name := "灵力"
 var resource_max := 100.0
 var resource_current := 100.0
@@ -21,11 +22,15 @@ func _ready() -> void:
 func setup_actor(config: Dictionary) -> void:
 	super.setup_actor(config)
 	class_id = str(config.get("class_id", ""))
+	class_profile = config.get("class_profile", {}).duplicate(true)
 	resource_name = str(config.get("resource_name", resource_name))
 	resource_max = float(config.get("resource_max", resource_max))
 	resource_current = resource_max
 	active_skills = config.get("active_skills", []).duplicate(true)
 	passive_skills = config.get("passive_skills", []).duplicate(true)
+	move_speed = float(class_profile.get("move_speed", config.get("move_speed", move_speed)))
+	attack_range = float(class_profile.get("attack_range", config.get("attack_range", attack_range)))
+	attack_interval = float(class_profile.get("attack_interval", config.get("attack_interval", attack_interval)))
 	_skill_cooldowns.clear()
 	for skill in active_skills:
 		_skill_cooldowns[str(skill.get("skill_id", ""))] = 0.0
@@ -42,16 +47,19 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_tick_skills(delta)
+	var target = _nearest_enemy()
 	var input_vector := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	if can_move():
-		velocity = input_vector.normalized() * move_speed
+		if input_vector.length() > 0.0:
+			velocity = input_vector.normalized() * move_speed
+		else:
+			velocity = _auto_position_velocity(target)
 	else:
 		velocity = Vector2.ZERO
 
 	move_and_slide()
 	clamp_to_arena()
 
-	var target = _nearest_enemy()
 	if target == null:
 		_emit_skill_state()
 		return
@@ -68,7 +76,7 @@ func _physics_process(delta: float) -> void:
 	_emit_skill_state()
 
 func _tick_skills(delta: float) -> void:
-	resource_current = min(resource_current + delta * 12.0, resource_max)
+	resource_current = min(resource_current + delta * float(class_profile.get("resource_regen", 12.0)), resource_max)
 	for skill_id in _skill_cooldowns.keys():
 		_skill_cooldowns[skill_id] = max(float(_skill_cooldowns.get(skill_id, 0.0)) - delta, 0.0)
 
@@ -99,10 +107,13 @@ func _cast_skill(skill: Dictionary, targets: Array) -> void:
 	var skill_id := str(skill.get("skill_id", ""))
 	var skill_name := str(skill.get("skill_name", skill_id))
 	var effect_type := str(skill.get("effect_type", "damage"))
+	var telegraph_type := str(skill.get("effect_payload", {}).get("telegraph_type", ""))
 	resource_current = max(resource_current - float(skill.get("cost", 0)), 0.0)
 	_skill_cooldowns[skill_id] = float(skill.get("cooldown", 0))
 	_attack_cooldown = max(_attack_cooldown, 0.35)
 	emit_signal("combat_event", "%s 施放 %s" % [display_name, skill_name])
+	if telegraph_type != "":
+		emit_signal("combat_event", "技能提示：%s 以%s方式展开。" % [skill_name, telegraph_type])
 
 	match effect_type:
 		"damage":
@@ -137,7 +148,8 @@ func _resolve_skill_targets(skill: Dictionary, primary_target) -> Array:
 	if primary_target == null or not primary_target.is_alive():
 		return []
 	if target_type == "single":
-		return [primary_target]
+		var priority_target = _preferred_enemy(str(skill.get("effect_payload", {}).get("preferred_target", class_profile.get("target_priority", "nearest"))))
+		return [priority_target if priority_target != null else primary_target]
 
 	var payload: Dictionary = skill.get("effect_payload", {})
 	var target_count: int = max(int(payload.get("target_count", 3)), 1)
@@ -150,6 +162,13 @@ func _resolve_skill_targets(skill: Dictionary, primary_target) -> Array:
 		candidates.append(candidate)
 
 	candidates.sort_custom(func(a, b) -> bool:
+		var priority := str(payload.get("preferred_target", class_profile.get("target_priority", "nearest")))
+		if priority == "farthest_cluster":
+			return global_position.distance_to(a.global_position) > global_position.distance_to(b.global_position)
+		if priority == "boss_or_high_threat":
+			if bool(a.is_boss) != bool(b.is_boss):
+				return bool(a.is_boss)
+			return float(a.attack) > float(b.attack)
 		return global_position.distance_to(a.global_position) < global_position.distance_to(b.global_position)
 	)
 	return candidates.slice(0, min(target_count, candidates.size()))
@@ -180,11 +199,14 @@ func _build_status_from_skill(skill: Dictionary) -> Dictionary:
 	var status_power_ratio := float(payload.get("status_power_ratio", max(float(skill.get("scaled_power", 0)) / 100.0 * 0.2, 0.12)))
 
 	return {
+		"status_id": str(payload.get("status_id", skill.get("skill_id", ""))),
 		"name": str(payload.get("status_name", skill.get("skill_name", "状态"))),
 		"type": status_type,
 		"duration": status_duration,
 		"tick_interval": status_tick_interval,
 		"power": max(6.0, attack * status_power_ratio),
+		"stack_rule": str(payload.get("stack_rule", "refresh")),
+		"max_stacks": int(payload.get("max_stacks", 1)),
 		"move_locked": _as_bool(payload.get("move_locked", status_type == "control")),
 		"attack_locked": _as_bool(payload.get("attack_locked", status_type == "control"))
 	}
@@ -209,6 +231,11 @@ func _apply_passive_triggers(trigger_name: String, target) -> void:
 		if target != null and target.is_alive() and payload.has("status_type"):
 			target.add_status(_build_status_from_skill(skill))
 
+		var self_heal_ratio := float(payload.get("self_heal_ratio", 0.0))
+		if self_heal_ratio > 0.0:
+			var healed := heal(max(4.0, attack * self_heal_ratio))
+			emit_signal("combat_event", "%s 因被动回复 %d 生命。" % [display_name, healed])
+
 func _emit_skill_state() -> void:
 	var states: Array = []
 	for skill in active_skills:
@@ -224,16 +251,48 @@ func _emit_skill_state() -> void:
 	emit_signal("skill_state_changed", states, resource_current, resource_max, resource_name)
 
 func _nearest_enemy():
+	return _preferred_enemy(str(class_profile.get("target_priority", "nearest")))
+
+func _preferred_enemy(priority: String):
 	var nearest = null
 	var nearest_distance: float = INF
+	var farthest_distance: float = -INF
+	var best_attack := -INF
 	for candidate in enemies:
 		if candidate == null or not candidate.is_alive():
 			continue
 		var distance := global_position.distance_to(candidate.global_position)
-		if distance < nearest_distance:
-			nearest_distance = distance
-			nearest = candidate
+		match priority:
+			"farthest_cluster":
+				if distance > farthest_distance:
+					farthest_distance = distance
+					nearest = candidate
+			"boss_or_high_threat":
+				if candidate.is_boss and (nearest == null or not nearest.is_boss):
+					nearest = candidate
+					best_attack = float(candidate.attack)
+					continue
+				if nearest == null or (not nearest.is_boss and float(candidate.attack) > best_attack):
+					nearest = candidate
+					best_attack = float(candidate.attack)
+			_:
+				if distance < nearest_distance:
+					nearest_distance = distance
+					nearest = candidate
 	return nearest
+
+func _auto_position_velocity(target) -> Vector2:
+	if target == null or not target.is_alive():
+		return Vector2.ZERO
+	var desired_range := float(class_profile.get("preferred_range", attack_range))
+	var kite_distance := float(class_profile.get("kite_distance", 0.0))
+	var direction: Vector2 = target.global_position - global_position
+	var distance: float = direction.length()
+	if kite_distance > 0.0 and distance < kite_distance:
+		return -direction.normalized() * move_speed * 0.62
+	if distance > desired_range * 1.05:
+		return direction.normalized() * move_speed * 0.55
+	return Vector2.ZERO
 
 func _as_bool(value: Variant) -> bool:
 	if value is bool:

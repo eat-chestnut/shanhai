@@ -4,6 +4,21 @@
       "chapter_id": "chapter_01",
       "chapter_name": "奉命巡山",
       "unlock_level": 1
+    },
+    {
+      "chapter_id": "chapter_02",
+      "chapter_name": "雷谷问劫",
+      "unlock_level": 20
+    },
+    {
+      "chapter_id": "chapter_03",
+      "chapter_name": "符火照夜",
+      "unlock_level": 34
+    },
+    {
+      "chapter_id": "chapter_04",
+      "chapter_name": "玄渊封灾",
+      "unlock_level": 48
     }
   ],
   "node_config": [
@@ -14,31 +29,161 @@
       "unlock_condition": {
         "level": 1
       },
-      "difficulty_ids": [
-        "easy",
-        "normal",
-        "hard"
-      ]
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "node_02",
+      "chapter_id": "chapter_01",
+      "node_name": "山道夜巡",
+      "unlock_condition": {
+        "level": 8,
+        "clear_node_id": "node_01"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "node_03",
+      "chapter_id": "chapter_01",
+      "node_name": "狐火裂谷",
+      "unlock_condition": {
+        "level": 14,
+        "clear_node_id": "node_02"
+      },
+      "difficulty_ids": ["normal", "hard", "nightmare"]
+    },
+    {
+      "node_id": "node_04",
+      "chapter_id": "chapter_02",
+      "node_name": "雷门初试",
+      "unlock_condition": {
+        "level": 20,
+        "clear_node_id": "node_03"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "node_05",
+      "chapter_id": "chapter_02",
+      "node_name": "风雷回廊",
+      "unlock_condition": {
+        "level": 24,
+        "clear_node_id": "node_04"
+      },
+      "difficulty_ids": ["normal", "hard", "nightmare"]
+    },
+    {
+      "node_id": "node_06",
+      "chapter_id": "chapter_02",
+      "node_name": "谷主惊雷",
+      "unlock_condition": {
+        "level": 28,
+        "clear_node_id": "node_05"
+      },
+      "difficulty_ids": ["hard", "nightmare"]
+    },
+    {
+      "node_id": "node_07",
+      "chapter_id": "chapter_03",
+      "node_name": "符桥残烬",
+      "unlock_condition": {
+        "level": 34,
+        "clear_node_id": "node_06"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "node_08",
+      "chapter_id": "chapter_03",
+      "node_name": "夜城焚印",
+      "unlock_condition": {
+        "level": 40,
+        "clear_node_id": "node_07"
+      },
+      "difficulty_ids": ["normal", "hard", "nightmare"]
+    },
+    {
+      "node_id": "node_09",
+      "chapter_id": "chapter_03",
+      "node_name": "天灯破阵",
+      "unlock_condition": {
+        "level": 46,
+        "clear_node_id": "node_08"
+      },
+      "difficulty_ids": ["hard", "nightmare"]
+    },
+    {
+      "node_id": "node_10",
+      "chapter_id": "chapter_04",
+      "node_name": "渊门初封",
+      "unlock_condition": {
+        "level": 48,
+        "clear_node_id": "node_09"
+      },
+      "difficulty_ids": ["normal", "hard", "nightmare"]
+    },
+    {
+      "node_id": "node_11",
+      "chapter_id": "chapter_04",
+      "node_name": "玄潮压境",
+      "unlock_condition": {
+        "level": 54,
+        "clear_node_id": "node_10"
+      },
+      "difficulty_ids": ["hard", "nightmare"]
+    },
+    {
+      "node_id": "node_12",
+      "chapter_id": "chapter_04",
+      "node_name": "封灾终局",
+      "unlock_condition": {
+        "level": 60,
+        "clear_node_id": "node_11"
+      },
+      "difficulty_ids": ["nightmare"]
     }
   ],
   "difficulty_config": [
-    {
-      "difficulty_id": "easy",
-      "node_id": "node_01",
-      "recommended_power": 100,
-      "first_clear_reward_group_id": "reward_node01_easy"
-    },
-    {
-      "difficulty_id": "normal",
-      "node_id": "node_01",
-      "recommended_power": 220,
-      "first_clear_reward_group_id": "reward_node01_normal"
-    },
-    {
-      "difficulty_id": "hard",
-      "node_id": "node_01",
-      "recommended_power": 420,
-      "first_clear_reward_group_id": "reward_node01_hard"
-    }
+    {"difficulty_id": "easy", "node_id": "node_01", "recommended_power": 100, "first_clear_reward_group_id": "reward_node01_easy"},
+    {"difficulty_id": "normal", "node_id": "node_01", "recommended_power": 220, "first_clear_reward_group_id": "reward_node01_normal"},
+    {"difficulty_id": "hard", "node_id": "node_01", "recommended_power": 420, "first_clear_reward_group_id": "reward_node01_hard"},
+
+    {"difficulty_id": "easy", "node_id": "node_02", "recommended_power": 260, "first_clear_reward_group_id": "reward_node02_easy"},
+    {"difficulty_id": "normal", "node_id": "node_02", "recommended_power": 460, "first_clear_reward_group_id": "reward_node02_normal"},
+    {"difficulty_id": "hard", "node_id": "node_02", "recommended_power": 680, "first_clear_reward_group_id": "reward_node02_hard"},
+
+    {"difficulty_id": "normal", "node_id": "node_03", "recommended_power": 760, "first_clear_reward_group_id": "reward_node03_normal"},
+    {"difficulty_id": "hard", "node_id": "node_03", "recommended_power": 980, "first_clear_reward_group_id": "reward_node03_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_03", "recommended_power": 1260, "first_clear_reward_group_id": "reward_node03_nightmare"},
+
+    {"difficulty_id": "easy", "node_id": "node_04", "recommended_power": 1180, "first_clear_reward_group_id": "reward_node04_easy"},
+    {"difficulty_id": "normal", "node_id": "node_04", "recommended_power": 1400, "first_clear_reward_group_id": "reward_node04_normal"},
+    {"difficulty_id": "hard", "node_id": "node_04", "recommended_power": 1700, "first_clear_reward_group_id": "reward_node04_hard"},
+
+    {"difficulty_id": "normal", "node_id": "node_05", "recommended_power": 1820, "first_clear_reward_group_id": "reward_node05_normal"},
+    {"difficulty_id": "hard", "node_id": "node_05", "recommended_power": 2140, "first_clear_reward_group_id": "reward_node05_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_05", "recommended_power": 2480, "first_clear_reward_group_id": "reward_node05_nightmare"},
+
+    {"difficulty_id": "hard", "node_id": "node_06", "recommended_power": 2700, "first_clear_reward_group_id": "reward_node06_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_06", "recommended_power": 3100, "first_clear_reward_group_id": "reward_node06_nightmare"},
+
+    {"difficulty_id": "easy", "node_id": "node_07", "recommended_power": 2500, "first_clear_reward_group_id": "reward_node07_easy"},
+    {"difficulty_id": "normal", "node_id": "node_07", "recommended_power": 2860, "first_clear_reward_group_id": "reward_node07_normal"},
+    {"difficulty_id": "hard", "node_id": "node_07", "recommended_power": 3240, "first_clear_reward_group_id": "reward_node07_hard"},
+
+    {"difficulty_id": "normal", "node_id": "node_08", "recommended_power": 3520, "first_clear_reward_group_id": "reward_node08_normal"},
+    {"difficulty_id": "hard", "node_id": "node_08", "recommended_power": 3960, "first_clear_reward_group_id": "reward_node08_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_08", "recommended_power": 4420, "first_clear_reward_group_id": "reward_node08_nightmare"},
+
+    {"difficulty_id": "hard", "node_id": "node_09", "recommended_power": 4800, "first_clear_reward_group_id": "reward_node09_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_09", "recommended_power": 5300, "first_clear_reward_group_id": "reward_node09_nightmare"},
+
+    {"difficulty_id": "normal", "node_id": "node_10", "recommended_power": 5200, "first_clear_reward_group_id": "reward_node10_normal"},
+    {"difficulty_id": "hard", "node_id": "node_10", "recommended_power": 5760, "first_clear_reward_group_id": "reward_node10_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_10", "recommended_power": 6360, "first_clear_reward_group_id": "reward_node10_nightmare"},
+
+    {"difficulty_id": "hard", "node_id": "node_11", "recommended_power": 6900, "first_clear_reward_group_id": "reward_node11_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_11", "recommended_power": 7480, "first_clear_reward_group_id": "reward_node11_nightmare"},
+
+    {"difficulty_id": "nightmare", "node_id": "node_12", "recommended_power": 8200, "first_clear_reward_group_id": "reward_node12_nightmare"}
   ]
 }

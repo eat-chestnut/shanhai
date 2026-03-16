@@ -47,9 +47,9 @@ class DungeonContentConfigTest extends TestCase
         ])->assertExitCode(0);
 
         $this->assertDatabaseCount('dungeons', 4);
-        $this->assertDatabaseCount('dungeon_difficulties', 10);
-        $this->assertDatabaseCount('monsters', 4);
-        $this->assertDatabaseCount('monster_drops', 9);
+        $this->assertDatabaseCount('dungeon_difficulties', 13);
+        $this->assertDatabaseCount('monsters', 12);
+        $this->assertDatabaseCount('monster_drops', 21);
         $this->assertDatabaseHas('monster_drops', [
             'monster_id' => 'mon_new_boss',
             'item_id' => 'boss_core_thunder',
@@ -82,12 +82,13 @@ class DungeonContentConfigTest extends TestCase
 
         $this->assertIsArray($payload);
         $this->assertSame('dungeon_gem', $payload['dungeon_config'][0]['dungeon_id']);
-        $this->assertSame(10, count($payload['dungeon_difficulty_config']));
+        $this->assertSame(13, count($payload['dungeon_difficulty_config']));
         $this->assertContains(
             'reward_dungeon_new_hard',
             array_column($payload['dungeon_difficulty_config'], 'first_clear_reward_group_id'),
         );
         $this->assertContains('boss_fixed', array_column($payload['monster_drop_config'], 'drop_kind'));
+        $this->assertContains('mon_abyss_lord', array_column($payload['monster_config'], 'monster_id'));
     }
 
     public function test_it_infers_boss_drop_kinds_when_json_omits_them(): void

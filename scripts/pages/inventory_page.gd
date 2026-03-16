@@ -43,14 +43,18 @@ func _build_player_summary() -> Control:
 	content.add_child(title)
 
 	var stats := PlayerState.get_total_stats()
+	var class_profile := PlayerState.get_class_profile()
 	var desc := Label.new()
-	desc.text = "%s  Lv.%d\n生命 %d  攻击 %d  防御 %d  Boss增伤 %d%%\n%s上限 %d  技能点 %d\n灵石 %d  灵玉 %d  贡献 %d" % [
+	desc.text = "%s  Lv.%d\n生命 %d  攻击 %d  防御 %d  Boss增伤 %d%%\n攻速系数 %.2f  伤害系数 %.2f  定位 %s\n%s上限 %d  技能点 %d\n灵石 %d  灵玉 %d  贡献 %d" % [
 		GameData.get_character_class_name(str(PlayerState.player.get("class_id", ""))),
 		PlayerState.get_level(),
 		int(stats.get("max_hp", 0)),
 		int(stats.get("atk", 0)),
 		int(stats.get("def", 0)),
 		int(stats.get("boss_dmg", 0)),
+		float(stats.get("attack_speed_bonus", 0.0)),
+		float(stats.get("damage_ratio_bonus", 0.0)),
+		str(class_profile.get("role", "adventurer")),
 		PlayerState.get_resource_name(),
 		PlayerState.get_max_energy(),
 		PlayerState.get_skill_points(),
@@ -173,7 +177,7 @@ func _build_equipment_section() -> Control:
 			var set_data := GameData.get_set(str(set_count.get("set_id", "")))
 			var label := Label.new()
 			label.text = "%s：已穿戴 %d 件" % [
-				set_data.get("set_id", set_count.get("set_id", "套装")),
+				set_data.get("name", set_data.get("set_id", set_count.get("set_id", "套装"))),
 				int(set_count.get("equipped_count", 0))
 			]
 			ShanhaiStyle.apply_body(label, false, 16)
@@ -199,13 +203,15 @@ func _build_runtime_equipment_card(entry: Dictionary) -> Control:
 	content.add_child(title)
 
 	var detail := Label.new()
-	detail.text = "实例 %s\n星级 %d  等级 %d\n攻击 %d  防御 %d  Boss增伤 %d%%\n宝石：%s\n蓝词条：%s\n紫洗练：%s" % [
+	detail.text = "实例 %s\n星级 %d  等级 %d\n攻击 %d  防御 %d  Boss增伤 %d%%\n攻速系数 %.2f  伤害系数 %.2f\n宝石：%s\n蓝词条：%s\n紫洗练：%s" % [
 		entry.get("equipment_uid", ""),
 		int(entry.get("star_level", 0)),
 		int(entry.get("level", 1)),
 		int(entry.get("final_atk", entry.get("base_atk", 0))),
 		int(entry.get("final_def", entry.get("base_def", 0))),
 		int(entry.get("bonus_boss_dmg", 0)),
+		float(entry.get("bonus_attack_speed", 0.0)),
+		float(entry.get("bonus_damage_ratio", 0.0)),
 		_runtime_gem_text(entry.get("gem_slots", [])),
 		_runtime_affix_text(entry.get("blue_affix", null), "未提取"),
 		_runtime_affix_text(entry.get("purple_refinement", null), "未洗练")

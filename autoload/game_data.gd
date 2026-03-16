@@ -44,10 +44,15 @@ var item_labels := {
 	"contribution": "贡献",
 	"boss_core_qingqiu": "青丘妖核",
 	"boss_core_thunder": "雷鸣核心",
+	"boss_core_abyss": "玄渊妖核",
 	"material_seal_essence": "灵印精华",
+	"material_seal_crystal": "灵印晶髓",
 	"material_star_stone": "升星石",
+	"material_star_crystal": "升星晶簇",
 	"material_refine_sand": "洗练砂",
-	"skill_book_thunder": "雷系技能书"
+	"material_refine_crystal": "淬灵晶尘",
+	"skill_book_thunder": "雷系技能书",
+	"talisman_cloud": "云纹护符"
 }
 
 var _loaded_once := false
@@ -488,17 +493,13 @@ func get_reward_group_items(group_id: String) -> Array:
 		return rewards.duplicate(true)
 	return _default_reward_group(group_id)
 
-func get_mainline_encounter(node_id: String) -> Array:
-	for entry in encounters.get("mainline", []):
-		if str(entry.get("node_id", "")) == node_id:
-			return entry.get("monster_ids", []).duplicate(true)
-	return _default_mainline_encounter(node_id)
+func get_mainline_encounter(node_id: String, difficulty_id: String = "") -> Array:
+	var stage_encounters: Dictionary = encounters.get("mainline", encounters.get("stage", {}))
+	return _resolve_encounter_ids(stage_encounters, node_id, difficulty_id, _default_mainline_encounter(node_id))
 
-func get_dungeon_encounter(dungeon_id: String) -> Array:
-	for entry in encounters.get("dungeons", []):
-		if str(entry.get("dungeon_id", "")) == dungeon_id:
-			return entry.get("monster_ids", []).duplicate(true)
-	return _default_dungeon_encounter(dungeon_id)
+func get_dungeon_encounter(dungeon_id: String, difficulty_id: String = "") -> Array:
+	var dungeon_encounters: Dictionary = encounters.get("dungeons", encounters.get("dungeon", {}))
+	return _resolve_encounter_ids(dungeon_encounters, dungeon_id, difficulty_id, _default_dungeon_encounter(dungeon_id))
 
 func _load_local_bootstrap() -> Dictionary:
 	if not FileAccess.file_exists(LOCAL_BOOTSTRAP_PATH):
@@ -809,6 +810,35 @@ func _default_dungeon_encounter(dungeon_id: String) -> Array:
 	if dungeon_id == "dungeon_refine" and monsters.size() >= 2:
 		return [monsters[1].get("monster_id", "")]
 	return _default_mainline_encounter("")
+
+func _resolve_encounter_ids(encounter_source: Variant, source_id: String, difficulty_id: String, fallback: Array) -> Array:
+	if encounter_source is Dictionary:
+		var source_entry = encounter_source.get(source_id, null)
+		if source_entry is Dictionary:
+			if difficulty_id != "" and source_entry.has(difficulty_id):
+				return _extract_monster_ids(source_entry.get(difficulty_id, []), fallback)
+			if source_entry.has("default"):
+				return _extract_monster_ids(source_entry.get("default", []), fallback)
+		return _extract_monster_ids(source_entry, fallback)
+
+	if encounter_source is Array:
+		for entry in encounter_source:
+			if not (entry is Dictionary):
+				continue
+			if str(entry.get("node_id", entry.get("dungeon_id", ""))) != source_id:
+				continue
+			return _extract_monster_ids(entry.get("monster_ids", []), fallback)
+
+	return fallback.duplicate(true)
+
+func _extract_monster_ids(raw_entry: Variant, fallback: Array) -> Array:
+	if raw_entry is Dictionary:
+		var monster_ids = raw_entry.get("monster_ids", [])
+		if monster_ids is Array and not monster_ids.is_empty():
+			return monster_ids.duplicate(true)
+	elif raw_entry is Array and not raw_entry.is_empty():
+		return raw_entry.duplicate(true)
+	return fallback.duplicate(true)
 
 func _build_fallback_task_payload() -> Dictionary:
 	var tasks: Array = []

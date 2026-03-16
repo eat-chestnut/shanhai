@@ -21,6 +21,7 @@ func load_from_dict(source: Dictionary) -> void:
 		"current_chapter_id": str(source.get("current_chapter_id", "")),
 		"current_node_id": str(source.get("current_node_id", "")),
 		"max_energy": int(source.get("max_energy", 100)),
+		"class_profile": source.get("class_profile", _class_combat_profile(str(source.get("class_id", "")))).duplicate(true),
 		"skill_points": int(source.get("skill_points", 0)),
 		"skill_levels": _normalize_skill_levels(source.get("skill_levels", {})),
 		"equipment_summary": source.get("equipment_summary", {}).duplicate(true)
@@ -35,6 +36,7 @@ func load_from_dict(source: Dictionary) -> void:
 
 func select_class(class_id: String) -> void:
 	player["class_id"] = class_id
+	player["class_profile"] = _class_combat_profile(class_id)
 	_prime_skill_levels(class_id)
 	restore_hp()
 	emit_signal("changed")
@@ -67,6 +69,9 @@ func get_resource_name() -> String:
 			return "符炁"
 		_:
 			return "灵力"
+
+func get_class_profile() -> Dictionary:
+	return player.get("class_profile", {}).duplicate(true)
 
 func get_player_name() -> String:
 	return str(player.get("nickname", "巡厄弟子 %s" % str(player.get("player_id", 10001))))
@@ -139,6 +144,13 @@ func get_total_stats() -> Dictionary:
 	var bonus_boss_dmg := 0
 	var bonus_attack_speed := 0.0
 	var bonus_damage_ratio := 0.0
+	var class_bonuses := _class_stat_bonuses(str(player.get("class_id", "")))
+	base_atk += int(class_bonuses.get("bonus_atk", 0))
+	base_def += int(class_bonuses.get("bonus_def", 0))
+	bonus_hp += int(class_bonuses.get("bonus_hp", 0))
+	bonus_boss_dmg += int(class_bonuses.get("bonus_boss_dmg", 0))
+	bonus_attack_speed += float(class_bonuses.get("bonus_attack_speed", 0.0))
+	bonus_damage_ratio += float(class_bonuses.get("bonus_damage_ratio", 0.0))
 
 	for equip_id in get_equipped_item_ids():
 		var equipment_data := GameData.get_equipment(str(equip_id))
@@ -156,6 +168,8 @@ func get_total_stats() -> Dictionary:
 		base_atk += int(bonuses.get("bonus_atk", 0))
 		base_def += int(bonuses.get("bonus_def", 0))
 		bonus_hp += int(bonuses.get("bonus_hp", 0))
+		bonus_attack_speed += float(bonuses.get("bonus_attack_speed", 0.0))
+		bonus_damage_ratio += float(bonuses.get("bonus_damage_ratio", 0.0))
 
 	for refinement_id in get_purple_refinement_ids():
 		var refinement_data := GameData.get_purple_refinement(str(refinement_id))
@@ -164,6 +178,8 @@ func get_total_stats() -> Dictionary:
 		base_def += int(refinement_bonuses.get("bonus_def", 0))
 		bonus_hp += int(refinement_bonuses.get("bonus_hp", 0))
 		bonus_boss_dmg += int(refinement_bonuses.get("bonus_boss_dmg", 0))
+		bonus_attack_speed += float(refinement_bonuses.get("bonus_attack_speed", 0.0))
+		bonus_damage_ratio += float(refinement_bonuses.get("bonus_damage_ratio", 0.0))
 
 	for set_count in get_equipment_summary().get("set_counts", []):
 		var set_data := GameData.get_set(str(set_count.get("set_id", "")))
@@ -174,6 +190,8 @@ func get_total_stats() -> Dictionary:
 			base_def += int(effect.get("bonus_def", 0))
 			bonus_hp += int(effect.get("bonus_hp", 0))
 			bonus_boss_dmg += int(effect.get("bonus_boss_dmg", 0))
+			bonus_attack_speed += float(effect.get("bonus_attack_speed", 0.0))
+			bonus_damage_ratio += float(effect.get("bonus_damage_ratio", 0.0))
 
 	for skill in get_runtime_skills("passive"):
 		var skill_level := int(skill.get("skill_level", 1))
@@ -262,3 +280,78 @@ func _prime_skill_levels(class_id: String) -> void:
 			continue
 		skill_levels[skill_id] = 1
 	player["skill_levels"] = skill_levels
+
+func _class_stat_bonuses(class_id: String) -> Dictionary:
+	match class_id:
+		"class_jingang":
+			return {
+				"bonus_atk": 4,
+				"bonus_def": 12,
+				"bonus_hp": 160,
+				"bonus_damage_ratio": 0.04
+			}
+		"class_lingyu":
+			return {
+				"bonus_atk": 14,
+				"bonus_def": -3,
+				"bonus_hp": -70,
+				"bonus_attack_speed": 0.12,
+				"bonus_damage_ratio": 0.08
+			}
+		"class_fulu":
+			return {
+				"bonus_atk": 10,
+				"bonus_def": -1,
+				"bonus_hp": 40,
+				"bonus_boss_dmg": 6,
+				"bonus_damage_ratio": 0.12
+			}
+		_:
+			return {}
+
+func _class_combat_profile(class_id: String) -> Dictionary:
+	match class_id:
+		"class_jingang":
+			return {
+				"role": "melee_tank",
+				"preferred_range": 78,
+				"move_speed": 186,
+				"attack_range": 88,
+				"attack_interval": 1.05,
+				"resource_regen": 11,
+				"target_priority": "nearest",
+				"kite_distance": 0
+			}
+		"class_lingyu":
+			return {
+				"role": "ranged_dps",
+				"preferred_range": 164,
+				"move_speed": 208,
+				"attack_range": 172,
+				"attack_interval": 0.82,
+				"resource_regen": 14,
+				"target_priority": "farthest_cluster",
+				"kite_distance": 108
+			}
+		"class_fulu":
+			return {
+				"role": "caster_control",
+				"preferred_range": 150,
+				"move_speed": 194,
+				"attack_range": 156,
+				"attack_interval": 0.92,
+				"resource_regen": 13,
+				"target_priority": "boss_or_high_threat",
+				"kite_distance": 84
+			}
+		_:
+			return {
+				"role": "adventurer",
+				"preferred_range": 100,
+				"move_speed": 190,
+				"attack_range": 84,
+				"attack_interval": 1.0,
+				"resource_regen": 12,
+				"target_priority": "nearest",
+				"kite_distance": 0
+			}

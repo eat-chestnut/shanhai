@@ -12,14 +12,8 @@
         "difficulty_id": "easy"
       },
       "rewards": [
-        {
-          "item_id": "gold",
-          "count": 300
-        },
-        {
-          "item_id": "material_star_stone",
-          "count": 2
-        }
+        {"item_id": "gold", "count": 300},
+        {"item_id": "material_star_stone", "count": 2}
       ],
       "sort": 10,
       "is_open": true
@@ -33,16 +27,44 @@
       "target": 20,
       "conditions": {},
       "rewards": [
-        {
-          "item_id": "contribution",
-          "count": 120
-        },
-        {
-          "item_id": "material_seal_essence",
-          "count": 2
-        }
+        {"item_id": "contribution", "count": 120},
+        {"item_id": "material_seal_essence", "count": 2}
       ],
       "sort": 20,
+      "is_open": true
+    },
+    {
+      "task_id": "task_mainline_node06_hard",
+      "task_type": "mainline",
+      "task_name": "雷谷破劫",
+      "task_desc": "通关主线节点 谷主惊雷·险关",
+      "target_type": "stage_clear",
+      "target": 1,
+      "conditions": {
+        "node_id": "node_06",
+        "difficulty_id": "hard"
+      },
+      "rewards": [
+        {"item_id": "gold", "count": 880},
+        {"item_id": "equip_tempest_bow_30", "count": 1}
+      ],
+      "sort": 30,
+      "is_open": true
+    },
+    {
+      "task_id": "task_mainline_level40",
+      "task_type": "mainline",
+      "task_name": "中期试锋",
+      "task_desc": "角色等级达到 40 级",
+      "target_type": "level_reach",
+      "target": 40,
+      "conditions": {},
+      "rewards": [
+        {"item_id": "contribution", "count": 260},
+        {"item_id": "material_star_crystal", "count": 2},
+        {"item_id": "gem_orange", "count": 1}
+      ],
+      "sort": 40,
       "is_open": true
     },
     {
@@ -54,14 +76,8 @@
       "target": 3,
       "conditions": {},
       "rewards": [
-        {
-          "item_id": "gold",
-          "count": 180
-        },
-        {
-          "item_id": "material_refine_sand",
-          "count": 1
-        }
+        {"item_id": "gold", "count": 180},
+        {"item_id": "material_refine_sand", "count": 1}
       ],
       "sort": 110,
       "is_open": true
@@ -75,16 +91,41 @@
       "target": 2,
       "conditions": {},
       "rewards": [
-        {
-          "item_id": "contribution",
-          "count": 80
-        },
-        {
-          "item_id": "material_seal_essence",
-          "count": 1
-        }
+        {"item_id": "contribution", "count": 80},
+        {"item_id": "material_seal_essence", "count": 1}
       ],
       "sort": 120,
+      "is_open": true
+    },
+    {
+      "task_id": "task_daily_dungeon_4",
+      "task_type": "daily",
+      "task_name": "中期镇守",
+      "task_desc": "完成 4 次副本战斗",
+      "target_type": "dungeon_clear",
+      "target": 4,
+      "conditions": {},
+      "rewards": [
+        {"item_id": "contribution", "count": 180},
+        {"item_id": "material_refine_crystal", "count": 1}
+      ],
+      "sort": 130,
+      "is_open": true
+    },
+    {
+      "task_id": "task_daily_battle_6",
+      "task_type": "daily",
+      "task_name": "百战再起",
+      "task_desc": "完成 6 场战斗",
+      "target_type": "battle_complete",
+      "target": 6,
+      "conditions": {},
+      "rewards": [
+        {"item_id": "gold", "count": 420},
+        {"item_id": "skill_book_thunder", "count": 1},
+        {"item_id": "material_star_stone", "count": 2}
+      ],
+      "sort": 140,
       "is_open": true
     }
   ]

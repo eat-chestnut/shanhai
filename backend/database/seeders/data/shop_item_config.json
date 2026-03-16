@@ -27,6 +27,32 @@
       "is_open": true
     },
     {
+      "shop_item_id": "common_gem_orange",
+      "shop_type": "common",
+      "item_id": "gem_orange",
+      "item_name": "橙曜石",
+      "count": 1,
+      "cost_type": "gold",
+      "cost_value": 1280,
+      "buy_limit": 2,
+      "cycle_type": "daily",
+      "sort": 30,
+      "is_open": true
+    },
+    {
+      "shop_item_id": "common_star_crystal",
+      "shop_type": "common",
+      "item_id": "material_star_crystal",
+      "item_name": "升星晶簇",
+      "count": 1,
+      "cost_type": "jade",
+      "cost_value": 80,
+      "buy_limit": 2,
+      "cycle_type": "daily",
+      "sort": 40,
+      "is_open": true
+    },
+    {
       "shop_item_id": "sect_seal_essence",
       "shop_type": "sect",
       "item_id": "material_seal_essence",
@@ -50,6 +76,32 @@
       "buy_limit": 2,
       "cycle_type": "daily",
       "sort": 20,
+      "is_open": true
+    },
+    {
+      "shop_item_id": "sect_refine_crystal",
+      "shop_type": "sect",
+      "item_id": "material_refine_crystal",
+      "item_name": "淬灵晶尘",
+      "count": 1,
+      "cost_type": "contribution",
+      "cost_value": 320,
+      "buy_limit": 2,
+      "cycle_type": "daily",
+      "sort": 30,
+      "is_open": true
+    },
+    {
+      "shop_item_id": "sect_skill_book_thunder",
+      "shop_type": "sect",
+      "item_id": "skill_book_thunder",
+      "item_name": "雷系技能书",
+      "count": 1,
+      "cost_type": "contribution",
+      "cost_value": 420,
+      "buy_limit": 1,
+      "cycle_type": "daily",
+      "sort": 40,
       "is_open": true
     }
   ]

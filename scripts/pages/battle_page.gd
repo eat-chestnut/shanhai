@@ -15,6 +15,7 @@ var _power_label: Label
 var _timer_label: Label
 var _resource_label: Label
 var _skill_label: Label
+var _telegraph_label: Label
 var _log_label: RichTextLabel
 var _player
 var _enemies: Array = []
@@ -78,6 +79,7 @@ func _prepare_and_start_battle() -> void:
 	var arena_bounds := Rect2(Vector2(60, 80), _arena_host.size - Vector2(120, 120))
 	var player_stats: Dictionary = player_snapshot.get("stats", PlayerState.get_total_stats())
 	var player_skills: Dictionary = player_snapshot.get("skills", {})
+	var class_profile: Dictionary = player_snapshot.get("class_profile", PlayerState.get_class_profile())
 	_player = PLAYER_SCENE.instantiate()
 	_player.global_position = Vector2(arena_bounds.position.x + 90.0, arena_bounds.get_center().y)
 	_arena_root.add_child(_player)
@@ -87,9 +89,9 @@ func _prepare_and_start_battle() -> void:
 		"max_hp": float(player_stats.get("max_hp", 850)),
 		"attack": float(player_stats.get("atk", 30)),
 		"defense": float(player_stats.get("def", 15)),
-		"move_speed": 190.0,
-		"attack_range": 84.0,
-		"attack_interval": 1.0,
+		"move_speed": float(class_profile.get("move_speed", 190.0)),
+		"attack_range": float(class_profile.get("attack_range", 84.0)),
+		"attack_interval": float(class_profile.get("attack_interval", 1.0)),
 		"is_player": true,
 		"boss_damage_bonus": float(player_stats.get("boss_dmg", 0)),
 		"attack_speed_bonus": float(player_stats.get("attack_speed_bonus", 0.0)),
@@ -97,6 +99,7 @@ func _prepare_and_start_battle() -> void:
 		"class_id": str(player_snapshot.get("class_id", PlayerState.player.get("class_id", ""))),
 		"resource_name": str(player_snapshot.get("resource_name", PlayerState.get_resource_name())),
 		"resource_max": float(player_snapshot.get("max_energy", PlayerState.get_max_energy())),
+		"class_profile": class_profile,
 		"active_skills": player_skills.get("active", PlayerState.get_runtime_skills("active")),
 		"passive_skills": player_skills.get("passive", PlayerState.get_runtime_skills("passive"))
 	})
@@ -108,33 +111,14 @@ func _prepare_and_start_battle() -> void:
 	var monsters: Array = enemy_group_snapshot.get("monsters", [])
 	for index in monsters.size():
 		var enemy_snapshot: Dictionary = monsters[index]
-		var enemy_stats: Dictionary = enemy_snapshot.get("stats", {})
-		var enemy = ENEMY_SCENE.instantiate()
-		enemy.global_position = Vector2(arena_bounds.end.x - 90.0 - float(index * 58), arena_bounds.position.y + 130.0 + float(index % 3) * 180.0)
-		_arena_root.add_child(enemy)
-		enemy.setup_actor({
-			"display_name": str(enemy_snapshot.get("name", "怪物")),
-			"body_color": ShanhaiStyle.BOSS if bool(enemy_snapshot.get("is_boss", false)) else Color("9f5449"),
-			"max_hp": float(enemy_stats.get("max_hp", 400)),
-			"attack": float(enemy_stats.get("attack", 35)),
-			"defense": float(enemy_stats.get("defense", 10)),
-			"move_speed": float(enemy_stats.get("move_speed", 118.0)),
-			"attack_range": float(enemy_stats.get("attack_range", 68.0)),
-			"attack_interval": float(enemy_stats.get("attack_interval", 1.7)),
-			"aggro_range": float(enemy_stats.get("aggro_range", 190.0)),
-			"is_boss": bool(enemy_snapshot.get("is_boss", false)),
-			"arena_bounds": arena_bounds,
-			"skill_profile": enemy_snapshot.get("skill_profile", {}).duplicate(true)
-		})
-		enemy.player_actor = _player
-		enemy.attacked.connect(_on_actor_attacked)
-		enemy.combat_event.connect(_append_log)
-		enemy.died.connect(_on_actor_died)
-		enemy.set_meta("monster_id", str(enemy_snapshot.get("monster_id", "")))
-		_enemies.append(enemy)
+		_spawn_enemy_from_snapshot(enemy_snapshot, arena_bounds, index)
 
 	_player.enemies = _enemies
 	_power_label.text = "当前战力 %d / 建议 %d" % [PlayerState.get_power(), int(context.get("recommended_power", 0))]
+	_apply_telegraph("当前职业：%s  战斗定位：%s" % [
+		GameData.get_character_class_name(str(player_snapshot.get("class_id", ""))),
+		str(class_profile.get("role", "adventurer"))
+	])
 	_on_skill_state_changed([], float(PlayerState.get_max_energy()), float(PlayerState.get_max_energy()), PlayerState.get_resource_name())
 
 func _queue_finish(victory: bool) -> void:
@@ -191,6 +175,8 @@ func _clear_battle() -> void:
 		_resource_label.text = ""
 	if _skill_label != null:
 		_skill_label.text = ""
+	if _telegraph_label != null:
+		_telegraph_label.text = ""
 	if _arena_root != null:
 		for child in _arena_root.get_children():
 			child.queue_free()
@@ -217,6 +203,85 @@ func _on_skill_state_changed(skill_states: Array, current_resource: float, max_r
 			suffix
 		])
 	_skill_label.text = "主动技能：%s" % " / ".join(parts)
+
+func _spawn_enemy_from_snapshot(enemy_snapshot: Dictionary, arena_bounds: Rect2, index: int) -> void:
+	var enemy_stats: Dictionary = enemy_snapshot.get("stats", {})
+	var enemy = ENEMY_SCENE.instantiate()
+	enemy.global_position = Vector2(arena_bounds.end.x - 90.0 - float(index * 58), arena_bounds.position.y + 130.0 + float(index % 3) * 180.0)
+	_arena_root.add_child(enemy)
+	enemy.setup_actor({
+		"display_name": str(enemy_snapshot.get("name", "怪物")),
+		"body_color": ShanhaiStyle.BOSS if bool(enemy_snapshot.get("is_boss", false)) else Color("9f5449"),
+		"max_hp": float(enemy_stats.get("max_hp", 400)),
+		"attack": float(enemy_stats.get("attack", 35)),
+		"defense": float(enemy_stats.get("defense", 10)),
+		"move_speed": float(enemy_stats.get("move_speed", 118.0)),
+		"attack_range": float(enemy_stats.get("attack_range", 68.0)),
+		"attack_interval": float(enemy_stats.get("attack_interval", 1.7)),
+		"aggro_range": float(enemy_stats.get("aggro_range", 190.0)),
+		"is_boss": bool(enemy_snapshot.get("is_boss", false)),
+		"arena_bounds": arena_bounds,
+		"skill_profile": enemy_snapshot.get("skill_profile", {}).duplicate(true)
+	})
+	enemy.player_actor = _player
+	enemy.attacked.connect(_on_actor_attacked)
+	enemy.combat_event.connect(_append_log)
+	enemy.died.connect(_on_actor_died)
+	enemy.telegraph_requested.connect(_apply_telegraph)
+	enemy.spawn_requested.connect(_on_enemy_spawn_requested.bind(arena_bounds))
+	enemy.set_meta("monster_id", str(enemy_snapshot.get("monster_id", "")))
+	_enemies.append(enemy)
+
+func _on_enemy_spawn_requested(monster_id: String, count: int, source_actor, arena_bounds: Rect2) -> void:
+	if monster_id.is_empty() or source_actor == null:
+		return
+	var spawn_count: int = min(max(count, 1), 2)
+	_apply_telegraph("%s 正在召来新的敌人。", [str(source_actor.display_name)])
+	for spawn_index in range(spawn_count):
+		var snapshot := _build_spawn_snapshot(monster_id)
+		snapshot["name"] = "%s·召影" % snapshot.get("name", monster_id)
+		snapshot["is_boss"] = false
+		_spawn_enemy_from_snapshot(snapshot, arena_bounds, _enemies.size() + spawn_index)
+	_player.enemies = _enemies
+
+func _build_spawn_snapshot(monster_id: String) -> Dictionary:
+	var monster := GameData.get_monster(monster_id)
+	var difficulty_multiplier := _difficulty_multiplier(str(BattleState.current_battle_payload.get("difficulty_id", BattleState.current_context.get("difficulty_id", "easy"))))
+	var behavior_profile: Dictionary = monster.get("behavior_profile", {})
+	return {
+		"monster_id": monster_id,
+		"name": str(monster.get("name", monster_id)),
+		"is_boss": bool(monster.get("is_boss", false)),
+		"skill_profile": behavior_profile.duplicate(true),
+		"stats": {
+			"max_hp": int(float(monster.get("base_hp", 400)) * difficulty_multiplier * float(behavior_profile.get("hp_ratio", 1.0))),
+			"attack": int(float(monster.get("base_atk", 35)) * (0.88 + difficulty_multiplier * 0.12) * float(behavior_profile.get("attack_ratio", 1.0))),
+			"defense": int(float(behavior_profile.get("base_defense", 10)) * difficulty_multiplier),
+			"move_speed": float(behavior_profile.get("move_speed", 118.0)),
+			"attack_range": float(behavior_profile.get("attack_range", 68.0)),
+			"attack_interval": float(behavior_profile.get("attack_interval", 1.7)),
+			"aggro_range": float(behavior_profile.get("aggro_range", 190.0))
+		}
+	}
+
+func _difficulty_multiplier(difficulty_id: String) -> float:
+	match difficulty_id:
+		"normal":
+			return 1.35
+		"hard":
+			return 1.75
+		"nightmare":
+			return 2.15
+		"epic":
+			return 2.55
+		_:
+			return 1.0
+
+func _apply_telegraph(message: String, args: Array = []) -> void:
+	var final_message := message % args if not args.is_empty() else message
+	if _telegraph_label != null:
+		_telegraph_label.text = "战场预警：%s" % final_message
+	_append_log(final_message)
 
 func _build_ui() -> void:
 	if get_child_count() > 0:
@@ -284,6 +349,11 @@ func _build_ui() -> void:
 	_resource_label = Label.new()
 	ShanhaiStyle.apply_heading(_resource_label, 18)
 	footer_box.add_child(_resource_label)
+
+	_telegraph_label = Label.new()
+	_telegraph_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ShanhaiStyle.apply_body(_telegraph_label, true, 16)
+	footer_box.add_child(_telegraph_label)
 
 	_skill_label = Label.new()
 	_skill_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

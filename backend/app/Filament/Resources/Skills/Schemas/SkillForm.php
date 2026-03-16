@@ -12,6 +12,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section as FormSection;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class SkillForm
@@ -54,7 +55,8 @@ class SkillForm
                         Select::make('effect_type')
                             ->label('effect_type')
                             ->native(false)
-                            ->options(SkillEffectType::options()),
+                            ->options(SkillEffectType::options())
+                            ->live(),
                         Select::make('target_type')
                             ->label('target_type')
                             ->native(false)
@@ -119,6 +121,40 @@ class SkillForm
                             ->maxValue(1)
                             ->step('0.0001')
                             ->default(0),
+                        TextInput::make('stat_bonuses.bonus_attack_speed')
+                            ->label('stat_bonuses.bonus_attack_speed')
+                            ->numeric()
+                            ->visible(fn (Get $get): bool => (string) $get('type') === 'passive'),
+                        TextInput::make('stat_bonuses.bonus_damage_ratio')
+                            ->label('stat_bonuses.bonus_damage_ratio')
+                            ->numeric()
+                            ->visible(fn (Get $get): bool => (string) $get('type') === 'passive'),
+                        TextInput::make('effect_payload.target_count')
+                            ->label('effect_payload.target_count')
+                            ->numeric()
+                            ->visible(fn (Get $get): bool => in_array((string) $get('target_type'), ['multi', 'area'], true)),
+                        TextInput::make('effect_payload.preferred_target')
+                            ->label('effect_payload.preferred_target')
+                            ->placeholder('nearest / farthest_cluster / boss_or_high_threat'),
+                        TextInput::make('effect_payload.telegraph_type')
+                            ->label('effect_payload.telegraph_type')
+                            ->placeholder('area / line'),
+                        TextInput::make('effect_payload.status_name')
+                            ->label('effect_payload.status_name')
+                            ->visible(fn (Get $get): bool => in_array((string) $get('effect_type'), ['control', 'dot', 'hot', 'damage'], true)),
+                        TextInput::make('effect_payload.status_type')
+                            ->label('effect_payload.status_type')
+                            ->visible(fn (Get $get): bool => in_array((string) $get('effect_type'), ['control', 'dot', 'hot', 'damage'], true)),
+                        TextInput::make('effect_payload.status_duration')
+                            ->label('effect_payload.status_duration')
+                            ->numeric()
+                            ->visible(fn (Get $get): bool => in_array((string) $get('effect_type'), ['control', 'dot', 'hot', 'damage'], true)),
+                        TextInput::make('effect_payload.stack_rule')
+                            ->label('effect_payload.stack_rule')
+                            ->placeholder('refresh / stack / replace'),
+                        TextInput::make('effect_payload.max_stacks')
+                            ->label('effect_payload.max_stacks')
+                            ->numeric(),
                     ]),
                 FormSection::make('加成与扩展')
                     ->columns(1)
@@ -133,7 +169,7 @@ class SkillForm
                             ->keyLabel('扩展键')
                             ->valueLabel('扩展值')
                             ->default([])
-                            ->helperText('例如 trigger、target_count、status_name、status_type、status_power_ratio。'),
+                            ->helperText('用于补充 trigger、preferred_target、stack_rule 等轻量键值。'),
                     ]),
             ]);
     }

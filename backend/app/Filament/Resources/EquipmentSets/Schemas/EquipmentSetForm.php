@@ -62,6 +62,14 @@ class EquipmentSetForm
                                     ->label('bonus_boss_dmg')
                                     ->numeric()
                                     ->default(0),
+                                TextInput::make('bonus_attack_speed')
+                                    ->label('bonus_attack_speed')
+                                    ->numeric()
+                                    ->default(0),
+                                TextInput::make('bonus_damage_ratio')
+                                    ->label('bonus_damage_ratio')
+                                    ->numeric()
+                                    ->default(0),
                             ])
                             ->columnSpanFull(),
                     ]),

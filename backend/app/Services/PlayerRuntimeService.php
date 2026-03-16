@@ -136,6 +136,7 @@ class PlayerRuntimeService
             'level' => (int) $playerProfile->level,
             'resource_name' => $this->getResourceName((string) $playerProfile->class_id),
             'max_energy' => (int) $playerProfile->max_energy,
+            'class_profile' => $this->getClassCombatProfile((string) $playerProfile->class_id),
             'stats' => $this->calculateTotalStats($playerProfile),
             'skills' => [
                 'active' => $activeSkills,
@@ -238,7 +239,15 @@ class PlayerRuntimeService
         $bonusBossDmg = 0;
         $bonusAttackSpeed = 0.0;
         $bonusDamageRatio = 0.0;
+        $classBonuses = $this->getClassStatBonuses((string) ($playerProfile->class_id ?? ''));
         $equipmentSummary = $playerProfile->equipment_summary ?? [];
+
+        $baseAtk += (int) ($classBonuses['bonus_atk'] ?? 0);
+        $baseDef += (int) ($classBonuses['bonus_def'] ?? 0);
+        $bonusHp += (int) ($classBonuses['bonus_hp'] ?? 0);
+        $bonusBossDmg += (int) ($classBonuses['bonus_boss_dmg'] ?? 0);
+        $bonusAttackSpeed += (float) ($classBonuses['bonus_attack_speed'] ?? 0.0);
+        $bonusDamageRatio += (float) ($classBonuses['bonus_damage_ratio'] ?? 0.0);
 
         $equipIds = array_values($equipmentSummary['equip_ids'] ?? []);
         $gems = array_values($equipmentSummary['equipped_gem_ids'] ?? []);
@@ -262,6 +271,8 @@ class PlayerRuntimeService
             $baseAtk += (int) ($bonuses['bonus_atk'] ?? 0);
             $baseDef += (int) ($bonuses['bonus_def'] ?? 0);
             $bonusHp += (int) ($bonuses['bonus_hp'] ?? 0);
+            $bonusAttackSpeed += (float) ($bonuses['bonus_attack_speed'] ?? 0.0);
+            $bonusDamageRatio += (float) ($bonuses['bonus_damage_ratio'] ?? 0.0);
         }
 
         foreach (PurpleRefinement::query()->whereIn('refinement_id', $purpleRefinements)->get() as $purpleRefinement) {
@@ -270,6 +281,8 @@ class PlayerRuntimeService
             $baseDef += (int) ($bonuses['bonus_def'] ?? 0);
             $bonusHp += (int) ($bonuses['bonus_hp'] ?? 0);
             $bonusBossDmg += (int) ($bonuses['bonus_boss_dmg'] ?? 0);
+            $bonusAttackSpeed += (float) ($bonuses['bonus_attack_speed'] ?? 0.0);
+            $bonusDamageRatio += (float) ($bonuses['bonus_damage_ratio'] ?? 0.0);
         }
 
         $setEffectMap = EquipmentSet::query()
@@ -297,6 +310,8 @@ class PlayerRuntimeService
                 $baseDef += (int) ($effect['bonus_def'] ?? 0);
                 $bonusHp += (int) ($effect['bonus_hp'] ?? 0);
                 $bonusBossDmg += (int) ($effect['bonus_boss_dmg'] ?? 0);
+                $bonusAttackSpeed += (float) ($effect['bonus_attack_speed'] ?? 0.0);
+                $bonusDamageRatio += (float) ($effect['bonus_damage_ratio'] ?? 0.0);
             }
         }
 
@@ -395,7 +410,7 @@ class PlayerRuntimeService
             'level' => (int) $playerProfile->level,
             'exp' => (int) $playerProfile->exp,
             'hp' => (int) $stats['max_hp'],
-            'max_hp' => (int) $playerProfile->max_hp,
+            'max_hp' => (int) $stats['max_hp'],
             'power' => (int) $stats['power'],
             'gold' => (int) $playerProfile->gold,
             'jade' => (int) $playerProfile->jade,
@@ -403,6 +418,7 @@ class PlayerRuntimeService
             'current_chapter_id' => $playerProfile->current_chapter_id,
             'current_node_id' => $playerProfile->current_node_id,
             'max_energy' => (int) $playerProfile->max_energy,
+            'class_profile' => $this->getClassCombatProfile((string) $playerProfile->class_id),
             'skill_points' => (int) $playerProfile->skill_points,
             'skill_levels' => $playerProfile->skill_levels ?? [],
             'equipment_summary' => $playerProfile->equipment_summary ?? [],
@@ -488,6 +504,85 @@ class PlayerRuntimeService
             'class_lingyu' => '灵羽',
             'class_fulu' => '符炁',
             default => '灵力',
+        };
+    }
+
+    /**
+     * @return array<string, int|float>
+     */
+    private function getClassStatBonuses(string $classId): array
+    {
+        return match ($classId) {
+            'class_jingang' => [
+                'bonus_atk' => 4,
+                'bonus_def' => 12,
+                'bonus_hp' => 160,
+                'bonus_damage_ratio' => 0.04,
+            ],
+            'class_lingyu' => [
+                'bonus_atk' => 14,
+                'bonus_def' => -3,
+                'bonus_hp' => -70,
+                'bonus_attack_speed' => 0.12,
+                'bonus_damage_ratio' => 0.08,
+            ],
+            'class_fulu' => [
+                'bonus_atk' => 10,
+                'bonus_def' => -1,
+                'bonus_hp' => 40,
+                'bonus_boss_dmg' => 6,
+                'bonus_damage_ratio' => 0.12,
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * @return array<string, int|float|string>
+     */
+    private function getClassCombatProfile(string $classId): array
+    {
+        return match ($classId) {
+            'class_jingang' => [
+                'role' => 'melee_tank',
+                'preferred_range' => 78,
+                'move_speed' => 186,
+                'attack_range' => 88,
+                'attack_interval' => 1.05,
+                'resource_regen' => 11,
+                'target_priority' => 'nearest',
+                'kite_distance' => 0,
+            ],
+            'class_lingyu' => [
+                'role' => 'ranged_dps',
+                'preferred_range' => 164,
+                'move_speed' => 208,
+                'attack_range' => 172,
+                'attack_interval' => 0.82,
+                'resource_regen' => 14,
+                'target_priority' => 'farthest_cluster',
+                'kite_distance' => 108,
+            ],
+            'class_fulu' => [
+                'role' => 'caster_control',
+                'preferred_range' => 150,
+                'move_speed' => 194,
+                'attack_range' => 156,
+                'attack_interval' => 0.92,
+                'resource_regen' => 13,
+                'target_priority' => 'boss_or_high_threat',
+                'kite_distance' => 84,
+            ],
+            default => [
+                'role' => 'adventurer',
+                'preferred_range' => 100,
+                'move_speed' => 190,
+                'attack_range' => 84,
+                'attack_interval' => 1.0,
+                'resource_regen' => 12,
+                'target_priority' => 'nearest',
+                'kite_distance' => 0,
+            ],
         };
     }
 }

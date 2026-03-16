@@ -70,6 +70,8 @@ class EquipmentConfigService
                 'equipment_set_config.*.effects.*.bonus_def' => ['nullable', 'integer'],
                 'equipment_set_config.*.effects.*.bonus_hp' => ['nullable', 'integer'],
                 'equipment_set_config.*.effects.*.bonus_boss_dmg' => ['nullable', 'integer'],
+                'equipment_set_config.*.effects.*.bonus_attack_speed' => ['nullable', 'numeric'],
+                'equipment_set_config.*.effects.*.bonus_damage_ratio' => ['nullable', 'numeric'],
                 'gem_config' => ['nullable', 'array'],
                 'gem_config.*.gem_id' => ['required', 'string', 'max:100', 'distinct'],
                 'gem_config.*.name' => ['required', 'string', 'max:100'],
@@ -280,7 +282,13 @@ class EquipmentConfigService
                 continue;
             }
 
-            $normalized[(string) $key] = is_numeric($value) ? (int) $value : $value;
+            if (is_numeric($value)) {
+                $normalized[(string) $key] = str_contains((string) $value, '.') ? (float) $value : (int) $value;
+
+                continue;
+            }
+
+            $normalized[(string) $key] = $value;
         }
 
         return $normalized;
@@ -288,7 +296,7 @@ class EquipmentConfigService
 
     /**
      * @param  array<string, mixed>  $effect
-     * @return array<string, int>
+     * @return array<string, int|float>
      */
     private function normalizeSetEffect(array $effect): array
     {
@@ -301,6 +309,14 @@ class EquipmentConfigService
 
             if ($value !== null && $value !== '') {
                 $normalized[$field] = (int) $value;
+            }
+        }
+
+        foreach (['bonus_attack_speed', 'bonus_damage_ratio'] as $field) {
+            $value = $effect[$field] ?? null;
+
+            if ($value !== null && $value !== '') {
+                $normalized[$field] = (float) $value;
             }
         }
 

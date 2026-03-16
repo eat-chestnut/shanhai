@@ -109,9 +109,10 @@ func build_monster_ids() -> Array:
 	var monsters: Array = current_battle_payload.get("enemy_group_snapshot", {}).get("monsters", [])
 	if not monsters.is_empty():
 		return monsters.map(func(entry: Dictionary) -> String: return str(entry.get("monster_id", "")))
+	var difficulty_id := str(current_context.get("difficulty_id", ""))
 	if str(current_context.get("mode", "")) == "mainline":
-		return GameData.get_mainline_encounter(str(current_context.get("node_id", "")))
-	return GameData.get_dungeon_encounter(str(current_context.get("dungeon_id", "")))
+		return GameData.get_mainline_encounter(str(current_context.get("node_id", "")), difficulty_id)
+	return GameData.get_dungeon_encounter(str(current_context.get("dungeon_id", "")), difficulty_id)
 
 func get_player_snapshot() -> Dictionary:
 	return current_battle_payload.get("player_snapshot", {}).duplicate(true)
@@ -125,6 +126,7 @@ func _build_local_prepare_payload(source_type: String, source_id: String, diffic
 	var player_stats := PlayerState.get_total_stats()
 	var active_skills := PlayerState.get_runtime_skills("active")
 	var passive_skills := PlayerState.get_runtime_skills("passive")
+	var class_profile := PlayerState.get_class_profile()
 	var monsters: Array = []
 
 	for monster_id in build_monster_ids():
@@ -161,6 +163,7 @@ func _build_local_prepare_payload(source_type: String, source_id: String, diffic
 			"level": PlayerState.get_level(),
 			"resource_name": PlayerState.get_resource_name(),
 			"max_energy": PlayerState.get_max_energy(),
+			"class_profile": class_profile,
 			"stats": player_stats,
 			"skills": {
 				"active": active_skills,
@@ -276,10 +279,15 @@ func _difficulty_multiplier(difficulty_id: String) -> float:
 			return 1.75
 		"nightmare":
 			return 2.15
+		"epic":
+			return 2.55
 		_:
 			return 1.0
 
 func _boss_skill_profile(monster_data: Dictionary) -> Dictionary:
+	var behavior_profile: Dictionary = monster_data.get("behavior_profile", {})
+	if not behavior_profile.is_empty():
+		return behavior_profile.duplicate(true)
 	var monster_id := str(monster_data.get("monster_id", ""))
 	if monster_id == "mon_new_boss":
 		return {

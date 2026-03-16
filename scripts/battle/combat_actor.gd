@@ -97,10 +97,32 @@ func add_status(status: Dictionary) -> void:
 	if not _alive:
 		return
 	var normalized: Dictionary = status.duplicate(true)
+	normalized["status_id"] = str(normalized.get("status_id", normalized.get("name", "status")))
 	normalized["duration"] = float(normalized.get("duration", 0.0))
 	normalized["tick_interval"] = float(normalized.get("tick_interval", 0.0))
 	normalized["tick_elapsed"] = 0.0
-	status_entries.append(normalized)
+	normalized["stacks"] = max(int(normalized.get("stacks", 1)), 1)
+	normalized["max_stacks"] = max(int(normalized.get("max_stacks", 1)), 1)
+	var stack_rule := str(normalized.get("stack_rule", "refresh"))
+	var existing_index := _find_status_index(str(normalized.get("status_id", "")))
+	if existing_index >= 0:
+		var existing: Dictionary = status_entries[existing_index]
+		match stack_rule:
+			"stack":
+				existing["stacks"] = min(int(existing.get("stacks", 1)) + int(normalized.get("stacks", 1)), int(existing.get("max_stacks", normalized.get("max_stacks", 1))))
+				existing["duration"] = max(float(existing.get("duration", 0.0)), float(normalized.get("duration", 0.0)))
+				existing["power"] = max(float(existing.get("power", 0.0)), float(normalized.get("power", 0.0)))
+				status_entries[existing_index] = existing
+			"replace":
+				status_entries[existing_index] = normalized
+			_:
+				existing["duration"] = max(float(existing.get("duration", 0.0)), float(normalized.get("duration", 0.0)))
+				existing["power"] = max(float(existing.get("power", 0.0)), float(normalized.get("power", 0.0)))
+				existing["move_locked"] = bool(existing.get("move_locked", false)) or bool(normalized.get("move_locked", false))
+				existing["attack_locked"] = bool(existing.get("attack_locked", false)) or bool(normalized.get("attack_locked", false))
+				status_entries[existing_index] = existing
+	else:
+		status_entries.append(normalized)
 	emit_signal("combat_event", "%s 获得状态：%s" % [display_name, normalized.get("name", "状态")])
 	refresh_visuals()
 
@@ -140,13 +162,13 @@ func _tick_statuses(delta: float) -> void:
 			entry["tick_elapsed"] = 0.0
 			match str(entry.get("type", "")):
 				"dot":
-					var tick_damage: int = max(1, int(round(float(entry.get("power", 1.0)))))
+					var tick_damage: int = max(1, int(round(float(entry.get("power", 1.0)) * max(int(entry.get("stacks", 1)), 1))))
 					hp = max(hp - tick_damage, 0.0)
 					emit_signal("combat_event", "%s 受到%s %d" % [display_name, entry.get("name", "持续伤害"), tick_damage])
 					if hp <= 0.0:
 						_die()
 				"hot":
-					var tick_heal: int = heal(float(entry.get("power", 1.0)))
+					var tick_heal: int = heal(float(entry.get("power", 1.0)) * max(int(entry.get("stacks", 1)), 1))
 					emit_signal("combat_event", "%s 恢复%d生命" % [display_name, tick_heal])
 
 		status_entries[index] = entry
@@ -157,7 +179,10 @@ func _tick_statuses(delta: float) -> void:
 func _status_summary() -> String:
 	var names: Array = []
 	for entry in status_entries:
-		names.append(str(entry.get("name", "")))
+		var stack_text := ""
+		if int(entry.get("stacks", 1)) > 1:
+			stack_text = "x%d" % int(entry.get("stacks", 1))
+		names.append("%s%s" % [str(entry.get("name", "")), stack_text])
 	return " | ".join(names)
 
 func _bar_color() -> Color:
@@ -202,3 +227,9 @@ func _draw() -> void:
 func clamp_to_arena() -> void:
 	global_position.x = clampf(global_position.x, arena_bounds.position.x, arena_bounds.end.x)
 	global_position.y = clampf(global_position.y, arena_bounds.position.y, arena_bounds.end.y)
+
+func _find_status_index(status_id: String) -> int:
+	for index in status_entries.size():
+		if str(status_entries[index].get("status_id", "")) == status_id:
+			return index
+	return -1
