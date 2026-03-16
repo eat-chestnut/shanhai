@@ -10,10 +10,15 @@ class EditMainlineNode extends EditRecord
 {
     protected static string $resource = MainlineNodeResource::class;
 
+    public function getTitle(): string
+    {
+        return '编辑节点';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()->label('删除'),
         ];
     }
 }

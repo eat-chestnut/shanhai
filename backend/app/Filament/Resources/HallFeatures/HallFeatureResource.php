@@ -20,9 +20,16 @@ class HallFeatureResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static ?int $navigationSort = 10;
+
     public static function getNavigationLabel(): string
     {
         return '大厅功能';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return '大厅配置';
     }
 
     public static function getModelLabel(): string

@@ -19,7 +19,7 @@ class HallFeaturesTable
             ->defaultSort('feature_id')
             ->columns([
                 TextColumn::make('feature_id')
-                    ->label('id')
+                    ->label('功能ID')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
@@ -51,12 +51,12 @@ class HallFeaturesTable
                     ->options(fn (): array => self::featureTypeOptions()),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()->label('编辑'),
+                DeleteAction::make()->label('删除'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->label('批量删除'),
                 ]),
             ]);
     }

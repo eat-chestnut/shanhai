@@ -22,12 +22,12 @@ class MainlineNodeForm
                     ->columns(2)
                     ->schema([
                         TextInput::make('node_id')
-                            ->label('node_id')
+                            ->label('节点ID')
                             ->required()
                             ->maxLength(100)
                             ->unique(ignoreRecord: true),
                         Select::make('chapter_id')
-                            ->label('chapter_id')
+                            ->label('所属章节')
                             ->required()
                             ->searchable()
                             ->preload()
@@ -40,7 +40,7 @@ class MainlineNodeForm
                                 ])
                                 ->all()),
                         TextInput::make('node_name')
-                            ->label('node_name')
+                            ->label('节点名称')
                             ->required()
                             ->maxLength(100)
                             ->columnSpanFull(),
@@ -49,13 +49,13 @@ class MainlineNodeForm
                     ->columns(2)
                     ->schema([
                         TextInput::make('unlock_condition.level')
-                            ->label('unlock_condition.level')
+                            ->label('等级要求')
                             ->required()
                             ->numeric()
                             ->minValue(1)
                             ->default(1),
                         Select::make('unlock_condition.clear_node_id')
-                            ->label('unlock_condition.clear_node_id')
+                            ->label('前置节点')
                             ->searchable()
                             ->preload()
                             ->native(false)
@@ -67,14 +67,14 @@ class MainlineNodeForm
                                 ])
                                 ->all()),
                         TagsInput::make('difficulty_ids')
-                            ->label('difficulty_ids')
+                            ->label('难度列表')
                             ->required()
                             ->reorderable()
                             ->nestedRecursiveRules(['distinct'])
                             ->helperText('通常由难度管理自动同步；也可在这里手动调整导出顺序。')
                             ->columnSpanFull(),
                         KeyValue::make('unlock_condition.conditions')
-                            ->label('unlock_condition.conditions')
+                            ->label('额外条件')
                             ->keyLabel('条件键')
                             ->valueLabel('条件值')
                             ->default([])

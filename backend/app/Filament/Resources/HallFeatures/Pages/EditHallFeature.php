@@ -10,10 +10,15 @@ class EditHallFeature extends EditRecord
 {
     protected static string $resource = HallFeatureResource::class;
 
+    public function getTitle(): string
+    {
+        return '编辑大厅功能';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()->label('删除'),
         ];
     }
 }

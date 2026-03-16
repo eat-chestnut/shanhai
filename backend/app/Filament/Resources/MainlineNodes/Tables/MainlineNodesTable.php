@@ -19,46 +19,46 @@ class MainlineNodesTable
             ->defaultSort('node_id')
             ->columns([
                 TextColumn::make('node_id')
-                    ->label('node_id')
+                    ->label('节点ID')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
                 TextColumn::make('chapter_id')
-                    ->label('chapter_id')
+                    ->label('所属章节ID')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('chapter.chapter_name')
-                    ->label('chapter_name')
+                    ->label('章节名称')
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('node_name')
-                    ->label('node_name')
+                    ->label('节点名称')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('unlock_condition')
-                    ->label('unlock_condition')
+                    ->label('解锁条件')
                     ->formatStateUsing(static fn (mixed $state): string => self::formatUnlockCondition($state))
                     ->wrap(),
                 TextColumn::make('difficulty_ids')
-                    ->label('difficulty_ids')
+                    ->label('难度列表')
                     ->formatStateUsing(static fn (mixed $state): string => self::formatDifficultyIds($state))
                     ->wrap(),
             ])
             ->filters([
                 SelectFilter::make('chapter_id')
-                    ->label('chapter_id')
+                    ->label('所属章节')
                     ->options(fn (): array => MainlineChapter::query()
                         ->orderBy('chapter_id')
                         ->pluck('chapter_id', 'chapter_id')
                         ->all()),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()->label('编辑'),
+                DeleteAction::make()->label('删除'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->label('批量删除'),
                 ]),
             ]);
     }

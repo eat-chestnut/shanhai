@@ -18,7 +18,7 @@ class HallFeatureForm
                     ->columns(2)
                     ->schema([
                         TextInput::make('feature_id')
-                            ->label('feature_id')
+                            ->label('功能ID')
                             ->required()
                             ->maxLength(100)
                             ->unique(ignoreRecord: true),
