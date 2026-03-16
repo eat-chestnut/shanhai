@@ -1,0 +1,833 @@
+{
+  "chapters": [
+    {
+      "chapter_id": "prologue",
+      "chapter_name": "序章·奉命巡山",
+      "unlock_level": 1,
+      "sort_order": 1,
+      "required_previous_chapter": null,
+      "required_previous_highest_difficulty": null
+    },
+    {
+      "chapter_id": "chapter_01",
+      "chapter_name": "第一章·南山初行",
+      "unlock_level": 3,
+      "sort_order": 2,
+      "required_previous_chapter": "prologue",
+      "required_previous_highest_difficulty": 3
+    },
+    {
+      "chapter_id": "chapter_02",
+      "chapter_name": "第二章·古寺疑云",
+      "unlock_level": 8,
+      "sort_order": 3,
+      "required_previous_chapter": "chapter_01",
+      "required_previous_highest_difficulty": 3
+    },
+    {
+      "chapter_id": "chapter_03",
+      "chapter_name": "第三章·幽谷深潭",
+      "unlock_level": 15,
+      "sort_order": 4,
+      "required_previous_chapter": "chapter_02",
+      "required_previous_highest_difficulty": 3
+    },
+    {
+      "chapter_id": "chapter_04",
+      "chapter_name": "第四章·山巅古寨",
+      "unlock_level": 22,
+      "sort_order": 5,
+      "required_previous_chapter": "chapter_03",
+      "required_previous_highest_difficulty": 3
+    },
+    {
+      "chapter_id": "chapter_05",
+      "chapter_name": "第五章·密林探险",
+      "unlock_level": 30,
+      "sort_order": 6,
+      "required_previous_chapter": "chapter_04",
+      "required_previous_highest_difficulty": 3
+    },
+    {
+      "chapter_id": "chapter_06",
+      "chapter_name": "第六章·洞天福地",
+      "unlock_level": 38,
+      "sort_order": 7,
+      "required_previous_chapter": "chapter_05",
+      "required_previous_highest_difficulty": 3
+    },
+    {
+      "chapter_id": "chapter_07",
+      "chapter_name": "第七章·上古遗迹",
+      "unlock_level": 46,
+      "sort_order": 8,
+      "required_previous_chapter": "chapter_06",
+      "required_previous_highest_difficulty": 3
+    },
+    {
+      "chapter_id": "chapter_08",
+      "chapter_name": "第八章·群山震动",
+      "unlock_level": 56,
+      "sort_order": 9,
+      "required_previous_chapter": "chapter_07",
+      "required_previous_highest_difficulty": 3
+    },
+    {
+      "chapter_id": "epilogue",
+      "chapter_name": "终章·巡厄终局",
+      "unlock_level": 60,
+      "sort_order": 10,
+      "required_previous_chapter": "chapter_08",
+      "required_previous_highest_difficulty": 3
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "prologue_01",
+      "chapter_id": "prologue",
+      "node_name": "巡山起点",
+      "unlock_condition": {
+        "level": 1
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "prologue_02",
+      "chapter_id": "prologue",
+      "node_name": "初遇妖魔",
+      "unlock_condition": {
+        "level": 1
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_01_01",
+      "chapter_id": "chapter_01",
+      "node_name": "南山入口",
+      "unlock_condition": {
+        "level": 3
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_01_02",
+      "chapter_id": "chapter_01",
+      "node_name": "竹林小径",
+      "unlock_condition": {
+        "level": 3,
+        "clear_node_id": "chapter_01_01"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_01_03",
+      "chapter_id": "chapter_01",
+      "node_name": "山神庙",
+      "unlock_condition": {
+        "level": 4,
+        "clear_node_id": "chapter_01_02"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_02_01",
+      "chapter_id": "chapter_02",
+      "node_name": "古寺山门",
+      "unlock_condition": {
+        "level": 8
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_02_02",
+      "chapter_id": "chapter_02",
+      "node_name": "大雄宝殿",
+      "unlock_condition": {
+        "level": 9,
+        "clear_node_id": "chapter_02_01"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_02_03",
+      "chapter_id": "chapter_02",
+      "node_name": "藏经阁",
+      "unlock_condition": {
+        "level": 10,
+        "clear_node_id": "chapter_02_02"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_03_01",
+      "chapter_id": "chapter_03",
+      "node_name": "幽谷入口",
+      "unlock_condition": {
+        "level": 15
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_03_02",
+      "chapter_id": "chapter_03",
+      "node_name": "深潭边",
+      "unlock_condition": {
+        "level": 16,
+        "clear_node_id": "chapter_03_01"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_03_03",
+      "chapter_id": "chapter_03",
+      "node_name": "水帘洞",
+      "unlock_condition": {
+        "level": 17,
+        "clear_node_id": "chapter_03_02"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_04_01",
+      "chapter_id": "chapter_04",
+      "node_name": "登山古道",
+      "unlock_condition": {
+        "level": 22
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_04_02",
+      "chapter_id": "chapter_04",
+      "node_name": "古寨门前",
+      "unlock_condition": {
+        "level": 23,
+        "clear_node_id": "chapter_04_01"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_04_03",
+      "chapter_id": "chapter_04",
+      "node_name": "寨主大厅",
+      "unlock_condition": {
+        "level": 24,
+        "clear_node_id": "chapter_04_02"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_05_01",
+      "chapter_id": "chapter_05",
+      "node_name": "密林边缘",
+      "unlock_condition": {
+        "level": 30
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_05_02",
+      "chapter_id": "chapter_05",
+      "node_name": "迷雾深处",
+      "unlock_condition": {
+        "level": 31,
+        "clear_node_id": "chapter_05_01"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_05_03",
+      "chapter_id": "chapter_05",
+      "node_name": "古老祭坛",
+      "unlock_condition": {
+        "level": 32,
+        "clear_node_id": "chapter_05_02"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_06_01",
+      "chapter_id": "chapter_06",
+      "node_name": "洞天入口",
+      "unlock_condition": {
+        "level": 38
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_06_02",
+      "chapter_id": "chapter_06",
+      "node_name": "福地中央",
+      "unlock_condition": {
+        "level": 39,
+        "clear_node_id": "chapter_06_01"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_06_03",
+      "chapter_id": "chapter_06",
+      "node_name": "灵泉圣地",
+      "unlock_condition": {
+        "level": 40,
+        "clear_node_id": "chapter_06_02"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_07_01",
+      "chapter_id": "chapter_07",
+      "node_name": "遗迹外围",
+      "unlock_condition": {
+        "level": 46
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_07_02",
+      "chapter_id": "chapter_07",
+      "node_name": "上古神殿",
+      "unlock_condition": {
+        "level": 47,
+        "clear_node_id": "chapter_07_01"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_07_03",
+      "chapter_id": "chapter_07",
+      "node_name": "核心密室",
+      "unlock_condition": {
+        "level": 48,
+        "clear_node_id": "chapter_07_02"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_08_01",
+      "chapter_id": "chapter_08",
+      "node_name": "震动源头",
+      "unlock_condition": {
+        "level": 56
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_08_02",
+      "chapter_id": "chapter_08",
+      "node_name": "群山之巅",
+      "unlock_condition": {
+        "level": 57,
+        "clear_node_id": "chapter_08_01"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "chapter_08_03",
+      "chapter_id": "chapter_08",
+      "node_name": "最终决战",
+      "unlock_condition": {
+        "level": 58,
+        "clear_node_id": "chapter_08_02"
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    },
+    {
+      "node_id": "epilogue_01",
+      "chapter_id": "epilogue",
+      "node_name": "巡厄终局",
+      "unlock_condition": {
+        "level": 60
+      },
+      "difficulty_ids": ["easy", "normal", "hard"]
+    }
+  ],
+  "difficulties": [
+    {
+      "difficulty_id": "easy",
+      "node_id": "prologue_01",
+      "recommended_power": 100,
+      "first_clear_reward_group_id": "reward_prologue_01_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "prologue_01",
+      "recommended_power": 150,
+      "first_clear_reward_group_id": "reward_prologue_01_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "prologue_01",
+      "recommended_power": 200,
+      "first_clear_reward_group_id": "reward_prologue_01_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "prologue_02",
+      "recommended_power": 120,
+      "first_clear_reward_group_id": "reward_prologue_02_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "prologue_02",
+      "recommended_power": 180,
+      "first_clear_reward_group_id": "reward_prologue_02_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "prologue_02",
+      "recommended_power": 250,
+      "first_clear_reward_group_id": "reward_prologue_02_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_01_01",
+      "recommended_power": 300,
+      "first_clear_reward_group_id": "reward_chapter_01_01_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_01_01",
+      "recommended_power": 450,
+      "first_clear_reward_group_id": "reward_chapter_01_01_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_01_01",
+      "recommended_power": 600,
+      "first_clear_reward_group_id": "reward_chapter_01_01_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_01_02",
+      "recommended_power": 350,
+      "first_clear_reward_group_id": "reward_chapter_01_02_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_01_02",
+      "recommended_power": 500,
+      "first_clear_reward_group_id": "reward_chapter_01_02_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_01_02",
+      "recommended_power": 700,
+      "first_clear_reward_group_id": "reward_chapter_01_02_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_01_03",
+      "recommended_power": 400,
+      "first_clear_reward_group_id": "reward_chapter_01_03_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_01_03",
+      "recommended_power": 600,
+      "first_clear_reward_group_id": "reward_chapter_01_03_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_01_03",
+      "recommended_power": 800,
+      "first_clear_reward_group_id": "reward_chapter_01_03_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_02_01",
+      "recommended_power": 800,
+      "first_clear_reward_group_id": "reward_chapter_02_01_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_02_01",
+      "recommended_power": 1200,
+      "first_clear_reward_group_id": "reward_chapter_02_01_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_02_01",
+      "recommended_power": 1600,
+      "first_clear_reward_group_id": "reward_chapter_02_01_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_02_02",
+      "recommended_power": 900,
+      "first_clear_reward_group_id": "reward_chapter_02_02_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_02_02",
+      "recommended_power": 1400,
+      "first_clear_reward_group_id": "reward_chapter_02_02_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_02_02",
+      "recommended_power": 1800,
+      "first_clear_reward_group_id": "reward_chapter_02_02_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_02_03",
+      "recommended_power": 1000,
+      "first_clear_reward_group_id": "reward_chapter_02_03_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_02_03",
+      "recommended_power": 1600,
+      "first_clear_reward_group_id": "reward_chapter_02_03_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_02_03",
+      "recommended_power": 2000,
+      "first_clear_reward_group_id": "reward_chapter_02_03_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_03_01",
+      "recommended_power": 1500,
+      "first_clear_reward_group_id": "reward_chapter_03_01_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_03_01",
+      "recommended_power": 2200,
+      "first_clear_reward_group_id": "reward_chapter_03_01_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_03_01",
+      "recommended_power": 3000,
+      "first_clear_reward_group_id": "reward_chapter_03_01_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_03_02",
+      "recommended_power": 1700,
+      "first_clear_reward_group_id": "reward_chapter_03_02_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_03_02",
+      "recommended_power": 2600,
+      "first_clear_reward_group_id": "reward_chapter_03_02_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_03_02",
+      "recommended_power": 3400,
+      "first_clear_reward_group_id": "reward_chapter_03_02_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_03_03",
+      "recommended_power": 1900,
+      "first_clear_reward_group_id": "reward_chapter_03_03_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_03_03",
+      "recommended_power": 3000,
+      "first_clear_reward_group_id": "reward_chapter_03_03_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_03_03",
+      "recommended_power": 3800,
+      "first_clear_reward_group_id": "reward_chapter_03_03_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_04_01",
+      "recommended_power": 2200,
+      "first_clear_reward_group_id": "reward_chapter_04_01_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_04_01",
+      "recommended_power": 3400,
+      "first_clear_reward_group_id": "reward_chapter_04_01_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_04_01",
+      "recommended_power": 4600,
+      "first_clear_reward_group_id": "reward_chapter_04_01_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_04_02",
+      "recommended_power": 2500,
+      "first_clear_reward_group_id": "reward_chapter_04_02_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_04_02",
+      "recommended_power": 3800,
+      "first_clear_reward_group_id": "reward_chapter_04_02_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_04_02",
+      "recommended_power": 5000,
+      "first_clear_reward_group_id": "reward_chapter_04_02_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_04_03",
+      "recommended_power": 2800,
+      "first_clear_reward_group_id": "reward_chapter_04_03_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_04_03",
+      "recommended_power": 4200,
+      "first_clear_reward_group_id": "reward_chapter_04_03_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_04_03",
+      "recommended_power": 5400,
+      "first_clear_reward_group_id": "reward_chapter_04_03_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_05_01",
+      "recommended_power": 3000,
+      "first_clear_reward_group_id": "reward_chapter_05_01_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_05_01",
+      "recommended_power": 4600,
+      "first_clear_reward_group_id": "reward_chapter_05_01_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_05_01",
+      "recommended_power": 6200,
+      "first_clear_reward_group_id": "reward_chapter_05_01_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_05_02",
+      "recommended_power": 3400,
+      "first_clear_reward_group_id": "reward_chapter_05_02_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_05_02",
+      "recommended_power": 5200,
+      "first_clear_reward_group_id": "reward_chapter_05_02_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_05_02",
+      "recommended_power": 6800,
+      "first_clear_reward_group_id": "reward_chapter_05_02_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_05_03",
+      "recommended_power": 3800,
+      "first_clear_reward_group_id": "reward_chapter_05_03_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_05_03",
+      "recommended_power": 5800,
+      "first_clear_reward_group_id": "reward_chapter_05_03_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_05_03",
+      "recommended_power": 7400,
+      "first_clear_reward_group_id": "reward_chapter_05_03_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_06_01",
+      "recommended_power": 3800,
+      "first_clear_reward_group_id": "reward_chapter_06_01_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_06_01",
+      "recommended_power": 5800,
+      "first_clear_reward_group_id": "reward_chapter_06_01_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_06_01",
+      "recommended_power": 7800,
+      "first_clear_reward_group_id": "reward_chapter_06_01_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_06_02",
+      "recommended_power": 4200,
+      "first_clear_reward_group_id": "reward_chapter_06_02_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_06_02",
+      "recommended_power": 6400,
+      "first_clear_reward_group_id": "reward_chapter_06_02_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_06_02",
+      "recommended_power": 8600,
+      "first_clear_reward_group_id": "reward_chapter_06_02_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_06_03",
+      "recommended_power": 4600,
+      "first_clear_reward_group_id": "reward_chapter_06_03_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_06_03",
+      "recommended_power": 7000,
+      "first_clear_reward_group_id": "reward_chapter_06_03_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_06_03",
+      "recommended_power": 9400,
+      "first_clear_reward_group_id": "reward_chapter_06_03_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_07_01",
+      "recommended_power": 4600,
+      "first_clear_reward_group_id": "reward_chapter_07_01_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_07_01",
+      "recommended_power": 7000,
+      "first_clear_reward_group_id": "reward_chapter_07_01_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_07_01",
+      "recommended_power": 9400,
+      "first_clear_reward_group_id": "reward_chapter_07_01_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_07_02",
+      "recommended_power": 5200,
+      "first_clear_reward_group_id": "reward_chapter_07_02_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_07_02",
+      "recommended_power": 7800,
+      "first_clear_reward_group_id": "reward_chapter_07_02_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_07_02",
+      "recommended_power": 10400,
+      "first_clear_reward_group_id": "reward_chapter_07_02_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_07_03",
+      "recommended_power": 5800,
+      "first_clear_reward_group_id": "reward_chapter_07_03_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_07_03",
+      "recommended_power": 8600,
+      "first_clear_reward_group_id": "reward_chapter_07_03_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_07_03",
+      "recommended_power": 11400,
+      "first_clear_reward_group_id": "reward_chapter_07_03_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_08_01",
+      "recommended_power": 5800,
+      "first_clear_reward_group_id": "reward_chapter_08_01_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_08_01",
+      "recommended_power": 8600,
+      "first_clear_reward_group_id": "reward_chapter_08_01_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_08_01",
+      "recommended_power": 11400,
+      "first_clear_reward_group_id": "reward_chapter_08_01_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_08_02",
+      "recommended_power": 6400,
+      "first_clear_reward_group_id": "reward_chapter_08_02_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_08_02",
+      "recommended_power": 9600,
+      "first_clear_reward_group_id": "reward_chapter_08_02_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_08_02",
+      "recommended_power": 12800,
+      "first_clear_reward_group_id": "reward_chapter_08_02_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "chapter_08_03",
+      "recommended_power": 7000,
+      "first_clear_reward_group_id": "reward_chapter_08_03_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "chapter_08_03",
+      "recommended_power": 10600,
+      "first_clear_reward_group_id": "reward_chapter_08_03_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "chapter_08_03",
+      "recommended_power": 14200,
+      "first_clear_reward_group_id": "reward_chapter_08_03_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "node_id": "epilogue_01",
+      "recommended_power": 7600,
+      "first_clear_reward_group_id": "reward_epilogue_01_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "node_id": "epilogue_01",
+      "recommended_power": 11600,
+      "first_clear_reward_group_id": "reward_epilogue_01_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "node_id": "epilogue_01",
+      "recommended_power": 15600,
+      "first_clear_reward_group_id": "reward_epilogue_01_hard"
+    }
+  ]
+}
