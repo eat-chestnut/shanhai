@@ -13,6 +13,8 @@ const PAGE_SCENES := {
 	UiState.SCREEN_TASK: preload("res://scenes/pages/task_page.tscn"),
 	UiState.SCREEN_SHOP: preload("res://scenes/pages/shop_page.tscn"),
 	UiState.SCREEN_INVENTORY: preload("res://scenes/pages/inventory_page.tscn"),
+	UiState.SCREEN_IDLE: preload("res://scenes/pages/idle_page.tscn"),
+	UiState.SCREEN_CHALLENGE: preload("res://scenes/pages/challenge_page.tscn"),
 	UiState.SCREEN_BATTLE: preload("res://scenes/pages/battle_page.tscn"),
 	UiState.SCREEN_BATTLE_RESULT: preload("res://scenes/pages/battle_result_page.tscn")
 }
@@ -115,6 +117,11 @@ func _instantiate_pages() -> void:
 
 	var dungeon_page = _pages[UiState.SCREEN_DUNGEON]
 	dungeon_page.start_battle.connect(func() -> void:
+		UiState.navigate_to(UiState.SCREEN_BATTLE)
+	)
+
+	var challenge_page = _pages[UiState.SCREEN_CHALLENGE]
+	challenge_page.start_battle.connect(func() -> void:
 		UiState.navigate_to(UiState.SCREEN_BATTLE)
 	)
 

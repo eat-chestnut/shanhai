@@ -12,7 +12,8 @@ var _tabs := [
 	{"screen": UiState.SCREEN_DUNGEON, "label": "副本"},
 	{"screen": UiState.SCREEN_TASK, "label": "任务"},
 	{"screen": UiState.SCREEN_SHOP, "label": "商店"},
-	{"screen": UiState.SCREEN_INVENTORY, "label": "行囊"}
+	{"screen": UiState.SCREEN_INVENTORY, "label": "行囊"},
+	{"screen": UiState.SCREEN_CHALLENGE, "label": "挑战"}
 ]
 
 func _ready() -> void:

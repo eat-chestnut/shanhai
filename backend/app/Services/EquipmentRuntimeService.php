@@ -108,13 +108,21 @@ class EquipmentRuntimeService
                 throw new ApiException('装备不存在或未拥有', 40461, 404);
             }
 
-            $cost = max((int) $target->star_level + (int) config('game_runtime.equipment_runtime.star_up_cost_base', 1), 1);
+            $cost = $this->resolveStarUpCost($target);
             $this->inventoryService->consumeItem(
                 (int) $lockedProfile->player_id,
                 (string) config('game_runtime.equipment_runtime.star_up_item_id', 'material_star_stone'),
-                $cost,
+                (int) $cost['base_cost'],
                 '材料不足',
             );
+            if ((int) $cost['advanced_cost'] > 0) {
+                $this->inventoryService->consumeItem(
+                    (int) $lockedProfile->player_id,
+                    (string) config('game_runtime.equipment_runtime.advanced_growth_item_id', 'material_star_crystal'),
+                    (int) $cost['advanced_cost'],
+                    '高阶材料不足',
+                );
+            }
 
             $this->equipmentRuntimeRepository->update($target, [
                 'star_level' => (int) $target->star_level + 1,
@@ -199,12 +207,7 @@ class EquipmentRuntimeService
                 throw new ApiException('装备不存在或未拥有', 40461, 404);
             }
 
-            $this->inventoryService->consumeItem(
-                (int) $lockedProfile->player_id,
-                (string) config('game_runtime.equipment_runtime.blue_extract_item_id', 'material_seal_essence'),
-                1,
-                '材料不足',
-            );
+            $this->inventoryService->consumeItem((int) $lockedProfile->player_id, $this->resolveBlueExtractItemId($target), 1, '材料不足');
 
             $affixId = (string) BlueAffix::query()->inRandomOrder()->value('affix_id');
 
@@ -236,12 +239,7 @@ class EquipmentRuntimeService
                 throw new ApiException('装备不存在或未拥有', 40461, 404);
             }
 
-            $this->inventoryService->consumeItem(
-                (int) $lockedProfile->player_id,
-                (string) config('game_runtime.equipment_runtime.purple_refine_item_id', 'material_refine_sand'),
-                1,
-                '材料不足',
-            );
+            $this->inventoryService->consumeItem((int) $lockedProfile->player_id, $this->resolvePurpleRefineItemId($target), 1, '材料不足');
 
             $refinementId = (string) PurpleRefinement::query()->inRandomOrder()->value('refinement_id');
 
@@ -576,6 +574,9 @@ class EquipmentRuntimeService
             'bonus_boss_dmg' => $bonusBossDmg,
             'bonus_attack_speed' => $bonusAttackSpeed,
             'bonus_damage_ratio' => $bonusDamageRatio,
+            'next_star_cost' => $this->resolveStarUpCost($playerEquipment),
+            'blue_extract_item_id' => $this->resolveBlueExtractItemId($playerEquipment),
+            'purple_refine_item_id' => $this->resolvePurpleRefineItemId($playerEquipment),
             'gem_slots' => $gemSlots,
             'blue_affix' => $blueAffix ? [
                 'affix_id' => $blueAffix->affix_id,
@@ -589,6 +590,47 @@ class EquipmentRuntimeService
             ] : null,
             'set_summary' => $setSummary,
         ];
+    }
+
+    /**
+     * @return array<string, int|string>
+     */
+    private function resolveStarUpCost(PlayerEquipment $playerEquipment): array
+    {
+        $template = Equipment::query()->where('equip_id', $playerEquipment->equip_id)->first();
+        $baseCost = max((int) $playerEquipment->star_level + (int) config('game_runtime.equipment_runtime.star_up_cost_base', 1), 1);
+        $advancedThresholdLevel = (int) config('game_runtime.equipment_runtime.advanced_level_threshold', 60);
+        $advancedThresholdStar = (int) config('game_runtime.equipment_runtime.advanced_star_threshold', 5);
+        $isAdvanced = (int) ($template?->level ?? 1) >= $advancedThresholdLevel || (int) $playerEquipment->star_level >= $advancedThresholdStar;
+
+        return [
+            'base_item_id' => (string) config('game_runtime.equipment_runtime.star_up_item_id', 'material_star_stone'),
+            'base_cost' => $baseCost,
+            'advanced_item_id' => (string) config('game_runtime.equipment_runtime.advanced_growth_item_id', 'material_star_crystal'),
+            'advanced_cost' => $isAdvanced ? 1 : 0,
+        ];
+    }
+
+    private function resolveBlueExtractItemId(PlayerEquipment $playerEquipment): string
+    {
+        $template = Equipment::query()->where('equip_id', $playerEquipment->equip_id)->first();
+
+        if ((int) ($template?->level ?? 1) >= (int) config('game_runtime.equipment_runtime.advanced_level_threshold', 60)) {
+            return (string) config('game_runtime.equipment_runtime.blue_extract_advanced_item_id', 'material_seal_crystal');
+        }
+
+        return (string) config('game_runtime.equipment_runtime.blue_extract_item_id', 'material_seal_essence');
+    }
+
+    private function resolvePurpleRefineItemId(PlayerEquipment $playerEquipment): string
+    {
+        $template = Equipment::query()->where('equip_id', $playerEquipment->equip_id)->first();
+
+        if ((int) ($template?->level ?? 1) >= (int) config('game_runtime.equipment_runtime.advanced_level_threshold', 60)) {
+            return (string) config('game_runtime.equipment_runtime.purple_refine_advanced_item_id', 'material_refine_crystal');
+        }
+
+        return (string) config('game_runtime.equipment_runtime.purple_refine_item_id', 'material_refine_sand');
     }
 
     /**

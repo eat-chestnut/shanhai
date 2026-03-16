@@ -21,6 +21,28 @@
       "jump_target": {
         "page": "shop"
       }
+    },
+    {
+      "feature_id": "feat_idle",
+      "feature_name": "闭关收益",
+      "feature_type": "idle_gain",
+      "unlock_condition": {
+        "level": 12
+      },
+      "jump_target": {
+        "page": "idle"
+      }
+    },
+    {
+      "feature_id": "feat_challenge",
+      "feature_name": "玄渊试炼塔",
+      "feature_type": "challenge",
+      "unlock_condition": {
+        "level": 60
+      },
+      "jump_target": {
+        "page": "challenge"
+      }
     }
   ]
 }

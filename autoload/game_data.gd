@@ -31,6 +31,10 @@ var runtime_equipment_detail: Dictionary = {}
 var runtime_task_list: Dictionary = {}
 var runtime_common_shop: Dictionary = {}
 var runtime_sect_shop: Dictionary = {}
+var runtime_idle_status: Dictionary = {}
+var runtime_idle_rules: Dictionary = {}
+var runtime_challenge_list: Dictionary = {}
+var runtime_challenge_details: Dictionary = {}
 var runtime_stage_chapters: Array = []
 var runtime_stage_nodes: Dictionary = {}
 var runtime_stage_difficulties: Dictionary = {}
@@ -248,6 +252,82 @@ func load_task_runtime() -> void:
 	runtime_task_list = _build_fallback_task_payload()
 	emit_signal("changed")
 
+func load_idle_runtime() -> void:
+	if using_runtime_backend:
+		var status_payload := await GameApi.fetch_idle_status()
+		var rules_payload := await GameApi.fetch_idle_rules()
+		if not status_payload.is_empty():
+			runtime_idle_status = status_payload.duplicate(true)
+		if not rules_payload.is_empty():
+			runtime_idle_rules = rules_payload.duplicate(true)
+		if not status_payload.is_empty() or not rules_payload.is_empty():
+			_clear_runtime_error()
+			emit_signal("changed")
+			return
+		_capture_api_error("挂机收益读取失败")
+
+	runtime_idle_status = {
+		"accumulated_seconds": 0,
+		"offline_seconds": 0,
+		"claimable_seconds": 0,
+		"cap_seconds": 0,
+		"is_capped": false,
+		"source_hint": "未连接正式运行态时不计算挂机收益。",
+		"rule": null,
+		"rewards": []
+	}
+	runtime_idle_rules = {"rules": [], "matched_rule": null}
+	emit_signal("changed")
+
+func claim_idle_rewards() -> bool:
+	if not using_runtime_backend:
+		_capture_api_error("当前未连接正式运行态后端")
+		emit_signal("changed")
+		return false
+
+	var payload := await GameApi.claim_idle_rewards()
+	if payload.is_empty():
+		_capture_api_error("挂机收益领取失败")
+		emit_signal("changed")
+		return false
+
+	runtime_idle_status = payload.get("status", {}).duplicate(true)
+	_apply_runtime_player_from_payload(payload.get("player", {}), payload.get("inventory", []))
+	_clear_runtime_error()
+	emit_signal("changed")
+	return true
+
+func load_challenge_runtime() -> void:
+	if using_runtime_backend:
+		var payload := await GameApi.fetch_challenge_list()
+		if not payload.is_empty():
+			runtime_challenge_list = payload.duplicate(true)
+			_clear_runtime_error()
+			emit_signal("changed")
+			return
+		_capture_api_error("长线挑战列表读取失败")
+
+	runtime_challenge_list = {
+		"challenges": [],
+		"week_key": "",
+		"next_reset_at": ""
+	}
+	emit_signal("changed")
+
+func load_challenge_detail(challenge_id: String) -> void:
+	if not using_runtime_backend or challenge_id.is_empty():
+		return
+
+	var payload := await GameApi.fetch_challenge_detail(challenge_id)
+	if payload.is_empty():
+		_capture_api_error("长线挑战详情读取失败")
+		emit_signal("changed")
+		return
+
+	runtime_challenge_details[challenge_id] = payload.duplicate(true)
+	_clear_runtime_error()
+	emit_signal("changed")
+
 func claim_task(task_id: String) -> bool:
 	if not using_runtime_backend:
 		_capture_api_error("当前未连接正式运行态后端")
@@ -449,6 +529,35 @@ func get_shop_entries(shop_type: String) -> Array:
 		return _build_fallback_shop_payload(shop_type).get("items", []).duplicate(true)
 	return []
 
+func get_idle_status() -> Dictionary:
+	return runtime_idle_status.duplicate(true)
+
+func get_idle_rules() -> Array:
+	var rules = runtime_idle_rules.get("rules", [])
+	if rules is Array:
+		return rules.duplicate(true)
+	return []
+
+func get_challenge_entries() -> Array:
+	var challenges = runtime_challenge_list.get("challenges", [])
+	if challenges is Array:
+		return challenges.duplicate(true)
+	return []
+
+func get_challenge_detail(challenge_id: String) -> Dictionary:
+	var payload = runtime_challenge_details.get(challenge_id, {})
+	if payload is Dictionary:
+		return payload.duplicate(true)
+	return {}
+
+func get_challenge_encounter(challenge_id: String, floor_id: String) -> Array:
+	var detail := get_challenge_detail(challenge_id)
+	var challenge: Dictionary = detail.get("challenge", {})
+	for floor in challenge.get("floors", []):
+		if str(floor.get("floor_id", "")) == floor_id:
+			return floor.get("monster_ids", []).duplicate(true)
+	return []
+
 func get_equipment_runtime_entries() -> Array:
 	var entries = runtime_equipment_detail.get("equipment_list", [])
 	if entries is Array:
@@ -534,6 +643,10 @@ func _apply_bootstrap(source: Dictionary) -> void:
 	runtime_task_list.clear()
 	runtime_common_shop.clear()
 	runtime_sect_shop.clear()
+	runtime_idle_status.clear()
+	runtime_idle_rules.clear()
+	runtime_challenge_list.clear()
+	runtime_challenge_details.clear()
 	runtime_stage_chapters.clear()
 	runtime_stage_nodes.clear()
 	runtime_stage_difficulties.clear()
@@ -569,6 +682,8 @@ func _apply_runtime_player_init(payload: Dictionary) -> void:
 	var player_payload: Dictionary = payload.get("player", {}).duplicate(true)
 	if player_payload.is_empty():
 		return
+	player_payload["build_summary"] = payload.get("build_summary", player_payload.get("build_summary", {}))
+	player_payload["growth_recommendations"] = payload.get("growth_recommendations", player_payload.get("growth_recommendations", []))
 	if not player_payload.has("inventory"):
 		player_payload["inventory"] = payload.get("inventory", []).duplicate(true)
 	PlayerState.load_from_dict(player_payload)

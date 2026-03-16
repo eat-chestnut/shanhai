@@ -24,7 +24,9 @@ func load_from_dict(source: Dictionary) -> void:
 		"class_profile": source.get("class_profile", _class_combat_profile(str(source.get("class_id", "")))).duplicate(true),
 		"skill_points": int(source.get("skill_points", 0)),
 		"skill_levels": _normalize_skill_levels(source.get("skill_levels", {})),
-		"equipment_summary": source.get("equipment_summary", {}).duplicate(true)
+		"equipment_summary": source.get("equipment_summary", {}).duplicate(true),
+		"build_summary": source.get("build_summary", {}).duplicate(true),
+		"growth_recommendations": source.get("growth_recommendations", []).duplicate(true)
 	}
 	_inventory_counts.clear()
 	for entry in source.get("inventory", []):
@@ -78,6 +80,12 @@ func get_player_name() -> String:
 
 func get_equipment_summary() -> Dictionary:
 	return player.get("equipment_summary", {}).duplicate(true)
+
+func get_build_summary() -> Dictionary:
+	return player.get("build_summary", {}).duplicate(true)
+
+func get_growth_recommendations() -> Array:
+	return player.get("growth_recommendations", []).duplicate(true)
 
 func get_equipped_item_ids() -> Array:
 	return get_equipment_summary().get("equip_ids", []).duplicate(true)

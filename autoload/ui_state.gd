@@ -11,6 +11,8 @@ const SCREEN_DUNGEON := "dungeon"
 const SCREEN_TASK := "task"
 const SCREEN_SHOP := "shop"
 const SCREEN_INVENTORY := "inventory"
+const SCREEN_IDLE := "idle"
+const SCREEN_CHALLENGE := "challenge"
 const SCREEN_BATTLE := "battle"
 const SCREEN_BATTLE_RESULT := "battle_result"
 
@@ -56,6 +58,10 @@ func _update_title() -> void:
 			current_title = "宗门商店"
 		SCREEN_INVENTORY:
 			current_title = "行囊与装备"
+		SCREEN_IDLE:
+			current_title = "闭关收益"
+		SCREEN_CHALLENGE:
+			current_title = "玄渊试炼塔"
 		SCREEN_BATTLE:
 			current_title = "巡厄战斗"
 		SCREEN_BATTLE_RESULT:

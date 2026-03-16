@@ -24,6 +24,7 @@ class BattleRuntimeService
         private readonly PlayerRuntimeService $playerRuntimeService,
         private readonly StageRuntimeService $stageRuntimeService,
         private readonly DungeonRuntimeService $dungeonRuntimeService,
+        private readonly ChallengeService $challengeService,
         private readonly InventoryService $inventoryService,
     ) {}
 
@@ -106,14 +107,14 @@ class BattleRuntimeService
                 );
             }
 
-            $normalRewards = $isVictory
-                ? $this->rollMonsterDrops($battleRecord)
-                : [];
+            $normalRewards = $this->buildNormalRewards($battleRecord, $isVictory);
             $progressUpdate = $this->updateProgress($lockedProfile, $battleRecord, $isVictory);
             $firstClearRewards = $progressUpdate['first_clear_rewards'] ?? [];
+            $weeklyRewards = $progressUpdate['weekly_rewards'] ?? [];
             unset($progressUpdate['first_clear_rewards']);
+            unset($progressUpdate['weekly_rewards']);
 
-            $allRewards = $this->mergeRewards(array_merge($normalRewards, $firstClearRewards));
+            $allRewards = $this->mergeRewards(array_merge($normalRewards, $firstClearRewards, $weeklyRewards));
             $rewardApplyResult = $this->inventoryService->applyRewards($lockedProfile, $allRewards);
             $updatedProfile = $rewardApplyResult['player_profile'];
             $initPayload = $this->playerRuntimeService->getInitPayload($updatedProfile);
@@ -123,7 +124,10 @@ class BattleRuntimeService
                 'result' => $normalizedResult,
                 'duration' => max((int) round((float) $payload['duration']), 0),
                 'cleared_wave' => max((int) $payload['cleared_wave'], 0),
-                'settle_payload' => $payload['client_summary'] ?? [],
+                'settle_payload' => array_merge(
+                    (array) ($payload['client_summary'] ?? []),
+                    ['weekly_rewards' => $weeklyRewards],
+                ),
                 'rewards' => $normalRewards,
                 'first_clear_rewards' => $firstClearRewards,
                 'settled_at' => Carbon::now(),
@@ -134,6 +138,7 @@ class BattleRuntimeService
                 'result' => $normalizedResult,
                 'rewards' => $normalRewards,
                 'first_clear_rewards' => $firstClearRewards,
+                'weekly_rewards' => $weeklyRewards,
                 'all_rewards' => $allRewards,
                 'progress_update' => $progressUpdate,
                 'inventory_update' => [
@@ -190,6 +195,25 @@ class BattleRuntimeService
             ];
         }
 
+        if ($sourceType === 'challenge') {
+            $sourceContext = $this->challengeService->assertAccess($playerProfile, $sourceId, $difficultyId);
+            $floor = $sourceContext['floor'];
+
+            return [
+                'source_type' => 'challenge',
+                'challenge_id' => $sourceContext['challenge']->challenge_id,
+                'challenge_name' => $sourceContext['challenge']->challenge_name,
+                'floor_id' => (string) ($floor['floor_id'] ?? $difficultyId),
+                'floor_name' => (string) ($floor['floor_name'] ?? $difficultyId),
+                'difficulty_id' => (string) ($floor['floor_id'] ?? $difficultyId),
+                'floor' => (int) ($floor['floor'] ?? 1),
+                'recommended_power' => (int) ($floor['recommended_power'] ?? 0),
+                'first_clear_reward_group_id' => (string) ($floor['first_clear_reward_group_id'] ?? ''),
+                'weekly_reward_group_id' => (string) ($floor['weekly_reward_group_id'] ?? ''),
+                'normal_reward_group_id' => (string) ($floor['normal_reward_group_id'] ?? ''),
+            ];
+        }
+
         throw new ApiException('参数错误', 42201, 422);
     }
 
@@ -238,6 +262,10 @@ class BattleRuntimeService
      */
     private function resolveEncounterDefinition(string $sourceType, string $sourceId, string $difficultyId): array
     {
+        if ($sourceType === 'challenge') {
+            return $this->challengeService->resolveEncounterDefinition($sourceId, $difficultyId);
+        }
+
         $encounterConfig = config(sprintf('game_runtime.encounters.%s', $sourceType), []);
 
         if (isset($encounterConfig[$sourceId])) {
@@ -371,7 +399,12 @@ class BattleRuntimeService
                 'first_clear_rewards' => $isFirstClearNow
                     ? $this->resolveRewardGroupItems((string) ($battleRecord->request_snapshot['first_clear_reward_group_id'] ?? ''))
                     : [],
+                'weekly_rewards' => [],
             ];
+        }
+
+        if ($battleRecord->source_type === 'challenge') {
+            return $this->challengeService->settleChallenge($playerProfile, $battleRecord, $isVictory);
         }
 
         $dungeonId = (string) ($battleRecord->request_snapshot['dungeon_id'] ?? '');
@@ -404,7 +437,30 @@ class BattleRuntimeService
             'first_clear_rewards' => $isFirstClearNow
                 ? $this->resolveRewardGroupItems((string) ($battleRecord->request_snapshot['first_clear_reward_group_id'] ?? ''))
                 : [],
+            'weekly_rewards' => [],
         ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function buildNormalRewards(BattleRecord $battleRecord, bool $isVictory): array
+    {
+        if (! $isVictory) {
+            return [];
+        }
+
+        if ($battleRecord->source_type === 'challenge') {
+            return $this->mergeRewards(array_merge(
+                $this->rollMonsterDrops($battleRecord),
+                $this->challengeService->resolveNormalRewards(
+                    (string) ($battleRecord->request_snapshot['challenge_id'] ?? ''),
+                    (string) $battleRecord->difficulty_id,
+                ),
+            ));
+        }
+
+        return $this->rollMonsterDrops($battleRecord);
     }
 
     /**

@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
             EquipmentConfigSeeder::class,
             TaskConfigSeeder::class,
             ShopItemConfigSeeder::class,
+            IdleRewardRuleSeeder::class,
+            ChallengeConfigSeeder::class,
         ]);
     }
 }

@@ -184,6 +184,8 @@ func _clear_battle() -> void:
 func _context_text(context: Dictionary) -> String:
 	if str(context.get("mode", "")) == "mainline":
 		return "%s / %s / %s" % [context.get("chapter_name", "主线"), context.get("node_name", "节点"), context.get("difficulty_id", "")]
+	if str(context.get("mode", "")) == "challenge":
+		return "%s / %s" % [context.get("challenge_name", "挑战"), context.get("floor_name", context.get("difficulty_id", ""))]
 	return "%s / %s" % [context.get("dungeon_name", "副本"), context.get("difficulty_id", "")]
 
 func _on_skill_state_changed(skill_states: Array, current_resource: float, max_resource: float, resource_name: String) -> void:

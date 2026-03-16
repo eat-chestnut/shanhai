@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BattleRuntimeController;
+use App\Http\Controllers\Api\ChallengeRuntimeController;
 use App\Http\Controllers\Api\CharacterClassController;
 use App\Http\Controllers\Api\ClassSelectionController;
 use App\Http\Controllers\Api\DungeonContentConfigController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Api\DungeonRuntimeController;
 use App\Http\Controllers\Api\EquipmentConfigController;
 use App\Http\Controllers\Api\EquipmentRuntimeController;
 use App\Http\Controllers\Api\HallFeatureController;
+use App\Http\Controllers\Api\IdleRuntimeController;
 use App\Http\Controllers\Api\InventoryRuntimeController;
 use App\Http\Controllers\Api\MainlineConfigController;
 use App\Http\Controllers\Api\PlayerRuntimeController;
@@ -47,6 +49,11 @@ Route::prefix('v1')->group(function (): void {
         Route::get('task/list', [TaskRuntimeController::class, 'list']);
         Route::post('task/claim', [TaskRuntimeController::class, 'claim']);
         Route::post('task/claim_all', [TaskRuntimeController::class, 'claimAll']);
+        Route::get('idle/status', [IdleRuntimeController::class, 'status']);
+        Route::post('idle/claim', [IdleRuntimeController::class, 'claim']);
+        Route::get('idle/rules', [IdleRuntimeController::class, 'rules']);
+        Route::get('challenge/list', [ChallengeRuntimeController::class, 'list']);
+        Route::get('challenge/detail', [ChallengeRuntimeController::class, 'detail']);
         Route::get('shop/common/list', [ShopRuntimeController::class, 'commonList']);
         Route::post('shop/common/buy', [ShopRuntimeController::class, 'commonBuy']);
         Route::get('shop/sect/list', [ShopRuntimeController::class, 'sectList']);

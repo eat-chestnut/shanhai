@@ -25,6 +25,9 @@ class PlayerProfile extends Model
         'skill_levels',
         'equipment_summary',
         'last_login_at',
+        'idle_started_at',
+        'idle_last_claimed_at',
+        'last_active_at',
     ];
 
     /**
@@ -45,6 +48,9 @@ class PlayerProfile extends Model
             'skill_levels' => 'array',
             'equipment_summary' => 'array',
             'last_login_at' => 'datetime',
+            'idle_started_at' => 'datetime',
+            'idle_last_claimed_at' => 'datetime',
+            'last_active_at' => 'datetime',
         ];
     }
 }

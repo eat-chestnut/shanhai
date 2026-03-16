@@ -39,6 +39,17 @@ func start_dungeon(dungeon: Dictionary, difficulty: Dictionary) -> void:
 		)
 	})
 
+func start_challenge(challenge: Dictionary, floor: Dictionary) -> void:
+	set_context({
+		"mode": "challenge",
+		"challenge_id": challenge.get("challenge_id", ""),
+		"challenge_name": challenge.get("challenge_name", ""),
+		"difficulty_id": floor.get("floor_id", ""),
+		"floor": int(floor.get("floor", 1)),
+		"floor_name": floor.get("floor_name", ""),
+		"recommended_power": int(floor.get("recommended_power", 0))
+	})
+
 func set_context(context: Dictionary) -> void:
 	current_context = context.duplicate(true)
 	current_battle_payload = {}
@@ -49,8 +60,8 @@ func prepare_current_battle() -> Dictionary:
 	if current_context.is_empty():
 		return {}
 
-	var source_type := "stage" if str(current_context.get("mode", "")) == "mainline" else "dungeon"
-	var source_id := str(current_context.get("node_id", current_context.get("dungeon_id", "")))
+	var source_type := "stage" if str(current_context.get("mode", "")) == "mainline" else ("challenge" if str(current_context.get("mode", "")) == "challenge" else "dungeon")
+	var source_id := str(current_context.get("node_id", current_context.get("dungeon_id", current_context.get("challenge_id", ""))))
 	var difficulty_id := str(current_context.get("difficulty_id", ""))
 
 	if GameData.using_runtime_backend:
@@ -103,6 +114,8 @@ func get_context_key() -> String:
 		return ""
 	if str(current_context.get("mode", "")) == "mainline":
 		return "%s::%s::%s" % [current_context.get("chapter_id", ""), current_context.get("node_id", ""), current_context.get("difficulty_id", "")]
+	if str(current_context.get("mode", "")) == "challenge":
+		return "%s::%s" % [current_context.get("challenge_id", ""), current_context.get("difficulty_id", "")]
 	return "%s::%s" % [current_context.get("dungeon_id", ""), current_context.get("difficulty_id", "")]
 
 func build_monster_ids() -> Array:
@@ -112,6 +125,8 @@ func build_monster_ids() -> Array:
 	var difficulty_id := str(current_context.get("difficulty_id", ""))
 	if str(current_context.get("mode", "")) == "mainline":
 		return GameData.get_mainline_encounter(str(current_context.get("node_id", "")), difficulty_id)
+	if str(current_context.get("mode", "")) == "challenge":
+		return GameData.get_challenge_encounter(str(current_context.get("challenge_id", "")), difficulty_id)
 	return GameData.get_dungeon_encounter(str(current_context.get("dungeon_id", "")), difficulty_id)
 
 func get_player_snapshot() -> Dictionary:
@@ -218,6 +233,7 @@ func _build_runtime_result(server_result: Dictionary, victory: bool, defeated_mo
 		"context": current_context.duplicate(true),
 		"rewards": _decorate_rewards(server_result.get("rewards", [])),
 		"first_clear_rewards": _decorate_rewards(server_result.get("first_clear_rewards", [])),
+		"weekly_rewards": _decorate_rewards(server_result.get("weekly_rewards", [])),
 		"all_rewards": _decorate_rewards(all_rewards),
 		"elapsed_seconds": elapsed_seconds,
 		"defeated_monsters": defeated_monsters.duplicate(true),

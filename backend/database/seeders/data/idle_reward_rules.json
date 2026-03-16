@@ -1,0 +1,36 @@
+{
+  "idle_reward_rules": [
+    {
+      "rule_id": "idle_midgame",
+      "rule_name": "巡山积累",
+      "min_level": 1,
+      "max_level": 39,
+      "idle_cap_hours": 8,
+      "reward_rate": [
+        {"item_id": "gold", "count_per_hour": 420},
+        {"item_id": "material_star_stone", "count_per_hour": 1},
+        {"item_id": "material_seal_essence", "count_per_hour": 1}
+      ],
+      "bonus_hint": "优先补齐基础升星和蓝词条材料。",
+      "sort": 10,
+      "is_open": true
+    },
+    {
+      "rule_id": "idle_lategame",
+      "rule_name": "玄渊闭关",
+      "min_level": 40,
+      "max_level": 80,
+      "idle_cap_hours": 12,
+      "reward_rate": [
+        {"item_id": "gold", "count_per_hour": 980},
+        {"item_id": "contribution", "count_per_hour": 60},
+        {"item_id": "material_star_crystal", "count_per_hour": 1},
+        {"item_id": "material_refine_crystal", "count_per_hour": 1},
+        {"item_id": "material_seal_crystal", "count_per_hour": 1}
+      ],
+      "bonus_hint": "挂机收益不会直接掉高阶装备和宝石，重点补后期成长消耗。",
+      "sort": 20,
+      "is_open": true
+    }
+  ]
+}

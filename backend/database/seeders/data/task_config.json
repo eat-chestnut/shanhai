@@ -68,6 +68,22 @@
       "is_open": true
     },
     {
+      "task_id": "task_mainline_level60",
+      "task_type": "mainline",
+      "task_name": "玄渊破境",
+      "task_desc": "角色等级达到 60 级",
+      "target_type": "level_reach",
+      "target": 60,
+      "conditions": {},
+      "rewards": [
+        {"item_id": "contribution", "count": 520},
+        {"item_id": "material_star_crystal", "count": 3},
+        {"item_id": "material_refine_crystal", "count": 2}
+      ],
+      "sort": 50,
+      "is_open": true
+    },
+    {
       "task_id": "task_daily_battle_3",
       "task_type": "daily",
       "task_name": "今日巡战",
@@ -126,6 +142,21 @@
         {"item_id": "material_star_stone", "count": 2}
       ],
       "sort": 140,
+      "is_open": true
+    },
+    {
+      "task_id": "task_daily_challenge_1",
+      "task_type": "daily",
+      "task_name": "裂渊试锋",
+      "task_desc": "完成 1 次长线挑战",
+      "target_type": "challenge_clear",
+      "target": 1,
+      "conditions": {},
+      "rewards": [
+        {"item_id": "gold", "count": 620},
+        {"item_id": "material_star_crystal", "count": 1}
+      ],
+      "sort": 150,
       "is_open": true
     }
   ]

@@ -240,6 +240,57 @@ return [
             ['item_id' => 'boss_core_thunder', 'count' => 1],
             ['item_id' => 'gem_purple', 'count' => 1],
         ],
+        'reward_challenge_floor01_normal' => [
+            ['item_id' => 'gold', 'count' => 820],
+            ['item_id' => 'material_star_crystal', 'count' => 1],
+        ],
+        'reward_challenge_floor01_weekly' => [
+            ['item_id' => 'contribution', 'count' => 260],
+            ['item_id' => 'material_refine_crystal', 'count' => 1],
+        ],
+        'reward_challenge_floor01_first' => [
+            ['item_id' => 'gold', 'count' => 1600],
+            ['item_id' => 'boss_core_abyss', 'count' => 1],
+        ],
+        'reward_challenge_floor02_normal' => [
+            ['item_id' => 'gold', 'count' => 980],
+            ['item_id' => 'material_refine_crystal', 'count' => 1],
+        ],
+        'reward_challenge_floor02_weekly' => [
+            ['item_id' => 'contribution', 'count' => 340],
+            ['item_id' => 'material_seal_crystal', 'count' => 1],
+        ],
+        'reward_challenge_floor02_first' => [
+            ['item_id' => 'gold', 'count' => 1900],
+            ['item_id' => 'gem_orange', 'count' => 1],
+        ],
+        'reward_challenge_floor03_normal' => [
+            ['item_id' => 'gold', 'count' => 1140],
+            ['item_id' => 'material_star_crystal', 'count' => 1],
+            ['item_id' => 'material_refine_crystal', 'count' => 1],
+        ],
+        'reward_challenge_floor03_weekly' => [
+            ['item_id' => 'contribution', 'count' => 420],
+            ['item_id' => 'skill_book_thunder', 'count' => 1],
+        ],
+        'reward_challenge_floor03_first' => [
+            ['item_id' => 'gold', 'count' => 2200],
+            ['item_id' => 'boss_core_abyss', 'count' => 1],
+            ['item_id' => 'material_star_crystal', 'count' => 2],
+        ],
+        'reward_challenge_floor04_normal' => [
+            ['item_id' => 'gold', 'count' => 1320],
+            ['item_id' => 'material_star_crystal', 'count' => 2],
+        ],
+        'reward_challenge_floor04_weekly' => [
+            ['item_id' => 'contribution', 'count' => 520],
+            ['item_id' => 'material_refine_crystal', 'count' => 2],
+        ],
+        'reward_challenge_floor04_first' => [
+            ['item_id' => 'gold', 'count' => 2600],
+            ['item_id' => 'boss_core_abyss', 'count' => 1],
+            ['item_id' => 'gem_orange', 'count' => 1],
+        ],
     ],
     'encounters' => [
         'stage' => [
@@ -342,6 +393,11 @@ return [
         'star_up_item_id' => 'material_star_stone',
         'star_up_cost_base' => 1,
         'blue_extract_item_id' => 'material_seal_essence',
+        'blue_extract_advanced_item_id' => 'material_seal_crystal',
         'purple_refine_item_id' => 'material_refine_sand',
+        'purple_refine_advanced_item_id' => 'material_refine_crystal',
+        'advanced_growth_item_id' => 'material_star_crystal',
+        'advanced_level_threshold' => 60,
+        'advanced_star_threshold' => 5,
     ],
 ];

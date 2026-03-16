@@ -44,8 +44,10 @@ func _build_player_summary() -> Control:
 
 	var stats := PlayerState.get_total_stats()
 	var class_profile := PlayerState.get_class_profile()
+	var build_summary := PlayerState.get_build_summary()
+	var recommendations := PlayerState.get_growth_recommendations()
 	var desc := Label.new()
-	desc.text = "%s  Lv.%d\n生命 %d  攻击 %d  防御 %d  Boss增伤 %d%%\n攻速系数 %.2f  伤害系数 %.2f  定位 %s\n%s上限 %d  技能点 %d\n灵石 %d  灵玉 %d  贡献 %d" % [
+	desc.text = "%s  Lv.%d\n生命 %d  攻击 %d  防御 %d  Boss增伤 %d%%\n攻速系数 %.2f  伤害系数 %.2f  定位 %s\n%s上限 %d  技能点 %d\n构筑方向 %s / %s / %s\n灵石 %d  灵玉 %d  贡献 %d" % [
 		GameData.get_character_class_name(str(PlayerState.player.get("class_id", ""))),
 		PlayerState.get_level(),
 		int(stats.get("max_hp", 0)),
@@ -58,6 +60,9 @@ func _build_player_summary() -> Control:
 		PlayerState.get_resource_name(),
 		PlayerState.get_max_energy(),
 		PlayerState.get_skill_points(),
+		str(build_summary.get("primary_tendency", "未成型")),
+		str(build_summary.get("gem_tendency", {}).get("focus", "宝石未聚焦")),
+		str(build_summary.get("affix_direction", {}).get("focus", "词条未聚焦")),
 		PlayerState.get_gold(),
 		PlayerState.get_jade(),
 		PlayerState.get_contribution()
@@ -65,6 +70,16 @@ func _build_player_summary() -> Control:
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ShanhaiStyle.apply_body(desc, false, 18)
 	content.add_child(desc)
+
+	var build_label := Label.new()
+	build_label.text = "技能组合：%s\n套装激活：%s\n下一步建议：%s" % [
+		_build_skill_combo_text(build_summary.get("active_skill_combo", [])),
+		_build_set_summary_text(build_summary.get("set_summary", [])),
+		" / ".join(recommendations) if not recommendations.is_empty() else "继续补齐高阶成长位点"
+	]
+	build_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ShanhaiStyle.apply_body(build_label, true, 16)
+	content.add_child(build_label)
 
 	var status := Label.new()
 	status.text = GameData.last_runtime_error if not GameData.last_runtime_error.is_empty() else "装备与成长操作会优先走后端正式接口。"
@@ -230,10 +245,10 @@ func _build_runtime_equipment_card(entry: Dictionary) -> Control:
 	equip_button.pressed.connect(_on_equipment_action.bind("unequip" if bool(entry.get("is_equipped", false)) else "equip", {"equipment_uid": str(entry.get("equipment_uid", ""))}))
 	actions.add_child(equip_button)
 
-	var star_cost := int(entry.get("star_level", 0)) + 1
+	var next_star_cost: Dictionary = entry.get("next_star_cost", {})
 	var star_button := Button.new()
-	star_button.text = "升星 (%d)" % star_cost
-	star_button.disabled = _inventory_count("material_star_stone") < star_cost
+	star_button.text = "升星 (%s)" % _growth_cost_text(next_star_cost)
+	star_button.disabled = not _can_pay_growth_cost(next_star_cost)
 	ShanhaiStyle.apply_button(star_button, not star_button.disabled)
 	star_button.pressed.connect(_on_equipment_action.bind("star_up", {"equipment_uid": str(entry.get("equipment_uid", ""))}))
 	actions.add_child(star_button)
@@ -255,15 +270,17 @@ func _build_runtime_equipment_card(entry: Dictionary) -> Control:
 	content.add_child(refine_row)
 
 	var blue_button := Button.new()
-	blue_button.text = "提取蓝词条"
-	blue_button.disabled = _inventory_count("material_seal_essence") <= 0
+	var blue_item_id := str(entry.get("blue_extract_item_id", "material_seal_essence"))
+	blue_button.text = "提取蓝词条 (%s)" % GameData.get_item_definition(blue_item_id).get("name", blue_item_id)
+	blue_button.disabled = _inventory_count(blue_item_id) <= 0
 	ShanhaiStyle.apply_button(blue_button, not blue_button.disabled)
 	blue_button.pressed.connect(_on_equipment_action.bind("extract_blue_affix", {"equipment_uid": str(entry.get("equipment_uid", ""))}))
 	refine_row.add_child(blue_button)
 
 	var purple_button := Button.new()
-	purple_button.text = "紫洗练"
-	purple_button.disabled = _inventory_count("material_refine_sand") <= 0
+	var purple_item_id := str(entry.get("purple_refine_item_id", "material_refine_sand"))
+	purple_button.text = "紫洗练 (%s)" % GameData.get_item_definition(purple_item_id).get("name", purple_item_id)
+	purple_button.disabled = _inventory_count(purple_item_id) <= 0
 	ShanhaiStyle.apply_button(purple_button, not purple_button.disabled)
 	purple_button.pressed.connect(_on_equipment_action.bind("refine_purple_affix", {"equipment_uid": str(entry.get("equipment_uid", ""))}))
 	refine_row.add_child(purple_button)
@@ -338,6 +355,44 @@ func _find_socket_candidate(entry: Dictionary) -> Dictionary:
 					"slot_index": int(slot.get("slot_index", 0))
 				}
 	return {}
+
+func _build_skill_combo_text(skills: Array) -> String:
+	if skills.is_empty():
+		return "暂无"
+	var labels: Array = []
+	for skill in skills:
+		labels.append(str(skill.get("skill_name", skill.get("skill_id", "技能"))))
+	return " / ".join(labels)
+
+func _build_set_summary_text(set_summary: Array) -> String:
+	if set_summary.is_empty():
+		return "尚未成套"
+	var labels: Array = []
+	for entry in set_summary:
+		labels.append("%s(%d)" % [str(entry.get("set_name", entry.get("set_id", "套装"))), int(entry.get("equipped_count", 0))])
+	return " / ".join(labels)
+
+func _can_pay_growth_cost(cost: Dictionary) -> bool:
+	var base_item_id := str(cost.get("base_item_id", "material_star_stone"))
+	var advanced_item_id := str(cost.get("advanced_item_id", ""))
+	if _inventory_count(base_item_id) < int(cost.get("base_cost", 0)):
+		return false
+	if not advanced_item_id.is_empty() and _inventory_count(advanced_item_id) < int(cost.get("advanced_cost", 0)):
+		return false
+	return true
+
+func _growth_cost_text(cost: Dictionary) -> String:
+	var base_item_id := str(cost.get("base_item_id", "material_star_stone"))
+	var base_label := "%s x%d" % [GameData.get_item_definition(base_item_id).get("name", base_item_id), int(cost.get("base_cost", 0))]
+	var advanced_cost := int(cost.get("advanced_cost", 0))
+	if advanced_cost <= 0:
+		return base_label
+	var advanced_item_id := str(cost.get("advanced_item_id", "material_star_crystal"))
+	return "%s + %s x%d" % [
+		base_label,
+		GameData.get_item_definition(advanced_item_id).get("name", advanced_item_id),
+		advanced_cost
+	]
 
 func _skill_meta_text(skill: Dictionary) -> String:
 	var lines: Array = []

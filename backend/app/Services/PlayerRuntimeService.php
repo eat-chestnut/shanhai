@@ -45,6 +45,9 @@ class PlayerRuntimeService
                 'nickname' => $nickname !== '' ? $nickname : $playerProfile->nickname,
                 'auth_token' => Str::random(60),
                 'last_login_at' => Carbon::now(),
+                'last_active_at' => Carbon::now(),
+                'idle_started_at' => $playerProfile->idle_started_at ?? Carbon::now(),
+                'idle_last_claimed_at' => $playerProfile->idle_last_claimed_at ?? Carbon::now(),
             ]);
 
             $playerProfile = $this->syncComputedFields($playerProfile);
@@ -64,16 +67,20 @@ class PlayerRuntimeService
      */
     public function getInitPayload(PlayerProfile $playerProfile): array
     {
+        $playerProfile = $this->touchActivity($playerProfile);
         $playerProfile = $this->syncComputedFields($playerProfile);
         $inventory = $this->buildInventoryPayload($playerProfile->player_id);
         $stageProgress = $this->buildStageProgressPayload($playerProfile->player_id);
         $dungeonProgress = $this->buildDungeonProgressPayload($playerProfile->player_id);
+        $buildSummary = $this->buildBuildSummary($playerProfile);
 
         return [
-            'player' => $this->buildPlayerPayload($playerProfile, $inventory),
+            'player' => $this->buildPlayerPayload($playerProfile, $inventory, $buildSummary),
             'inventory' => $inventory,
             'stage_progress' => $stageProgress,
             'dungeon_progress' => $dungeonProgress,
+            'build_summary' => $buildSummary,
+            'growth_recommendations' => $buildSummary['next_recommendations'] ?? [],
         ];
     }
 
@@ -138,11 +145,21 @@ class PlayerRuntimeService
             'max_energy' => (int) $playerProfile->max_energy,
             'class_profile' => $this->getClassCombatProfile((string) $playerProfile->class_id),
             'stats' => $this->calculateTotalStats($playerProfile),
+            'build_summary' => $this->buildBuildSummary($playerProfile),
             'skills' => [
                 'active' => $activeSkills,
                 'passive' => $passiveSkills,
             ],
         ];
+    }
+
+    public function touchActivity(PlayerProfile $playerProfile): PlayerProfile
+    {
+        return $this->repository->updateProfile($playerProfile, [
+            'last_active_at' => Carbon::now(),
+            'idle_started_at' => $playerProfile->idle_started_at ?? Carbon::now(),
+            'idle_last_claimed_at' => $playerProfile->idle_last_claimed_at ?? Carbon::now(),
+        ]);
     }
 
     /**
@@ -399,9 +416,10 @@ class PlayerRuntimeService
      * @param  list<array<string, mixed>>  $inventory
      * @return array<string, mixed>
      */
-    private function buildPlayerPayload(PlayerProfile $playerProfile, array $inventory): array
+    private function buildPlayerPayload(PlayerProfile $playerProfile, array $inventory, ?array $buildSummary = null): array
     {
         $stats = $this->calculateTotalStats($playerProfile);
+        $summary = $buildSummary ?? $this->buildBuildSummary($playerProfile);
 
         return [
             'player_id' => (int) $playerProfile->player_id,
@@ -422,6 +440,8 @@ class PlayerRuntimeService
             'skill_points' => (int) $playerProfile->skill_points,
             'skill_levels' => $playerProfile->skill_levels ?? [],
             'equipment_summary' => $playerProfile->equipment_summary ?? [],
+            'build_summary' => $summary,
+            'growth_recommendations' => $summary['next_recommendations'] ?? [],
             'inventory' => $inventory,
         ];
     }
@@ -450,7 +470,190 @@ class PlayerRuntimeService
             'skill_points' => (int) ($starter['skill_points'] ?? 0),
             'skill_levels' => $starter['skill_levels'] ?? [],
             'equipment_summary' => $starter['equipment_summary'] ?? [],
+            'idle_started_at' => Carbon::now(),
+            'idle_last_claimed_at' => Carbon::now(),
+            'last_active_at' => Carbon::now(),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildBuildSummary(PlayerProfile $playerProfile): array
+    {
+        $classId = (string) ($playerProfile->class_id ?? '');
+        $equipmentSummary = $playerProfile->equipment_summary ?? [];
+        $activeSkills = array_values(array_slice(array_map(
+            static fn (array $skill): array => [
+                'skill_id' => (string) ($skill['skill_id'] ?? ''),
+                'skill_name' => (string) ($skill['skill_name'] ?? $skill['skill_id'] ?? ''),
+            ],
+            $this->getRuntimeSkillsForPlayer($playerProfile, 'active'),
+        ), 0, 3));
+        $setSummary = array_values(array_filter(array_map(function (array $setCount): array {
+            $setId = (string) ($setCount['set_id'] ?? '');
+            $set = EquipmentSet::query()->where('set_id', $setId)->first();
+
+            return [
+                'set_id' => $setId,
+                'set_name' => $set?->set_id ?? $setId,
+                'equipped_count' => (int) ($setCount['equipped_count'] ?? 0),
+            ];
+        }, $equipmentSummary['set_counts'] ?? []), static fn (array $set): bool => $set['set_id'] !== ''));
+        $gemFocus = $this->resolveGemTendency(array_values($equipmentSummary['equipped_gem_ids'] ?? []));
+        $affixDirection = $this->resolveAffixDirection(
+            array_values($equipmentSummary['blue_affix_ids'] ?? []),
+            array_values($equipmentSummary['purple_refinement_ids'] ?? []),
+        );
+        $stats = $this->calculateTotalStats($playerProfile);
+        $primaryTendency = $this->resolvePrimaryTendency($playerProfile, $stats, $affixDirection);
+        $recommendations = $this->resolveGrowthRecommendations($playerProfile, $setSummary, $gemFocus, $affixDirection, $primaryTendency);
+
+        return [
+            'class_id' => $classId,
+            'class_name' => CharacterClass::query()->where('class_id', $classId)->value('class_name') ?? $classId,
+            'class_role' => $this->getClassCombatProfile($classId)['role'] ?? 'adventurer',
+            'active_skill_combo' => $activeSkills,
+            'set_summary' => $setSummary,
+            'gem_tendency' => $gemFocus,
+            'affix_direction' => $affixDirection,
+            'primary_tendency' => $primaryTendency,
+            'next_recommendations' => $recommendations,
+        ];
+    }
+
+    /**
+     * @param  list<string>  $gemIds
+     * @return array<string, mixed>
+     */
+    private function resolveGemTendency(array $gemIds): array
+    {
+        $attack = 0;
+        $boss = 0;
+
+        foreach (Gem::query()->whereIn('gem_id', $gemIds)->get() as $gem) {
+            $attack += (int) $gem->bonus_atk;
+            $boss += (int) $gem->bonus_boss_dmg;
+        }
+
+        $focus = $boss >= 20 ? 'Boss爆发' : ($attack >= 12 ? '高攻速输出' : '均衡成长');
+
+        return [
+            'focus' => $focus,
+            'equipped_gem_ids' => $gemIds,
+        ];
+    }
+
+    /**
+     * @param  list<string>  $blueAffixIds
+     * @param  list<string>  $purpleRefinementIds
+     * @return array<string, mixed>
+     */
+    private function resolveAffixDirection(array $blueAffixIds, array $purpleRefinementIds): array
+    {
+        $focusScores = [
+            '输出' => 0,
+            '生存' => 0,
+            '控制' => 0,
+            '爆发' => 0,
+        ];
+
+        foreach (BlueAffix::query()->whereIn('affix_id', $blueAffixIds)->get() as $blueAffix) {
+            $bonuses = $blueAffix->bonuses ?? [];
+            $focusScores['输出'] += (int) ($bonuses['bonus_atk'] ?? 0) + (int) round((float) ($bonuses['bonus_attack_speed'] ?? 0) * 100);
+            $focusScores['生存'] += (int) ($bonuses['bonus_def'] ?? 0) + (int) ($bonuses['bonus_hp'] ?? 0) / 20;
+            $focusScores['爆发'] += (int) round((float) ($bonuses['bonus_damage_ratio'] ?? 0) * 120);
+        }
+
+        foreach (PurpleRefinement::query()->whereIn('refinement_id', $purpleRefinementIds)->get() as $purpleRefinement) {
+            $bonuses = $purpleRefinement->bonuses ?? [];
+            $focusScores['输出'] += (int) ($bonuses['bonus_atk'] ?? 0);
+            $focusScores['生存'] += (int) ($bonuses['bonus_def'] ?? 0) + (int) ($bonuses['bonus_hp'] ?? 0) / 20;
+            $focusScores['爆发'] += (int) ($bonuses['bonus_boss_dmg'] ?? 0) * 2 + (int) round((float) ($bonuses['bonus_damage_ratio'] ?? 0) * 140);
+            if ((int) ($bonuses['bonus_control_power'] ?? 0) > 0) {
+                $focusScores['控制'] += (int) ($bonuses['bonus_control_power'] ?? 0);
+            }
+        }
+
+        arsort($focusScores);
+        $direction = (string) array_key_first($focusScores);
+
+        return [
+            'focus' => $direction !== '' ? $direction : '均衡',
+            'blue_affix_ids' => $blueAffixIds,
+            'purple_refinement_ids' => $purpleRefinementIds,
+        ];
+    }
+
+    /**
+     * @param  array<string, int|float>  $stats
+     * @param  array<string, mixed>  $affixDirection
+     */
+    private function resolvePrimaryTendency(PlayerProfile $playerProfile, array $stats, array $affixDirection): string
+    {
+        $classRole = (string) ($this->getClassCombatProfile((string) ($playerProfile->class_id ?? ''))['role'] ?? '');
+        $affixFocus = (string) ($affixDirection['focus'] ?? '');
+
+        if ($affixFocus !== '' && $affixFocus !== '均衡') {
+            return $affixFocus;
+        }
+
+        if ($classRole === 'melee_tank' && (int) ($stats['def'] ?? 0) >= 220) {
+            return '生存';
+        }
+
+        if ((int) ($stats['boss_dmg'] ?? 0) >= 20 || (float) ($stats['damage_ratio_bonus'] ?? 0.0) >= 0.2) {
+            return '爆发';
+        }
+
+        return match ($classRole) {
+            'caster_control' => '控制',
+            'ranged_dps' => '输出',
+            default => '生存',
+        };
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $setSummary
+     * @param  array<string, mixed>  $gemFocus
+     * @param  array<string, mixed>  $affixDirection
+     * @return list<string>
+     */
+    private function resolveGrowthRecommendations(
+        PlayerProfile $playerProfile,
+        array $setSummary,
+        array $gemFocus,
+        array $affixDirection,
+        string $primaryTendency,
+    ): array {
+        $recommendations = [];
+        $highestSetPieces = 0;
+
+        foreach ($setSummary as $set) {
+            $highestSetPieces = max($highestSetPieces, (int) ($set['equipped_count'] ?? 0));
+        }
+
+        if ($highestSetPieces < 4) {
+            $recommendations[] = '优先补齐 4 件套，后期构筑收益会明显高于散件堆数值。';
+        }
+
+        if ((string) ($gemFocus['focus'] ?? '') === '均衡成长') {
+            $recommendations[] = '当前宝石方向偏分散，可优先向攻速输出或 Boss 爆发集中。';
+        }
+
+        if ((string) ($affixDirection['focus'] ?? '') === '均衡') {
+            $recommendations[] = '蓝词条与紫洗练尚未成型，建议围绕主要技能补同向词条。';
+        }
+
+        if ((int) $playerProfile->level >= 60) {
+            $recommendations[] = sprintf('当前主方向为%s，建议优先挑战周常塔层并补足高阶成长材料。', $primaryTendency);
+        }
+
+        if ($recommendations === []) {
+            $recommendations[] = '当前构筑已初步成型，下一步可冲击更高挑战层和后期套装毕业。';
+        }
+
+        return $recommendations;
     }
 
     /**

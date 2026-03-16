@@ -234,7 +234,9 @@
     {"feature_id": "feat_trial", "feature_name": "宗门试炼", "feature_type": "daily_task", "unlock_condition": {"level": 1}, "jump_target": {"page": "trial"}},
     {"feature_id": "feat_shop", "feature_name": "宗门贡献商店", "feature_type": "shop", "unlock_condition": {"level": 1}, "jump_target": {"page": "shop"}},
     {"feature_id": "feat_mainline", "feature_name": "巡厄主线", "feature_type": "mainline", "unlock_condition": {"level": 1}, "jump_target": {"page": "mainline"}},
-    {"feature_id": "feat_dungeon", "feature_name": "宗门副本", "feature_type": "dungeon", "unlock_condition": {"level": 5}, "jump_target": {"page": "dungeon"}}
+    {"feature_id": "feat_dungeon", "feature_name": "宗门副本", "feature_type": "dungeon", "unlock_condition": {"level": 5}, "jump_target": {"page": "dungeon"}},
+    {"feature_id": "feat_idle", "feature_name": "闭关收益", "feature_type": "idle", "unlock_condition": {"level": 12}, "jump_target": {"page": "idle"}},
+    {"feature_id": "feat_challenge", "feature_name": "玄渊试炼", "feature_type": "challenge", "unlock_condition": {"level": 60}, "jump_target": {"page": "challenge"}}
   ],
   "chapters": [
     {

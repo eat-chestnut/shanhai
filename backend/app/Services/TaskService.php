@@ -190,6 +190,7 @@ class TaskService
             'stage_clear' => $this->countStageClearProgress((int) $playerProfile->player_id, $conditions),
             'dungeon_clear' => $this->countTodayBattles((int) $playerProfile->player_id, 'dungeon'),
             'battle_complete' => $this->countTodayBattles((int) $playerProfile->player_id),
+            'challenge_clear' => $this->countTodayBattles((int) $playerProfile->player_id, 'challenge'),
             default => 0,
         };
     }

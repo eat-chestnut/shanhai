@@ -89,6 +89,8 @@ func _build_quick_links() -> Control:
 		{"screen": UiState.SCREEN_DUNGEON, "label": "进入宗门副本"},
 		{"screen": UiState.SCREEN_TASK, "label": "查看宗门任务"},
 		{"screen": UiState.SCREEN_SHOP, "label": "进入宗门商店"},
+		{"screen": UiState.SCREEN_IDLE, "label": "领取闭关收益"},
+		{"screen": UiState.SCREEN_CHALLENGE, "label": "挑战玄渊试炼"},
 		{"screen": UiState.SCREEN_INVENTORY, "label": "查看行囊与装备"}
 	]:
 		var screen := str(entry.get("screen", ""))
@@ -111,6 +113,10 @@ func _handle_feature(feature: Dictionary) -> void:
 			emit_signal("navigate", UiState.SCREEN_MAINLINE)
 		"dungeon":
 			emit_signal("navigate", UiState.SCREEN_DUNGEON)
+		"idle":
+			emit_signal("navigate", UiState.SCREEN_IDLE)
+		"challenge":
+			emit_signal("navigate", UiState.SCREEN_CHALLENGE)
 		_:
 			pass
 

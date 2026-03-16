@@ -18,7 +18,7 @@ class BattlePrepareRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'source_type' => ['required', 'string', Rule::in(['stage', 'dungeon'])],
+            'source_type' => ['required', 'string', Rule::in(['stage', 'dungeon', 'challenge'])],
             'source_id' => ['required', 'string', 'max:100'],
             'difficulty_id' => ['required', 'string', 'max:100'],
         ];

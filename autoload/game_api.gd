@@ -185,6 +185,26 @@ func buy_sect_shop_item(shop_item_id: String, count: int = 1) -> Dictionary:
 		true
 	)
 
+func fetch_idle_status() -> Dictionary:
+	return await _request_api_data("/idle/status", HTTPClient.METHOD_GET, {}, true)
+
+func claim_idle_rewards() -> Dictionary:
+	return await _request_api_data("/idle/claim", HTTPClient.METHOD_POST, {}, true)
+
+func fetch_idle_rules() -> Dictionary:
+	return await _request_api_data("/idle/rules", HTTPClient.METHOD_GET, {}, true)
+
+func fetch_challenge_list() -> Dictionary:
+	return await _request_api_data("/challenge/list", HTTPClient.METHOD_GET, {}, true)
+
+func fetch_challenge_detail(challenge_id: String) -> Dictionary:
+	return await _request_api_data(
+		"/challenge/detail?challenge_id=%s" % challenge_id.uri_encode(),
+		HTTPClient.METHOD_GET,
+		{},
+		true
+	)
+
 func battle_prepare(source_type: String, source_id: String, difficulty_id: String) -> Dictionary:
 	return await _request_api_data(
 		"/battle/prepare",

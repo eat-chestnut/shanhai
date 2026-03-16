@@ -1,0 +1,66 @@
+{
+  "challenge_config": [
+    {
+      "challenge_id": "challenge_abyss_tower",
+      "challenge_name": "玄渊试炼塔",
+      "challenge_type": "tower",
+      "challenge_desc": "后期长线挑战玩法，每周重置周奖励状态，首次通关奖励永久保留。",
+      "unlock_level": 60,
+      "cycle_type": "weekly",
+      "reward_preview": [
+        {"item_id": "gold", "count": 3600},
+        {"item_id": "material_star_crystal", "count": 2},
+        {"item_id": "material_refine_crystal", "count": 2},
+        {"item_id": "boss_core_abyss", "count": 1}
+      ],
+      "floors": [
+        {
+          "floor_id": "floor_01",
+          "floor": 1,
+          "floor_name": "裂渊初阶",
+          "recommended_power": 8400,
+          "monster_group_id": "challenge_abyss_floor_01",
+          "monster_ids": ["mon_abyss_guard", "mon_refine_spirit", "mon_abyss_lord"],
+          "first_clear_reward_group_id": "reward_challenge_floor01_first",
+          "weekly_reward_group_id": "reward_challenge_floor01_weekly",
+          "normal_reward_group_id": "reward_challenge_floor01_normal"
+        },
+        {
+          "floor_id": "floor_02",
+          "floor": 2,
+          "floor_name": "裂渊破军",
+          "recommended_power": 9200,
+          "monster_group_id": "challenge_abyss_floor_02",
+          "monster_ids": ["mon_abyss_guard", "mon_abyss_guard", "mon_abyss_lord"],
+          "first_clear_reward_group_id": "reward_challenge_floor02_first",
+          "weekly_reward_group_id": "reward_challenge_floor02_weekly",
+          "normal_reward_group_id": "reward_challenge_floor02_normal"
+        },
+        {
+          "floor_id": "floor_03",
+          "floor": 3,
+          "floor_name": "渊主回潮",
+          "recommended_power": 10100,
+          "monster_group_id": "challenge_abyss_floor_03",
+          "monster_ids": ["mon_abyss_guard", "mon_new_boss", "mon_abyss_lord"],
+          "first_clear_reward_group_id": "reward_challenge_floor03_first",
+          "weekly_reward_group_id": "reward_challenge_floor03_weekly",
+          "normal_reward_group_id": "reward_challenge_floor03_normal"
+        },
+        {
+          "floor_id": "floor_04",
+          "floor": 4,
+          "floor_name": "封灾逆潮",
+          "recommended_power": 11200,
+          "monster_group_id": "challenge_abyss_floor_04",
+          "monster_ids": ["mon_abyss_guard", "mon_abyss_lord", "mon_abyss_lord"],
+          "first_clear_reward_group_id": "reward_challenge_floor04_first",
+          "weekly_reward_group_id": "reward_challenge_floor04_weekly",
+          "normal_reward_group_id": "reward_challenge_floor04_normal"
+        }
+      ],
+      "sort": 10,
+      "is_open": true
+    }
+  ]
+}
