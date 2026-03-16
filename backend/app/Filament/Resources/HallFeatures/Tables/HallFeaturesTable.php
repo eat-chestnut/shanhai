@@ -35,13 +35,13 @@ class HallFeaturesTable
                 TextColumn::make('unlock_condition')
                     ->label('unlock_condition')
                     ->formatStateUsing(
-                        static fn (?array $state): string => self::formatUnlockCondition($state),
+                        static fn (mixed $state): string => self::formatUnlockCondition($state),
                     )
                     ->wrap(),
                 TextColumn::make('jump_target')
                     ->label('jump_target')
                     ->formatStateUsing(
-                        static fn (?array $state): string => self::formatJumpTarget($state),
+                        static fn (mixed $state): string => self::formatJumpTarget($state),
                     )
                     ->wrap(),
             ])
@@ -61,11 +61,12 @@ class HallFeaturesTable
             ]);
     }
 
-    /**
-     * @param  array<string, mixed>|null  $state
-     */
-    private static function formatUnlockCondition(?array $state): string
+    private static function formatUnlockCondition(mixed $state): string
     {
+        if (! is_array($state)) {
+            return filled($state) ? (string) $state : '-';
+        }
+
         if ($state === null || $state === []) {
             return '-';
         }
@@ -80,11 +81,12 @@ class HallFeaturesTable
         return implode('; ', $parts);
     }
 
-    /**
-     * @param  array<string, mixed>|null  $state
-     */
-    private static function formatJumpTarget(?array $state): string
+    private static function formatJumpTarget(mixed $state): string
     {
+        if (! is_array($state)) {
+            return filled($state) ? (string) $state : '-';
+        }
+
         if ($state === null || $state === []) {
             return '-';
         }

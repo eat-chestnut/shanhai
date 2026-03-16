@@ -4,9 +4,9 @@ namespace App\Filament\Resources\EquipmentSets\Schemas;
 
 use App\Models\Equipment;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section as FormSection;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section as FormSection;
 use Filament\Schemas\Schema;
 
 class EquipmentSetForm

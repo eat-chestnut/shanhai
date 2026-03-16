@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\MainlineChapters\Schemas;
 
-use Filament\Forms\Components\Section as FormSection;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section as FormSection;
 use Filament\Schemas\Schema;
 
 class MainlineChapterForm

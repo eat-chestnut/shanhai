@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\Monsters\Schemas;
 
-use Filament\Forms\Components\Section as FormSection;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section as FormSection;
 use Filament\Schemas\Schema;
 
 class MonsterForm

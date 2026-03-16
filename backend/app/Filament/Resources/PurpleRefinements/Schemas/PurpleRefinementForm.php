@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\PurpleRefinements\Schemas;
 
 use Filament\Forms\Components\KeyValue;
-use Filament\Forms\Components\Section as FormSection;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section as FormSection;
 use Filament\Schemas\Schema;
 
 class PurpleRefinementForm

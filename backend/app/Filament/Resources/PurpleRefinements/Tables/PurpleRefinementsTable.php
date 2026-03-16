@@ -28,7 +28,7 @@ class PurpleRefinementsTable
                 TextColumn::make('bonuses')
                     ->label('bonuses')
                     ->formatStateUsing(
-                        static fn (?array $state): string => json_encode($state ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                        static fn (mixed $state): string => self::formatBonuses($state),
                     )
                     ->wrap(),
             ])
@@ -44,5 +44,14 @@ class PurpleRefinementsTable
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    private static function formatBonuses(mixed $state): string
+    {
+        if (is_array($state)) {
+            return (string) json_encode($state, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        return filled($state) ? (string) $state : '-';
     }
 }

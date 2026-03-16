@@ -4,9 +4,9 @@ namespace App\Filament\Resources\MainlineDifficulties\Schemas;
 
 use App\Models\MainlineDifficulty;
 use App\Models\MainlineNode;
-use Filament\Forms\Components\Section as FormSection;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section as FormSection;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Validation\Rules\Unique;

@@ -26,11 +26,11 @@ class EquipmentSetsTable
                     ->sortable(),
                 TextColumn::make('pieces')
                     ->label('pieces')
-                    ->formatStateUsing(static fn (?array $state): string => implode(', ', $state ?? []))
+                    ->formatStateUsing(static fn (mixed $state): string => self::formatPieces($state))
                     ->wrap(),
                 TextColumn::make('effects')
                     ->label('effects')
-                    ->formatStateUsing(static fn (?array $state): string => self::formatEffects($state))
+                    ->formatStateUsing(static fn (mixed $state): string => self::formatEffects($state))
                     ->wrap(),
             ])
             ->filters([
@@ -47,11 +47,21 @@ class EquipmentSetsTable
             ]);
     }
 
-    /**
-     * @param  array<int, array<string, mixed>>|null  $effects
-     */
-    private static function formatEffects(?array $effects): string
+    private static function formatPieces(mixed $state): string
     {
+        if (is_array($state)) {
+            return implode(', ', $state);
+        }
+
+        return filled($state) ? (string) $state : '-';
+    }
+
+    private static function formatEffects(mixed $effects): string
+    {
+        if (! is_array($effects)) {
+            return filled($effects) ? (string) $effects : '-';
+        }
+
         if ($effects === null || $effects === []) {
             return '-';
         }

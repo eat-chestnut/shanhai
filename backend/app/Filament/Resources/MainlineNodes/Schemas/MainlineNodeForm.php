@@ -4,10 +4,10 @@ namespace App\Filament\Resources\MainlineNodes\Schemas;
 
 use App\Models\MainlineChapter;
 use Filament\Forms\Components\KeyValue;
-use Filament\Forms\Components\Section as FormSection;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section as FormSection;
 use Filament\Schemas\Schema;
 
 class MainlineNodeForm

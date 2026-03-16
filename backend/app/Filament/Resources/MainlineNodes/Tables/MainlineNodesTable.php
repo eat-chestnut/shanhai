@@ -37,11 +37,11 @@ class MainlineNodesTable
                     ->sortable(),
                 TextColumn::make('unlock_condition')
                     ->label('unlock_condition')
-                    ->formatStateUsing(static fn (?array $state): string => self::formatUnlockCondition($state))
+                    ->formatStateUsing(static fn (mixed $state): string => self::formatUnlockCondition($state))
                     ->wrap(),
                 TextColumn::make('difficulty_ids')
                     ->label('difficulty_ids')
-                    ->formatStateUsing(static fn (?array $state): string => implode(', ', $state ?? []))
+                    ->formatStateUsing(static fn (mixed $state): string => self::formatDifficultyIds($state))
                     ->wrap(),
             ])
             ->filters([
@@ -63,11 +63,12 @@ class MainlineNodesTable
             ]);
     }
 
-    /**
-     * @param  array<string, mixed>|null  $state
-     */
-    private static function formatUnlockCondition(?array $state): string
+    private static function formatUnlockCondition(mixed $state): string
     {
+        if (! is_array($state)) {
+            return filled($state) ? (string) $state : '-';
+        }
+
         if ($state === null || $state === []) {
             return '-';
         }
@@ -80,5 +81,14 @@ class MainlineNodesTable
         }
 
         return implode('; ', $parts);
+    }
+
+    private static function formatDifficultyIds(mixed $state): string
+    {
+        if (is_array($state)) {
+            return implode(', ', $state);
+        }
+
+        return filled($state) ? (string) $state : '-';
     }
 }
