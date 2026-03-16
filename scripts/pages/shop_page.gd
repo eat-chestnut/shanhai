@@ -2,6 +2,7 @@ extends ScrollContainer
 class_name ShopPage
 
 const ShanhaiStyle = preload("res://scripts/core/shanhai_style.gd")
+const ITEM_SLOT_SCENE := preload("res://scenes/components/item_slot.tscn")
 
 var _content: VBoxContainer
 var _status_label: Label
@@ -58,16 +59,23 @@ func _rebuild_items() -> void:
 func _build_shop_item(item: Dictionary) -> Control:
 	var panel := PanelContainer.new()
 	ShanhaiStyle.apply_panel(panel)
-
+	
 	var content := VBoxContainer.new()
 	content.add_theme_constant_override("separation", 8)
 	panel.add_child(content)
-
-	var title := Label.new()
-	title.text = "%s x%d" % [item.get("item_name", item.get("item_id", "商品")), int(item.get("count", 1))]
-	ShanhaiStyle.apply_heading(title, 22)
-	content.add_child(title)
-
+	
+	var item_id := str(item.get("item_id", ""))
+	var definition := GameData.get_item_definition(item_id)
+	
+	# 使用ItemSlot组件显示商品
+	var item_slot = ITEM_SLOT_SCENE.instantiate()
+	item_slot.configure({
+		"item_id": item_id,
+		"count": int(item.get("count", 1)),
+		"definition": definition
+	})
+	content.add_child(item_slot)
+	
 	var desc := Label.new()
 	desc.text = "价格：%s %d\n限购：%d / %d" % [
 		_cost_label(str(item.get("cost_type", "gold"))),
@@ -78,14 +86,14 @@ func _build_shop_item(item: Dictionary) -> Control:
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ShanhaiStyle.apply_body(desc, false, 18)
 	content.add_child(desc)
-
+	
 	var action := Button.new()
 	action.text = "已售罄" if bool(item.get("is_sold_out", false)) else "购买"
 	action.disabled = bool(item.get("is_sold_out", false))
 	ShanhaiStyle.apply_button(action, not action.disabled)
 	action.pressed.connect(_on_buy_pressed.bind(str(item.get("shop_item_id", ""))))
 	content.add_child(action)
-
+	
 	return panel
 
 func _cost_label(cost_type: String) -> String:
