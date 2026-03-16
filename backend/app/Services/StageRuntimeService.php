@@ -262,26 +262,32 @@ class StageRuntimeService
         }
 
         $levelRequirement = (int) (($node->unlock_condition ?? [])['level'] ?? 1);
-        $clearNodeId = (string) (($node->unlock_condition ?? [])['clear_node_id'] ?? (($node->unlock_condition ?? [])['conditions']['clear_node_id'] ?? ''));
 
         if ((int) $playerProfile->level < $levelRequirement) {
             return false;
         }
 
+        // clear_node_id 现在只是辅助条件，不是主要判定
+        $clearNodeId = (string) (($node->unlock_condition ?? [])['clear_node_id'] ?? (($node->unlock_condition ?? [])['conditions']['clear_node_id'] ?? ''));
+        
         if ($clearNodeId !== '') {
             $requiredClear = $progress
                 ->where('node_id', $clearNodeId)
                 ->first(fn ($entry): bool => (int) $entry->clear_count > 0);
 
             if ($requiredClear === null) {
+                // 如果辅助条件未满足，仍然可以解锁，但可能需要其他条件
+                // 这里可以根据需要调整逻辑
                 return false;
             }
         }
 
+        // 如果是章节第一个节点，直接解锁
         if ($nodeIndex <= 0) {
             return true;
         }
 
+        // 检查前一个节点是否已通关（节点内部的顺序）
         $previousNode = $orderedNodes[$nodeIndex - 1] ?? null;
 
         if (! $previousNode instanceof MainlineNode) {
