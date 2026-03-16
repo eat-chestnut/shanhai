@@ -17,32 +17,32 @@ class EquipmentForm
                     ->columns(2)
                     ->schema([
                         TextInput::make('equip_id')
-                            ->label('equip_id')
+                            ->label('装备ID')
                             ->required()
                             ->maxLength(100)
                             ->unique(ignoreRecord: true),
                         TextInput::make('name')
-                            ->label('name')
+                            ->label('装备名称')
                             ->required()
                             ->maxLength(100),
                         TextInput::make('type')
-                            ->label('type')
+                            ->label('装备类型')
                             ->required()
                             ->maxLength(100)
                             ->placeholder('weapon'),
                         TextInput::make('level')
-                            ->label('level')
+                            ->label('等级')
                             ->required()
                             ->numeric()
                             ->minValue(1)
                             ->default(1),
                         TextInput::make('base_atk')
-                            ->label('base_atk')
+                            ->label('基础攻击')
                             ->numeric()
                             ->minValue(0)
                             ->default(0),
                         TextInput::make('base_def')
-                            ->label('base_def')
+                            ->label('基础防御')
                             ->numeric()
                             ->minValue(0)
                             ->default(0),

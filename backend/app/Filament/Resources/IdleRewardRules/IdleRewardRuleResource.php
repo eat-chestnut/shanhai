@@ -25,6 +25,11 @@ class IdleRewardRuleResource extends Resource
         return '挂机收益规则';
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return '玩法配置';
+    }
+
     public static function getModelLabel(): string
     {
         return '挂机收益规则';

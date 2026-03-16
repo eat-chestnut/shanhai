@@ -311,16 +311,20 @@ class SustainableLoopRuntimeTest extends TestCase
 
         $token = $this->loginAndGetToken();
 
-        $this->app['db']->table('player_stage_progress')->insert([
-            'player_id' => 10001,
-            'chapter_id' => 'chapter_01',
-            'node_id' => 'node_01',
-            'difficulty_id' => 'easy',
-            'is_first_clear' => true,
-            'clear_count' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $this->app['db']->table('player_stage_progress')->updateOrInsert(
+            [
+                'player_id' => 10001,
+                'node_id' => 'node_01',
+                'difficulty_id' => 'easy',
+            ],
+            [
+                'chapter_id' => 'chapter_01',
+                'is_first_clear' => true,
+                'clear_count' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        );
 
         $response = $this
             ->withHeader('Authorization', "Bearer {$token}")

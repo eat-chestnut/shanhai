@@ -46,7 +46,8 @@ class MainlineNode extends Model
         }
 
         $difficultyIds = $node->difficulties()
-            ->orderBy('id')
+            ->orderBy('difficulty_order')
+            ->orderBy('difficulty_id')
             ->pluck('difficulty_id')
             ->all();
 

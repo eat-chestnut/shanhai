@@ -28,4 +28,9 @@ class MonsterDrop extends Model
     {
         return $this->belongsTo(Monster::class, 'monster_id', 'monster_id');
     }
+
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(Item::class, 'item_id', 'item_id');
+    }
 }

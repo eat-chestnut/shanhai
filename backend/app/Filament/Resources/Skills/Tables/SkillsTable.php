@@ -23,63 +23,63 @@ class SkillsTable
             ->defaultSort('class_id')
             ->columns([
                 TextColumn::make('skill_id')
-                    ->label('skill_id')
+                    ->label('技能ID')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('skill_name')
-                    ->label('skill_name')
+                    ->label('技能名称')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('class_id')
-                    ->label('class_id')
+                    ->label('职业ID')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('characterClass.class_name')
-                    ->label('class_name')
+                    ->label('职业名称')
                     ->toggleable(),
                 TextColumn::make('type')
-                    ->label('type')
+                    ->label('技能类型')
                     ->badge()
                     ->formatStateUsing(static fn (string $state): string => SkillType::tryFrom($state)?->label() ?? $state)
                     ->sortable(),
                 TextColumn::make('effect_type')
-                    ->label('effect_type')
+                    ->label('效果类型')
                     ->badge()
                     ->formatStateUsing(static fn (?string $state): string => SkillEffectType::tryFrom((string) $state)?->label() ?? (string) $state)
                     ->sortable(),
                 TextColumn::make('cooldown')
-                    ->label('cooldown')
+                    ->label('冷却时间')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('cost')
-                    ->label('cost')
+                    ->label('消耗')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('unlock_level')
-                    ->label('unlock_level')
+                    ->label('解锁等级')
                     ->numeric()
                     ->sortable(),
                 IconColumn::make('is_open')
-                    ->label('is_open')
+                    ->label('是否开放')
                     ->boolean(),
             ])
             ->filters([
                 SelectFilter::make('class_id')
-                    ->label('class_id')
+                    ->label('职业ID')
                     ->options(fn (): array => CharacterClass::query()->orderBy('class_id')->pluck('class_id', 'class_id')->all()),
                 SelectFilter::make('type')
-                    ->label('type')
+                    ->label('技能类型')
                     ->options(SkillType::options()),
                 TernaryFilter::make('is_open')
-                    ->label('is_open'),
+                    ->label('是否开放'),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()->label('编辑'),
+                DeleteAction::make()->label('删除'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->label('批量删除'),
                 ]),
             ]);
     }

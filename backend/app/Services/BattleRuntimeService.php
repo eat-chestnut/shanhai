@@ -108,7 +108,7 @@ class BattleRuntimeService
             }
 
             $normalRewards = $this->buildNormalRewards($battleRecord, $isVictory);
-            $progressUpdate = $this->updateProgress($lockedProfile, $battleRecord, $isVictory);
+            $progressUpdate = $this->updateProgress($lockedProfile, $battleRecord, $isVictory, $payload);
             $firstClearRewards = $progressUpdate['first_clear_rewards'] ?? [];
             $weeklyRewards = $progressUpdate['weekly_rewards'] ?? [];
             unset($progressUpdate['first_clear_rewards']);
@@ -386,7 +386,7 @@ class BattleRuntimeService
     /**
      * @return array<string, mixed>
      */
-    private function updateProgress(PlayerProfile $playerProfile, BattleRecord $battleRecord, bool $isVictory): array
+    private function updateProgress(PlayerProfile $playerProfile, BattleRecord $battleRecord, bool $isVictory, array $payload = []): array
     {
         if ($battleRecord->source_type === 'stage') {
             $chapterId = (string) ($battleRecord->request_snapshot['chapter_id'] ?? '');
@@ -410,10 +410,9 @@ class BattleRuntimeService
                     ],
                 );
 
-                $this->playerRuntimeRepository->updateProfile($playerProfile, [
-                    'current_chapter_id' => $chapterId,
-                    'current_node_id' => $nodeId,
-                ]);
+                $nextLocation = $this->stageRuntimeService->resolveNextCurrentLocation($playerProfile, $nodeId, $difficultyId);
+
+                $this->playerRuntimeRepository->updateProfile($playerProfile, $nextLocation);
             }
 
             return [

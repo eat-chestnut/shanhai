@@ -16,6 +16,8 @@ class RarityConfigResource extends Resource
 {
     protected static ?string $model = RarityConfig::class;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSparkles;
 
     protected static ?int $navigationSort = 61;

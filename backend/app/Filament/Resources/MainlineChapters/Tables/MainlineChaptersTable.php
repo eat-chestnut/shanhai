@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MainlineChapters\Tables;
 
+use App\Models\MainlineDifficulty;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -37,6 +38,7 @@ class MainlineChaptersTable
                     ->placeholder('无'),
                 TextColumn::make('required_previous_highest_difficulty')
                     ->label('前置难度要求')
+                    ->formatStateUsing(static fn (?string $state): string => $state ? MainlineDifficulty::defaultDifficultyName($state) : '无')
                     ->sortable()
                     ->placeholder('无'),
             ])

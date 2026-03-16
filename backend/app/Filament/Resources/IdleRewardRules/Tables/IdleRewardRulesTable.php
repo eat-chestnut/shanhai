@@ -18,37 +18,37 @@ class IdleRewardRulesTable
             ->defaultSort('sort')
             ->columns([
                 TextColumn::make('rule_id')
-                    ->label('rule_id')
+                    ->label('规则ID')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
                 TextColumn::make('rule_name')
-                    ->label('rule_name')
+                    ->label('规则名称')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('level_range')
-                    ->label('level_range')
+                    ->label('等级区间')
                     ->state(static fn ($record): string => sprintf('Lv.%d - Lv.%d', (int) $record->min_level, (int) $record->max_level))
                     ->sortable(query: static fn ($query, string $direction) => $query->orderBy('min_level', $direction)),
                 TextColumn::make('idle_cap_hours')
-                    ->label('idle_cap_hours')
-                    ->suffix('h')
+                    ->label('挂机上限')
+                    ->suffix(' 小时')
                     ->sortable(),
                 TextColumn::make('reward_rate')
-                    ->label('reward_rate')
+                    ->label('收益速率')
                     ->formatStateUsing(static fn (mixed $state): string => self::formatRewardRate($state))
                     ->wrap(),
                 IconColumn::make('is_open')
-                    ->label('is_open')
+                    ->label('是否开启')
                     ->boolean(),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()->label('编辑'),
+                DeleteAction::make()->label('删除'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->label('批量删除'),
                 ]),
             ]);
     }

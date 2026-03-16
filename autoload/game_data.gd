@@ -576,29 +576,90 @@ func get_selected_equipment_runtime() -> Dictionary:
 
 func get_item_definition(item_id: String) -> Dictionary:
 	if item_id == "gold" or item_id == "jade" or item_id == "contribution":
-		return {"item_id": item_id, "name": item_labels.get(item_id, item_id), "type": "currency", "rarity": "common"}
+		return _normalize_item_entry({
+			"item_id": item_id,
+			"item_name": item_labels.get(item_id, item_id),
+			"item_type": "currency",
+			"rarity": "common"
+		})
 
 	var item_data := get_item(item_id)
 	if not item_data.is_empty():
-		return item_data.duplicate(true)
+		return _normalize_item_entry(item_data)
 
 	var equipment_data := get_equipment(item_id)
 	if not equipment_data.is_empty():
-		return {"item_id": item_id, "name": equipment_data.get("name", item_id), "type": equipment_data.get("type", "equipment"), "rarity": equipment_data.get("rarity", "common")}
+		return _normalize_item_entry({
+			"item_id": item_id,
+			"item_name": equipment_data.get("name", item_id),
+			"item_type": "equipment",
+			"rarity": equipment_data.get("rarity", "common")
+		})
 
 	var gem_data := get_gem(item_id)
 	if not gem_data.is_empty():
-		return {"item_id": item_id, "name": gem_data.get("name", item_id), "type": "gem", "rarity": gem_data.get("rarity", "uncommon")}
+		return _normalize_item_entry({
+			"item_id": item_id,
+			"item_name": gem_data.get("name", item_id),
+			"item_type": "gem",
+			"rarity": gem_data.get("rarity", "uncommon")
+		})
 
 	var affix_data := get_blue_affix(item_id)
 	if not affix_data.is_empty():
-		return {"item_id": item_id, "name": affix_data.get("name", item_id), "type": "blue_affix"}
+		return _normalize_item_entry({
+			"item_id": item_id,
+			"item_name": affix_data.get("name", item_id),
+			"item_type": "blue_affix",
+			"rarity": "rare"
+		})
 
 	var refinement_data := get_purple_refinement(item_id)
 	if not refinement_data.is_empty():
-		return {"item_id": item_id, "name": refinement_data.get("name", item_id), "type": "purple_refinement"}
+		return _normalize_item_entry({
+			"item_id": item_id,
+			"item_name": refinement_data.get("name", item_id),
+			"item_type": "purple_refinement",
+			"rarity": "epic"
+		})
 
-	return {"item_id": item_id, "name": item_labels.get(item_id, _label_from_id(item_id)), "type": "loot"}
+	return _normalize_item_entry({
+		"item_id": item_id,
+		"item_name": item_labels.get(item_id, _label_from_id(item_id)),
+		"item_type": "loot"
+	})
+	
+func get_item_display_name(definition: Dictionary) -> String:
+	return str(definition.get("item_name", definition.get("name", definition.get("item_id", "未知道具"))))
+
+func get_item_type_label(item_type: String) -> String:
+	match item_type:
+		"currency":
+			return "货币"
+		"material":
+			return "材料"
+		"equipment":
+			return "装备"
+		"talisman":
+			return "护符"
+		"consumable":
+			return "消耗品"
+		"boss_material", "boss_core":
+			return "Boss材料"
+		"gem":
+			return "宝石"
+		"blue_affix":
+			return "蓝词条"
+		"purple_refinement":
+			return "紫炼化"
+		"quest_item":
+			return "任务物品"
+		"fragment":
+			return "碎片"
+		"loot":
+			return "物品"
+		_:
+			return item_type if item_type != "" else "物品"
 
 func get_reward_group_items(group_id: String) -> Array:
 	var rewards = reward_groups.get(group_id, [])
@@ -638,7 +699,8 @@ func _apply_bootstrap(source: Dictionary) -> void:
 	purple_refinements = source.get("purple_refinements", []).duplicate(true)
 	task_configs = source.get("task_config", []).duplicate(true)
 	shop_items = source.get("shop_item_config", []).duplicate(true)
-	items = source.get("items", []).duplicate(true)
+	items = _normalize_item_catalog(source.get("items", []))
+	rarity_configs = _normalize_rarity_configs(source.get("rarity_configs", []))
 	reward_groups = source.get("reward_groups", {}).duplicate(true)
 	encounters = source.get("encounters", {}).duplicate(true)
 	runtime_player_init.clear()
@@ -681,9 +743,9 @@ func _merge_remote_bundle(remote_bundle: Dictionary) -> void:
 		blue_affixes = equipment_payload.get("blue_affix_config", equipment_payload.get("blue_affixes", blue_affixes)).duplicate(true)
 		purple_refinements = equipment_payload.get("purple_refinement_config", equipment_payload.get("purple_refinements", purple_refinements)).duplicate(true)
 	if remote_bundle.has("items"):
-		items = remote_bundle.get("items", []).duplicate(true)
+		items = _normalize_item_catalog(remote_bundle.get("items", []))
 	if remote_bundle.has("rarity_configs"):
-		rarity_configs = remote_bundle.get("rarity_configs", []).duplicate(true)
+		rarity_configs = _normalize_rarity_configs(remote_bundle.get("rarity_configs", []))
 	_fill_default_content()
 
 func _apply_runtime_player_init(payload: Dictionary) -> void:
@@ -876,6 +938,8 @@ func _normalize_mainline(payload: Dictionary, fallback: Array) -> Array:
 			difficulty_map[node_id] = []
 		difficulty_map[node_id].append({
 			"difficulty_id": str(difficulty.get("difficulty_id", "")),
+			"difficulty_order": int(difficulty.get("difficulty_order", _difficulty_order(str(difficulty.get("difficulty_id", ""))) + 1)),
+			"difficulty_name": str(difficulty.get("difficulty_name", _difficulty_name(str(difficulty.get("difficulty_id", ""))))),
 			"recommended_power": int(difficulty.get("recommended_power", 0)),
 			"first_clear_reward_group_id": str(difficulty.get("first_clear_reward_group_id", "")),
 			"is_unlocked": true,
@@ -892,6 +956,11 @@ func _normalize_mainline(payload: Dictionary, fallback: Array) -> Array:
 			"is_unlocked": true,
 			"difficulties": difficulty_map.get(str(node.get("node_id", "")), [])
 		}
+		normalized_node["difficulties"].sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			if int(a.get("difficulty_order", 0)) != int(b.get("difficulty_order", 0)):
+				return int(a.get("difficulty_order", 0)) < int(b.get("difficulty_order", 0))
+			return str(a.get("difficulty_id", "")) < str(b.get("difficulty_id", ""))
+		)
 		var owner_id := str(node.get("chapter_id", ""))
 		if chapter_lookup.has(owner_id):
 			var owner: Dictionary = chapter_lookup[owner_id]
@@ -1031,6 +1100,55 @@ func _difficulty_order(difficulty_id: String) -> int:
 			return 3
 		_:
 			return 99
+
+func _difficulty_name(difficulty_id: String) -> String:
+	match difficulty_id:
+		"easy":
+			return "简单"
+		"normal":
+			return "普通"
+		"hard":
+			return "困难"
+		"nightmare":
+			return "梦魇"
+		"epic":
+			return "史诗"
+		_:
+			return difficulty_id.capitalize()
+
+func _normalize_item_catalog(source: Variant) -> Array:
+	var normalized: Array = []
+	if source is Array:
+		for entry in source:
+			if entry is Dictionary:
+				normalized.append(_normalize_item_entry(entry))
+	return normalized
+
+func _normalize_rarity_configs(source: Variant) -> Array:
+	var normalized: Array = []
+	if source is Array:
+		for entry in source:
+			if entry is Dictionary:
+				normalized.append(entry.duplicate(true))
+	return normalized
+
+func _normalize_item_entry(entry: Dictionary) -> Dictionary:
+	var normalized := entry.duplicate(true)
+	var item_id := str(normalized.get("item_id", ""))
+	var item_name := str(normalized.get("item_name", normalized.get("name", item_labels.get(item_id, _label_from_id(item_id)))))
+	var item_type := str(normalized.get("item_type", normalized.get("type", "loot")))
+	var rarity := str(normalized.get("rarity", "common"))
+	normalized["item_id"] = item_id
+	normalized["item_name"] = item_name
+	normalized["item_type"] = item_type
+	normalized["rarity"] = rarity
+	normalized["name"] = item_name
+	normalized["type"] = item_type
+	if not normalized.has("icon"):
+		normalized["icon"] = ""
+	if not normalized.has("desc"):
+		normalized["desc"] = str(normalized.get("description", ""))
+	return normalized
 
 func _label_from_id(raw_id: String) -> String:
 	return raw_id.replace("_", " ").capitalize()

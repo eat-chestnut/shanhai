@@ -2,6 +2,7 @@ extends ScrollContainer
 class_name TaskPage
 
 const ShanhaiStyle = preload("res://scripts/core/shanhai_style.gd")
+const ITEM_SLOT_SCENE := preload("res://scenes/components/item_slot.tscn")
 
 var _content: VBoxContainer
 var _status_label: Label
@@ -64,10 +65,11 @@ func _build_task_card(task: Dictionary) -> Control:
 	content.add_child(desc)
 
 	var reward_label := Label.new()
-	reward_label.text = "奖励：%s" % _reward_text(task.get("rewards", []))
-	reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	reward_label.text = "奖励预览"
 	ShanhaiStyle.apply_body(reward_label, true, 16)
 	content.add_child(reward_label)
+
+	content.add_child(_build_reward_slots(task.get("rewards", [])))
 
 	var action := Button.new()
 	action.text = "已领取" if bool(task.get("is_claimed", false)) else "领取奖励"
@@ -78,14 +80,22 @@ func _build_task_card(task: Dictionary) -> Control:
 
 	return panel
 
-func _reward_text(rewards: Array) -> String:
+func _build_reward_slots(rewards: Array) -> Control:
 	if rewards.is_empty():
-		return "暂无"
-	var labels: Array = []
+		var empty := Label.new()
+		empty.text = "暂无奖励。"
+		ShanhaiStyle.apply_body(empty, true, 16)
+		return empty
+
+	var flow := FlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 10)
+	flow.add_theme_constant_override("v_separation", 10)
 	for reward in rewards:
-		var definition := GameData.get_item_definition(str(reward.get("item_id", "")))
-		labels.append("%s x%d" % [definition.get("name", reward.get("item_id", "奖励")), int(reward.get("count", 0))])
-	return " / ".join(labels)
+		var slot = ITEM_SLOT_SCENE.instantiate()
+		slot.custom_minimum_size = Vector2(240, 88)
+		slot.configure(reward, int(reward.get("count", 0)))
+		flow.add_child(slot)
+	return flow
 
 func _on_claim_pressed(task_id: String) -> void:
 	await GameData.claim_task(task_id)

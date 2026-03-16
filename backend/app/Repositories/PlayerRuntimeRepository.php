@@ -62,6 +62,17 @@ class PlayerRuntimeRepository implements PlayerRuntimeRepositoryInterface
         PlayerItem::query()->insert($rows);
     }
 
+    public function syncStageProgress(int $playerId, array $rows): void
+    {
+        PlayerStageProgress::query()->where('player_id', $playerId)->delete();
+
+        if ($rows === []) {
+            return;
+        }
+
+        PlayerStageProgress::query()->insert($rows);
+    }
+
     public function getInventory(int $playerId): Collection
     {
         return PlayerItem::query()

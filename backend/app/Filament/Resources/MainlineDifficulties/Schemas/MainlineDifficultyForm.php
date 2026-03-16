@@ -22,7 +22,7 @@ class MainlineDifficultyForm
                     ->columns(2)
                     ->schema([
                         Select::make('node_id')
-                            ->label('node_id')
+                            ->label('所属节点')
                             ->required()
                             ->live()
                             ->searchable()
@@ -36,7 +36,7 @@ class MainlineDifficultyForm
                                 ])
                                 ->all()),
                         TextInput::make('difficulty_id')
-                            ->label('difficulty_id')
+                            ->label('难度ID')
                             ->required()
                             ->maxLength(100)
                             ->unique(
@@ -45,13 +45,24 @@ class MainlineDifficultyForm
                                 ignoreRecord: true,
                                 modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule->where('node_id', $get('node_id')),
                             ),
+                        TextInput::make('difficulty_order')
+                            ->label('难度排序')
+                            ->required()
+                            ->numeric()
+                            ->minValue(1)
+                            ->default(1),
+                        TextInput::make('difficulty_name')
+                            ->label('难度名称')
+                            ->required()
+                            ->maxLength(100)
+                            ->helperText('用于客户端与后台展示，例如：简单、普通、困难、梦魇。'),
                         TextInput::make('recommended_power')
-                            ->label('recommended_power')
+                            ->label('建议战力')
                             ->required()
                             ->numeric()
                             ->minValue(0),
                         TextInput::make('first_clear_reward_group_id')
-                            ->label('first_clear_reward_group_id')
+                            ->label('首通奖励组ID')
                             ->maxLength(100)
                             ->helperText('填写首通奖励组 ID，用于挂载首通奖励。'),
                     ]),

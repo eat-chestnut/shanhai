@@ -1,5 +1,8 @@
 <?php
 
+namespace Database\Seeders;
+
+use App\Models\RarityConfig;
 use Illuminate\Database\Seeder;
 
 class RarityConfigSeeder extends Seeder
@@ -9,10 +12,10 @@ class RarityConfigSeeder extends Seeder
      */
     public function run(): void
     {
-        $configs = App\Models\RarityConfig::getDefaultConfigs();
+        $configs = RarityConfig::getDefaultConfigs();
         
         foreach ($configs as $config) {
-            App\Models\RarityConfig::updateOrCreate(
+            RarityConfig::updateOrCreate(
                 ['rarity_key' => $config['rarity_key']],
                 $config
             );

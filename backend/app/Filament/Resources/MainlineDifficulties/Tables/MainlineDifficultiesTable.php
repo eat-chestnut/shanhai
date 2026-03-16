@@ -24,6 +24,13 @@ class MainlineDifficultiesTable
                     ->label('难度ID')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('difficulty_name')
+                    ->label('难度名称')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('difficulty_order')
+                    ->label('难度排序')
+                    ->sortable(),
                 TextColumn::make('node_id')
                     ->label('节点ID')
                     ->searchable()

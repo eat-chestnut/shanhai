@@ -24,6 +24,8 @@ interface PlayerRuntimeRepositoryInterface
 
     public function syncInventory(int $playerId, array $rows): void;
 
+    public function syncStageProgress(int $playerId, array $rows): void;
+
     public function getInventory(int $playerId): Collection;
 
     public function findInventoryItem(int $playerId, string $itemId): ?PlayerItem;

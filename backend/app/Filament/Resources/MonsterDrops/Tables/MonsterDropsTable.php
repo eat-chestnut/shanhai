@@ -21,24 +21,28 @@ class MonsterDropsTable
             ->defaultSort('monster_id')
             ->columns([
                 TextColumn::make('monster_id')
-                    ->label('monster_id')
+                    ->label('怪物ID')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('monster.name')
-                    ->label('name')
+                    ->label('怪物名称')
+                    ->searchable()
+                    ->toggleable(),
+                TextColumn::make('item.item_name')
+                    ->label('物品名称')
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('item_id')
-                    ->label('item_id')
+                    ->label('物品ID')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
                 TextColumn::make('drop_rate')
-                    ->label('drop_rate')
+                    ->label('掉落概率')
                     ->numeric(decimalPlaces: 4)
                     ->sortable(),
                 TextColumn::make('drop_kind')
-                    ->label('drop_kind')
+                    ->label('掉落类型')
                     ->badge()
                     ->formatStateUsing(
                         static fn (string $state): string => MonsterDropKind::tryFrom($state)?->label() ?? $state,
@@ -47,10 +51,10 @@ class MonsterDropsTable
             ])
             ->filters([
                 SelectFilter::make('drop_kind')
-                    ->label('drop_kind')
+                    ->label('掉落类型')
                     ->options(MonsterDropKind::options()),
                 TernaryFilter::make('monster.is_boss')
-                    ->label('monster.is_boss')
+                    ->label('是否 Boss')
                     ->trueLabel('Boss')
                     ->falseLabel('普通怪')
                     ->queries(
@@ -58,19 +62,19 @@ class MonsterDropsTable
                         false: fn ($query) => $query->whereHas('monster', fn ($monsterQuery) => $monsterQuery->where('is_boss', false)),
                     ),
                 SelectFilter::make('monster_id')
-                    ->label('monster_id')
+                    ->label('怪物ID')
                     ->options(fn (): array => Monster::query()
                         ->orderBy('monster_id')
                         ->pluck('monster_id', 'monster_id')
                         ->all()),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()->label('编辑'),
+                DeleteAction::make()->label('删除'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->label('批量删除'),
                 ]),
             ]);
     }

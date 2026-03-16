@@ -2,6 +2,7 @@ extends ScrollContainer
 class_name ChallengePage
 
 const ShanhaiStyle = preload("res://scripts/core/shanhai_style.gd")
+const ITEM_SLOT_SCENE := preload("res://scenes/components/item_slot.tscn")
 
 signal start_battle
 
@@ -98,10 +99,11 @@ func _build_floor_card(challenge: Dictionary, floor: Dictionary) -> Control:
 	content.add_child(desc)
 
 	var reward_label := Label.new()
-	reward_label.text = "奖励预览：%s" % _reward_text(floor.get("reward_preview", []))
-	reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	reward_label.text = "奖励预览"
 	ShanhaiStyle.apply_body(reward_label, true, 16)
 	content.add_child(reward_label)
+
+	content.add_child(_build_reward_slots(floor.get("reward_preview", [])))
 
 	var button := Button.new()
 	button.text = "发起挑战"
@@ -112,14 +114,22 @@ func _build_floor_card(challenge: Dictionary, floor: Dictionary) -> Control:
 
 	return panel
 
-func _reward_text(rewards: Array) -> String:
+func _build_reward_slots(rewards: Array) -> Control:
 	if rewards.is_empty():
-		return "暂无"
-	var labels: Array = []
+		var empty := Label.new()
+		empty.text = "暂无奖励。"
+		ShanhaiStyle.apply_body(empty, true, 16)
+		return empty
+
+	var flow := FlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 10)
+	flow.add_theme_constant_override("v_separation", 10)
 	for reward in rewards:
-		var definition := GameData.get_item_definition(str(reward.get("item_id", "")))
-		labels.append("%s x%d" % [definition.get("name", reward.get("item_id", "奖励")), int(reward.get("count", 0))])
-	return " / ".join(labels)
+		var slot = ITEM_SLOT_SCENE.instantiate()
+		slot.custom_minimum_size = Vector2(240, 88)
+		slot.configure(reward, int(reward.get("count", 0)))
+		flow.add_child(slot)
+	return flow
 
 func _on_select_challenge(challenge_id: String) -> void:
 	_selected_challenge_id = challenge_id

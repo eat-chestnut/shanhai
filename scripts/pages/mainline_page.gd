@@ -7,6 +7,7 @@ signal start_battle
 
 const NODE_MAP_SCENE := preload("res://scenes/components/node_map.tscn")
 const DIFFICULTY_CARD_SCENE := preload("res://scenes/components/difficulty_card.tscn")
+const ITEM_SLOT_SCENE := preload("res://scenes/components/item_slot.tscn")
 
 var _content: VBoxContainer
 var _chapter_row: HBoxContainer
@@ -14,6 +15,7 @@ var _node_map
 var _difficulty_box: VBoxContainer
 var _start_button: Button
 var _summary_label: Label
+var _reward_box: FlowContainer
 
 func _ready() -> void:
 	_build_ui()
@@ -34,6 +36,7 @@ func refresh() -> void:
 	_rebuild_nodes()
 	_rebuild_difficulties()
 	_update_summary()
+	_rebuild_reward_preview()
 
 func _sync_defaults() -> void:
 	if GameData.chapters.is_empty():
@@ -53,6 +56,14 @@ func _sync_defaults() -> void:
 	if difficulties.is_empty():
 		return
 	if str(UiState.selection.get("difficulty_id", "")).is_empty():
+		var current_difficulty_id := str(node.get("current_difficulty_id", ""))
+		if current_difficulty_id != "":
+			UiState.set_selection("difficulty_id", current_difficulty_id)
+			return
+		for difficulty in difficulties:
+			if bool(difficulty.get("is_unlocked", false)):
+				UiState.set_selection("difficulty_id", str(difficulty.get("difficulty_id", "")))
+				return
 		UiState.set_selection("difficulty_id", str(difficulties[0].get("difficulty_id", "")))
 
 func _rebuild_chapters() -> void:
@@ -94,16 +105,35 @@ func _update_summary() -> void:
 	var node := GameData.get_mainline_node(str(UiState.selection.get("node_id", "")))
 	var difficulty := GameData.get_difficulty_for_node(str(UiState.selection.get("node_id", "")), str(UiState.selection.get("difficulty_id", "")))
 	var recommended_power := int(difficulty.get("recommended_power", 0))
-	_summary_label.text = "当前章节：%s\n节点：%s  ·  状态：%s\n建议战力：%d  当前战力：%d\n难度状态：%s\n首通奖励：%s" % [
+	_summary_label.text = "当前章节：%s\n节点：%s  ·  状态：%s\n建议战力：%d  当前战力：%d\n难度状态：%s" % [
 		chapter.get("chapter_name", "未选章节"),
 		node.get("node_name", "未选节点"),
 		_node_state_text(str(node.get("progress_state", "available"))),
 		recommended_power,
 		PlayerState.get_power(),
-		_node_state_text(str(difficulty.get("progress_state", "available"))),
-		_reward_preview(str(difficulty.get("first_clear_reward_group_id", "")))
+		_node_state_text(str(difficulty.get("progress_state", "available")))
 	]
 	_start_button.disabled = node.is_empty() or difficulty.is_empty() or not bool(node.get("is_unlocked", true)) or not bool(difficulty.get("is_unlocked", true))
+
+func _rebuild_reward_preview() -> void:
+	for child in _reward_box.get_children():
+		child.queue_free()
+
+	var difficulty := GameData.get_difficulty_for_node(str(UiState.selection.get("node_id", "")), str(UiState.selection.get("difficulty_id", "")))
+	var rewards := GameData.get_reward_group_items(str(difficulty.get("first_clear_reward_group_id", "")))
+
+	if rewards.is_empty():
+		var empty := Label.new()
+		empty.text = "当前难度暂无首通奖励。"
+		ShanhaiStyle.apply_body(empty, true, 16)
+		_reward_box.add_child(empty)
+		return
+
+	for reward in rewards:
+		var slot = ITEM_SLOT_SCENE.instantiate()
+		slot.custom_minimum_size = Vector2(240, 88)
+		slot.configure(reward, int(reward.get("count", 0)))
+		_reward_box.add_child(slot)
 
 func _on_node_selected(node: Dictionary) -> void:
 	UiState.set_selection("node_id", str(node.get("node_id", "")))
@@ -126,16 +156,6 @@ func _refresh_runtime_selection() -> void:
 	if node_id.is_empty():
 		return
 	await GameData.load_stage_runtime_for_selection(node_id)
-
-func _reward_preview(group_id: String) -> String:
-	var rewards := GameData.get_reward_group_items(group_id)
-	if rewards.is_empty():
-		return "暂无"
-	var labels: Array = []
-	for reward in rewards:
-		var definition := GameData.get_item_definition(str(reward.get("item_id", "")))
-		labels.append("%s x%d" % [definition.get("name", reward.get("item_id", "奖励")), int(reward.get("count", 0))])
-	return " / ".join(labels)
 
 func _on_start_pressed() -> void:
 	var chapter := GameData.get_chapter(str(UiState.selection.get("chapter_id", "")))
@@ -206,6 +226,16 @@ func _build_ui() -> void:
 	_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ShanhaiStyle.apply_body(_summary_label, false, 18)
 	_content.add_child(_summary_label)
+
+	var reward_heading := Label.new()
+	reward_heading.text = "首通奖励"
+	ShanhaiStyle.apply_heading(reward_heading, 20)
+	_content.add_child(reward_heading)
+
+	_reward_box = FlowContainer.new()
+	_reward_box.add_theme_constant_override("h_separation", 10)
+	_reward_box.add_theme_constant_override("v_separation", 10)
+	_content.add_child(_reward_box)
 
 	_start_button = Button.new()
 	_start_button.text = "进入巡厄战斗"

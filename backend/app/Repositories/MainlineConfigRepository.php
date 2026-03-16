@@ -52,6 +52,7 @@ class MainlineConfigRepository implements MainlineConfigRepositoryInterface
     public function getOrderedChapters(): Collection
     {
         return MainlineChapter::query()
+            ->orderBy('sort_order')
             ->orderBy('chapter_id')
             ->get();
     }
@@ -59,8 +60,11 @@ class MainlineConfigRepository implements MainlineConfigRepositoryInterface
     public function getOrderedNodes(): Collection
     {
         return MainlineNode::query()
-            ->orderBy('chapter_id')
-            ->orderBy('node_id')
+            ->join('mainline_chapters', 'mainline_nodes.chapter_id', '=', 'mainline_chapters.chapter_id')
+            ->select('mainline_nodes.*')
+            ->orderBy('mainline_chapters.sort_order')
+            ->orderBy('mainline_chapters.chapter_id')
+            ->orderBy('mainline_nodes.node_id')
             ->get();
     }
 
@@ -71,6 +75,15 @@ class MainlineConfigRepository implements MainlineConfigRepositoryInterface
 
     public function getAllDifficulties(): Collection
     {
-        return MainlineDifficulty::query()->get();
+        return MainlineDifficulty::query()
+            ->join('mainline_nodes', 'mainline_difficulties.node_id', '=', 'mainline_nodes.node_id')
+            ->join('mainline_chapters', 'mainline_nodes.chapter_id', '=', 'mainline_chapters.chapter_id')
+            ->select('mainline_difficulties.*')
+            ->orderBy('mainline_chapters.sort_order')
+            ->orderBy('mainline_chapters.chapter_id')
+            ->orderBy('mainline_nodes.node_id')
+            ->orderBy('mainline_difficulties.difficulty_order')
+            ->orderBy('mainline_difficulties.difficulty_id')
+            ->get();
     }
 }

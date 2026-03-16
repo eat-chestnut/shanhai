@@ -18,16 +18,16 @@ class BlueAffixForm
                     ->columns(2)
                     ->schema([
                         TextInput::make('affix_id')
-                            ->label('affix_id')
+                            ->label('蓝词条ID')
                             ->required()
                             ->maxLength(100)
                             ->unique(ignoreRecord: true),
                         TextInput::make('name')
-                            ->label('name')
+                            ->label('蓝词条名称')
                             ->required()
                             ->maxLength(100),
                         KeyValue::make('bonuses')
-                            ->label('bonuses')
+                            ->label('属性加成')
                             ->keyLabel('属性键')
                             ->valueLabel('属性值')
                             ->default([])

@@ -17,19 +17,19 @@ class EquipmentSetsTable
             ->defaultSort('set_id')
             ->columns([
                 TextColumn::make('set_id')
-                    ->label('set_id')
+                    ->label('套装ID')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
                 TextColumn::make('level')
-                    ->label('level')
+                    ->label('套装等级')
                     ->sortable(),
                 TextColumn::make('pieces')
-                    ->label('pieces')
+                    ->label('套装部件')
                     ->formatStateUsing(static fn (mixed $state): string => self::formatPieces($state))
                     ->wrap(),
                 TextColumn::make('effects')
-                    ->label('effects')
+                    ->label('套装效果')
                     ->formatStateUsing(static fn (mixed $state): string => self::formatEffects($state))
                     ->wrap(),
             ])
@@ -37,12 +37,12 @@ class EquipmentSetsTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()->label('编辑'),
+                DeleteAction::make()->label('删除'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->label('批量删除'),
                 ]),
             ]);
     }

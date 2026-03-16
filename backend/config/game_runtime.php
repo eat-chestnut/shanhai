@@ -60,6 +60,20 @@ return [
             ['item_id' => 'equip_tempest_bow_30', 'count' => 1],
             ['item_id' => 'equip_seal_staff_30', 'count' => 1],
         ],
+        'stage_progress' => [
+            ['chapter_id' => 'prologue', 'node_id' => 'prologue_node_01', 'difficulty_id' => 'easy', 'is_first_clear' => true, 'clear_count' => 1],
+            ['chapter_id' => 'prologue', 'node_id' => 'prologue_node_02', 'difficulty_id' => 'easy', 'is_first_clear' => true, 'clear_count' => 1],
+            ['chapter_id' => 'prologue', 'node_id' => 'prologue_node_02', 'difficulty_id' => 'normal', 'is_first_clear' => true, 'clear_count' => 1],
+            ['chapter_id' => 'chapter_01', 'node_id' => 'node_01', 'difficulty_id' => 'easy', 'is_first_clear' => true, 'clear_count' => 1],
+            ['chapter_id' => 'chapter_01', 'node_id' => 'node_01', 'difficulty_id' => 'normal', 'is_first_clear' => true, 'clear_count' => 1],
+            ['chapter_id' => 'chapter_01', 'node_id' => 'node_01', 'difficulty_id' => 'hard', 'is_first_clear' => true, 'clear_count' => 1],
+            ['chapter_id' => 'chapter_01', 'node_id' => 'node_02', 'difficulty_id' => 'easy', 'is_first_clear' => true, 'clear_count' => 1],
+            ['chapter_id' => 'chapter_01', 'node_id' => 'node_02', 'difficulty_id' => 'normal', 'is_first_clear' => true, 'clear_count' => 1],
+            ['chapter_id' => 'chapter_01', 'node_id' => 'node_02', 'difficulty_id' => 'hard', 'is_first_clear' => true, 'clear_count' => 1],
+            ['chapter_id' => 'chapter_01', 'node_id' => 'node_03', 'difficulty_id' => 'normal', 'is_first_clear' => true, 'clear_count' => 1],
+            ['chapter_id' => 'chapter_01', 'node_id' => 'node_03', 'difficulty_id' => 'hard', 'is_first_clear' => true, 'clear_count' => 1],
+            ['chapter_id' => 'chapter_01', 'node_id' => 'node_03', 'difficulty_id' => 'nightmare', 'is_first_clear' => true, 'clear_count' => 1],
+        ],
     ],
     'reward_groups' => [
         'reward_node01_easy' => [

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\MainlineDifficulty;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -9,51 +10,24 @@ class MainlineDifficultiesSeeder extends Seeder
 {
     public function run(): void
     {
-        $difficulties = [
-            // 序章难度
-            ['difficulty_id' => 'diff_node_prologue_01_easy', 'node_id' => 'node_prologue_01', 'recommended_power' => 80, 'first_clear_reward_group_id' => 'reward_diff_node_prologue_01_easy'],
-            ['difficulty_id' => 'diff_node_prologue_01_normal', 'node_id' => 'node_prologue_01', 'recommended_power' => 120, 'first_clear_reward_group_id' => 'reward_diff_node_prologue_01_normal'],
-            ['difficulty_id' => 'diff_node_prologue_01_hard', 'node_id' => 'node_prologue_01', 'recommended_power' => 180, 'first_clear_reward_group_id' => 'reward_diff_node_prologue_01_hard'],
+        $payload = json_decode((string) file_get_contents(database_path('seeders/data/mainline_config.json')), true);
+        $difficulties = collect($payload['difficulty_config'] ?? [])
+            ->filter(static fn (mixed $entry): bool => is_array($entry))
+            ->map(static function (array $entry): array {
+                $difficultyId = (string) ($entry['difficulty_id'] ?? '');
 
-            ['difficulty_id' => 'diff_node_prologue_02_easy', 'node_id' => 'node_prologue_02', 'recommended_power' => 100, 'first_clear_reward_group_id' => 'reward_diff_node_prologue_02_easy'],
-            ['difficulty_id' => 'diff_node_prologue_02_normal', 'node_id' => 'node_prologue_02', 'recommended_power' => 150, 'first_clear_reward_group_id' => 'reward_diff_node_prologue_02_normal'],
-            ['difficulty_id' => 'diff_node_prologue_02_hard', 'node_id' => 'node_prologue_02', 'recommended_power' => 220, 'first_clear_reward_group_id' => 'reward_diff_node_prologue_02_hard'],
-
-            ['difficulty_id' => 'diff_node_prologue_03_easy', 'node_id' => 'node_prologue_03', 'recommended_power' => 120, 'first_clear_reward_group_id' => 'reward_diff_node_prologue_03_easy'],
-            ['difficulty_id' => 'diff_node_prologue_03_normal', 'node_id' => 'node_prologue_03', 'recommended_power' => 180, 'first_clear_reward_group_id' => 'reward_diff_node_prologue_03_normal'],
-            ['difficulty_id' => 'diff_node_prologue_03_hard', 'node_id' => 'node_prologue_03', 'recommended_power' => 260, 'first_clear_reward_group_id' => 'reward_diff_node_prologue_03_hard'],
-
-            // 第一章难度
-            ['difficulty_id' => 'diff_node_ch01_01_easy', 'node_id' => 'node_ch01_01', 'recommended_power' => 180, 'first_clear_reward_group_id' => 'reward_diff_node_ch01_01_easy'],
-            ['difficulty_id' => 'diff_node_ch01_01_normal', 'node_id' => 'node_ch01_01', 'recommended_power' => 260, 'first_clear_reward_group_id' => 'reward_diff_node_ch01_01_normal'],
-            ['difficulty_id' => 'diff_node_ch01_01_hard', 'node_id' => 'node_ch01_01', 'recommended_power' => 360, 'first_clear_reward_group_id' => 'reward_diff_node_ch01_01_hard'],
-
-            ['difficulty_id' => 'diff_node_ch01_02_easy', 'node_id' => 'node_ch01_02', 'recommended_power' => 220, 'first_clear_reward_group_id' => 'reward_diff_node_ch01_02_easy'],
-            ['difficulty_id' => 'diff_node_ch01_02_normal', 'node_id' => 'node_ch01_02', 'recommended_power' => 320, 'first_clear_reward_group_id' => 'reward_diff_node_ch01_02_normal'],
-            ['difficulty_id' => 'diff_node_ch01_02_hard', 'node_id' => 'node_ch01_02', 'recommended_power' => 440, 'first_clear_reward_group_id' => 'reward_diff_node_ch01_02_hard'],
-
-            ['difficulty_id' => 'diff_node_ch01_03_easy', 'node_id' => 'node_ch01_03', 'recommended_power' => 260, 'first_clear_reward_group_id' => 'reward_diff_node_ch01_03_easy'],
-            ['difficulty_id' => 'diff_node_ch01_03_normal', 'node_id' => 'node_ch01_03', 'recommended_power' => 380, 'first_clear_reward_group_id' => 'reward_diff_node_ch01_03_normal'],
-            ['difficulty_id' => 'diff_node_ch01_03_hard', 'node_id' => 'node_ch01_03', 'recommended_power' => 520, 'first_clear_reward_group_id' => 'reward_diff_node_ch01_03_hard'],
-
-            // 第二章难度
-            ['difficulty_id' => 'diff_node_ch02_01_easy', 'node_id' => 'node_ch02_01', 'recommended_power' => 340, 'first_clear_reward_group_id' => 'reward_diff_node_ch02_01_easy'],
-            ['difficulty_id' => 'diff_node_ch02_01_normal', 'node_id' => 'node_ch02_01', 'recommended_power' => 480, 'first_clear_reward_group_id' => 'reward_diff_node_ch02_01_normal'],
-            ['difficulty_id' => 'diff_node_ch02_01_hard', 'node_id' => 'node_ch02_01', 'recommended_power' => 650, 'first_clear_reward_group_id' => 'reward_diff_node_ch02_01_hard'],
-
-            ['difficulty_id' => 'diff_node_ch02_02_easy', 'node_id' => 'node_ch02_02', 'recommended_power' => 380, 'first_clear_reward_group_id' => 'reward_diff_node_ch02_02_easy'],
-            ['difficulty_id' => 'diff_node_ch02_02_normal', 'node_id' => 'node_ch02_02', 'recommended_power' => 540, 'first_clear_reward_group_id' => 'reward_diff_node_ch02_02_normal'],
-            ['difficulty_id' => 'diff_node_ch02_02_hard', 'node_id' => 'node_ch02_02', 'recommended_power' => 720, 'first_clear_reward_group_id' => 'reward_diff_node_ch02_02_hard'],
-
-            ['difficulty_id' => 'diff_node_ch02_03_easy', 'node_id' => 'node_ch02_03', 'recommended_power' => 420, 'first_clear_reward_group_id' => 'reward_diff_node_ch02_03_easy'],
-            ['difficulty_id' => 'diff_node_ch02_03_normal', 'node_id' => 'node_ch02_03', 'recommended_power' => 600, 'first_clear_reward_group_id' => 'reward_diff_node_ch02_03_normal'],
-            ['difficulty_id' => 'diff_node_ch02_03_hard', 'node_id' => 'node_ch02_03', 'recommended_power' => 800, 'first_clear_reward_group_id' => 'reward_diff_node_ch02_03_hard'],
-
-            // 终章难度（示例）
-            ['difficulty_id' => 'diff_node_epilogue_01_easy', 'node_id' => 'node_epilogue_01', 'recommended_power' => 2860, 'first_clear_reward_group_id' => 'reward_diff_node_epilogue_01_easy'],
-            ['difficulty_id' => 'diff_node_epilogue_01_normal', 'node_id' => 'node_epilogue_01', 'recommended_power' => 3460, 'first_clear_reward_group_id' => 'reward_diff_node_epilogue_01_normal'],
-            ['difficulty_id' => 'diff_node_epilogue_01_hard', 'node_id' => 'node_epilogue_01', 'recommended_power' => 4160, 'first_clear_reward_group_id' => 'reward_diff_node_epilogue_01_hard'],
-        ];
+                return [
+                    'difficulty_id' => $difficultyId,
+                    'node_id' => (string) ($entry['node_id'] ?? ''),
+                    'difficulty_order' => (int) ($entry['difficulty_order'] ?? MainlineDifficulty::defaultDifficultyOrder($difficultyId)),
+                    'difficulty_name' => (string) ($entry['difficulty_name'] ?? MainlineDifficulty::defaultDifficultyName($difficultyId)),
+                    'recommended_power' => max((int) ($entry['recommended_power'] ?? 0), 0),
+                    'first_clear_reward_group_id' => (string) ($entry['first_clear_reward_group_id'] ?? ''),
+                ];
+            })
+            ->filter(static fn (array $entry): bool => $entry['difficulty_id'] !== '' && $entry['node_id'] !== '')
+            ->values()
+            ->all();
 
         DB::table('mainline_difficulties')->insert($difficulties);
         $this->command->info('主线难度数据已导入：' . count($difficulties) . ' 条记录');

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MonsterDrops\Schemas;
 
 use App\Enums\MonsterDropKind;
+use App\Models\Item;
 use App\Models\Monster;
 use App\Models\MonsterDrop;
 use Filament\Forms\Components\Select;
@@ -25,7 +26,7 @@ class MonsterDropForm
                     ->columns(2)
                     ->schema([
                         Select::make('monster_id')
-                            ->label('monster_id')
+                            ->label('怪物ID')
                             ->required()
                             ->live()
                             ->searchable()
@@ -47,10 +48,13 @@ class MonsterDropForm
                                     $set('drop_kind', MonsterDropKind::BossFixed->value);
                                 }
                             }),
-                        TextInput::make('item_id')
-                            ->label('item_id')
+                        Select::make('item_id')
+                            ->label('掉落物品')
                             ->required()
-                            ->maxLength(100)
+                            ->searchable()
+                            ->preload()
+                            ->native(false)
+                            ->options(fn (): array => Item::getEnabledItemOptions())
                             ->unique(
                                 table: MonsterDrop::class,
                                 column: 'item_id',
@@ -58,7 +62,7 @@ class MonsterDropForm
                                 modifyRuleUsing: fn (Unique $rule, Get $get): Unique => $rule->where('monster_id', $get('monster_id')),
                             ),
                         TextInput::make('drop_rate')
-                            ->label('drop_rate')
+                            ->label('掉落概率')
                             ->required()
                             ->numeric()
                             ->minValue(0)
@@ -66,7 +70,7 @@ class MonsterDropForm
                             ->step('0.0001')
                             ->default(0.1),
                         Select::make('drop_kind')
-                            ->label('drop_kind')
+                            ->label('掉落类型')
                             ->required()
                             ->options(MonsterDropKind::options())
                             ->default(MonsterDropKind::Normal->value)

@@ -27,6 +27,7 @@ class StageRuntimeService
                 'nodes' => fn ($query) => $query->orderBy('node_id'),
             ])
             ->orderBy('sort_order')
+            ->orderBy('chapter_id')
             ->get()
             ->map(function (MainlineChapter $chapter) use ($playerProfile, $progress): array {
                 $chapterUnlocked = $this->isChapterUnlocked($playerProfile, $chapter, $progress);
@@ -40,12 +41,19 @@ class StageRuntimeService
                         ->sortByDesc('clear_count')
                         ->first();
 
+                    $currentDifficultyId = $this->resolveCurrentDifficultyId(
+                        $playerProfile,
+                        $node->node_id,
+                        $node->difficulty_ids ?? [],
+                    );
+
                     $chapterNodes[] = [
                         'node_id' => $node->node_id,
                         'chapter_id' => $chapter->chapter_id,
                         'node_name' => $node->node_name,
                         'unlock_condition' => $node->unlock_condition ?? ['level' => 1],
                         'difficulty_ids' => $node->difficulty_ids ?? [],
+                        'current_difficulty_id' => $currentDifficultyId,
                         'is_unlocked' => $nodeUnlocked,
                         'clear_count' => (int) ($nodeProgressSummary?->clear_count ?? 0),
                         'is_current' => $playerProfile->current_node_id === $node->node_id,
@@ -94,6 +102,7 @@ class StageRuntimeService
                 'node_name' => $node->node_name,
                 'unlock_condition' => $node->unlock_condition ?? ['level' => 1],
                 'difficulty_ids' => $node->difficulty_ids ?? [],
+                'current_difficulty_id' => $this->resolveCurrentDifficultyId($playerProfile, $node->node_id, $node->difficulty_ids ?? []),
                 'is_unlocked' => (bool) $difficultyStates['node_unlocked'],
                 'progress_state' => $this->resolveNodeProgressState(
                     $playerProfile,
@@ -115,6 +124,7 @@ class StageRuntimeService
 
         return [
             'node_id' => $node->node_id,
+            'current_difficulty_id' => $this->resolveCurrentDifficultyId($playerProfile, $node->node_id, $node->difficulty_ids ?? []),
             'difficulties' => $difficulties,
         ];
     }
@@ -146,6 +156,87 @@ class StageRuntimeService
             'chapter' => $chapter,
             'node' => $node,
             'difficulty' => $difficulty,
+        ];
+    }
+
+    /**
+     * 结算后定位新的当前主线节点：
+     * 先留在当前节点推进下一难度，再切到下一节点，最后才尝试切到下一章节。
+     *
+     * @return array{current_chapter_id:string,current_node_id:string}
+     */
+    public function resolveNextCurrentLocation(PlayerProfile $playerProfile, string $nodeId, string $difficultyId): array
+    {
+        $profile = $this->playerRuntimeRepository->refreshProfile($playerProfile);
+        $progress = $this->playerRuntimeRepository->getStageProgress($profile->player_id);
+        $node = MainlineNode::query()->with('chapter')->where('node_id', $nodeId)->first();
+
+        if (! $node || ! $node->chapter) {
+            return [
+                'current_chapter_id' => $profile->current_chapter_id ?: '',
+                'current_node_id' => $profile->current_node_id ?: '',
+            ];
+        }
+
+        $difficultyIds = collect($node->difficulty_ids ?? [])
+            ->filter()
+            ->values();
+        $currentIndex = $difficultyIds->search($difficultyId);
+
+        if (is_int($currentIndex) && $currentIndex >= 0 && $currentIndex < ($difficultyIds->count() - 1)) {
+            return [
+                'current_chapter_id' => $node->chapter_id,
+                'current_node_id' => $node->node_id,
+            ];
+        }
+
+        $orderedNodes = MainlineNode::query()
+            ->where('chapter_id', $node->chapter_id)
+            ->orderBy('node_id')
+            ->get()
+            ->values();
+        $nodeIndex = $orderedNodes->search(static fn (MainlineNode $entry): bool => $entry->node_id === $node->node_id);
+        $chapterUnlocked = $this->isChapterUnlocked($profile, $node->chapter, $progress);
+
+        if (is_int($nodeIndex)) {
+            $nextNode = $orderedNodes->get($nodeIndex + 1);
+
+            if (
+                $nextNode instanceof MainlineNode &&
+                $this->isNodeUnlocked($profile, $orderedNodes, $progress, $nextNode, $nodeIndex + 1, $chapterUnlocked)
+            ) {
+                return [
+                    'current_chapter_id' => $nextNode->chapter_id,
+                    'current_node_id' => $nextNode->node_id,
+                ];
+            }
+        }
+
+        $nextChapter = MainlineChapter::query()
+            ->orderBy('sort_order')
+            ->orderBy('chapter_id')
+            ->get()
+            ->first(function (MainlineChapter $chapter) use ($node): bool {
+                return (int) $chapter->sort_order > (int) ($node->chapter->sort_order ?? 0);
+            });
+
+        if ($nextChapter instanceof MainlineChapter && $this->isChapterUnlocked($profile, $nextChapter, $progress)) {
+            $firstNode = MainlineNode::query()
+                ->where('chapter_id', $nextChapter->chapter_id)
+                ->orderBy('node_id')
+                ->first();
+
+            if ($firstNode instanceof MainlineNode) {
+                return [
+                    'current_chapter_id' => $nextChapter->chapter_id,
+                    'current_node_id' => $firstNode->node_id,
+                ];
+            }
+        }
+
+        return [
+            'current_chapter_id' => $node->chapter_id,
+            'current_node_id' => $node->node_id,
         ];
     }
 
@@ -183,6 +274,8 @@ class StageRuntimeService
 
         $difficultyMap = MainlineDifficulty::query()
             ->where('node_id', $nodeId)
+            ->orderBy('difficulty_order')
+            ->orderBy('difficulty_id')
             ->get()
             ->mapWithKeys(static fn (MainlineDifficulty $difficulty): array => [
                 $difficulty->difficulty_id => $difficulty,
@@ -192,7 +285,13 @@ class StageRuntimeService
             ->values();
 
         if ($orderedDifficultyIds->isEmpty()) {
-            $orderedDifficultyIds = $difficultyMap->keys()->sort()->values();
+            $orderedDifficultyIds = $difficultyMap
+                ->sortBy([
+                    ['difficulty_order', 'asc'],
+                    ['difficulty_id', 'asc'],
+                ])
+                ->keys()
+                ->values();
         }
 
         $difficulties = [];
@@ -222,18 +321,23 @@ class StageRuntimeService
                 $previousCleared = (int) ($previousProgress?->clear_count ?? 0) > 0;
             }
 
+            $isUnlocked = $nodeUnlocked && $previousCleared;
+            $currentDifficultyId = $this->resolveCurrentDifficultyId($playerProfile, $nodeId, $orderedDifficultyIds->all());
+
             $difficulties[] = [
                 'difficulty_id' => $difficulty->difficulty_id,
                 'node_id' => $difficulty->node_id,
+                'difficulty_order' => (int) $difficulty->difficulty_order,
+                'difficulty_name' => $difficulty->difficulty_name ?: MainlineDifficulty::defaultDifficultyName($difficulty->difficulty_id),
                 'recommended_power' => (int) $difficulty->recommended_power,
                 'first_clear_reward_group_id' => $difficulty->first_clear_reward_group_id,
-                'is_unlocked' => $nodeUnlocked && $previousCleared,
+                'is_unlocked' => $isUnlocked,
                 'is_first_clear' => (bool) ($progressRecord?->is_first_clear ?? false),
                 'clear_count' => (int) ($progressRecord?->clear_count ?? 0),
                 'progress_state' => $this->resolveDifficultyProgressState(
-                    $nodeUnlocked && $previousCleared,
+                    $isUnlocked,
                     (int) ($progressRecord?->clear_count ?? 0),
-                    $playerProfile->current_node_id === $nodeId && $difficulty->difficulty_id === ($node->difficulty_ids[0] ?? ''),
+                    $playerProfile->current_node_id === $nodeId && $difficulty->difficulty_id === $currentDifficultyId,
                 ),
             ];
         }
@@ -267,27 +371,21 @@ class StageRuntimeService
             return false;
         }
 
-        // clear_node_id 现在只是辅助条件，不是主要判定
         $clearNodeId = (string) (($node->unlock_condition ?? [])['clear_node_id'] ?? (($node->unlock_condition ?? [])['conditions']['clear_node_id'] ?? ''));
-        
+
         if ($clearNodeId !== '') {
             $requiredClear = $progress
-                ->where('node_id', $clearNodeId)
-                ->first(fn ($entry): bool => (int) $entry->clear_count > 0);
+                ->first(fn ($entry): bool => $entry->node_id === $clearNodeId && (int) $entry->clear_count > 0);
 
             if ($requiredClear === null) {
-                // 如果辅助条件未满足，仍然可以解锁，但可能需要其他条件
-                // 这里可以根据需要调整逻辑
                 return false;
             }
         }
 
-        // 如果是章节第一个节点，直接解锁
         if ($nodeIndex <= 0) {
             return true;
         }
 
-        // 检查前一个节点是否已通关（节点内部的顺序）
         $previousNode = $orderedNodes[$nodeIndex - 1] ?? null;
 
         if (! $previousNode instanceof MainlineNode) {
@@ -295,100 +393,83 @@ class StageRuntimeService
         }
 
         $previousCleared = $progress
-            ->where('node_id', $previousNode->node_id)
-            ->first(fn ($entry): bool => (int) $entry->clear_count > 0);
+            ->first(fn ($entry): bool => $entry->node_id === $previousNode->node_id && (int) $entry->clear_count > 0);
 
         return $previousCleared !== null || $playerProfile->current_node_id === $node->node_id;
     }
 
     private function isChapterUnlocked(PlayerProfile $playerProfile, MainlineChapter $chapter, Collection $progress): bool
     {
-        // 检查等级要求
         if ((int) $playerProfile->level < (int) $chapter->unlock_level) {
             return false;
         }
 
-        // 如果没有前置章节要求，直接解锁
-        if (empty($chapter->required_previous_chapter)) {
+        if (blank($chapter->required_previous_chapter)) {
             return true;
         }
 
-        // 检查前置章节是否存在
-        $previousChapter = MainlineChapter::where('chapter_id', $chapter->required_previous_chapter)->first();
-        if (! $previousChapter) {
+        $completionNode = $this->resolveChapterCompletionNode((string) $chapter->required_previous_chapter);
+
+        if (! $completionNode instanceof MainlineNode) {
             return false;
         }
 
-        // 获取前置章节的所有节点进度
-        $previousChapterNodes = MainlineNode::where('chapter_id', $chapter->required_previous_chapter)->get();
-        $allNodeDifficulties = [];
+        $requiredDifficultyId = $this->resolveChapterRequiredDifficultyId($chapter, $completionNode);
 
-        foreach ($previousChapterNodes as $node) {
-            $difficulties = MainlineDifficulty::where('node_id', $node->node_id)->get();
-            foreach ($difficulties as $difficulty) {
-                $allNodeDifficulties[] = [
-                    'node_id' => $node->node_id,
-                    'difficulty_id' => $difficulty->difficulty_id,
-                    'difficulty_order' => $this->getDifficultyOrder($difficulty->difficulty_id),
-                ];
-            }
+        if ($requiredDifficultyId === '') {
+            return false;
         }
 
-        // 按难度排序
-        usort($allNodeDifficulties, fn ($a, $b) => $a['difficulty_order'] <=> $b['difficulty_order']);
-
-        // 找到最高难度
-        $highestDifficulty = null;
-        $highestOrder = -1;
-        foreach ($allNodeDifficulties as $diff) {
-            if ($diff['difficulty_order'] > $highestOrder) {
-                $highestOrder = $diff['difficulty_order'];
-                $highestDifficulty = $diff;
-            }
-        }
-
-        // 如果没有配置难度要求，只需要检查前置章节有任意通关即可
-        if (empty($chapter->required_previous_highest_difficulty)) {
-            return $progress->contains(function ($progressRecord) use ($chapter) {
-                return $progressRecord->node_id && 
-                       MainlineNode::where('node_id', $progressRecord->node_id)
-                                  ->where('chapter_id', $chapter->required_previous_chapter)
-                                  ->exists() &&
-                       (int) $progressRecord->clear_count > 0;
-            });
-        }
-
-        // 检查是否通关了指定难度的任意节点
-        $requiredDifficultyOrder = $this->getDifficultyOrder($chapter->required_previous_highest_difficulty);
-        
-        return $progress->contains(function ($progressRecord) use ($chapter, $requiredDifficultyOrder) {
-            if ((int) $progressRecord->clear_count <= 0) {
-                return false;
-            }
-
-            $node = MainlineNode::where('node_id', $progressRecord->node_id)
-                               ->where('chapter_id', $chapter->required_previous_chapter)
-                               ->first();
-            
-            if (! $node) {
-                return false;
-            }
-
-            $difficultyOrder = $this->getDifficultyOrder($progressRecord->difficulty_id);
-            return $difficultyOrder >= $requiredDifficultyOrder;
+        return $progress->contains(function ($progressRecord) use ($completionNode, $requiredDifficultyId): bool {
+            return $progressRecord->node_id === $completionNode->node_id
+                && $progressRecord->difficulty_id === $requiredDifficultyId
+                && (int) $progressRecord->clear_count > 0;
         });
     }
 
-    private function getDifficultyOrder(string $difficultyId): int
+    private function resolveChapterCompletionNode(string $chapterId): ?MainlineNode
     {
-        return match ($difficultyId) {
-            'easy' => 1,
-            'normal' => 2,
-            'hard' => 3,
-            'nightmare' => 4,
-            'epic' => 5,
-            default => 0,
-        };
+        return MainlineNode::query()
+            ->where('chapter_id', $chapterId)
+            ->orderBy('node_id', 'desc')
+            ->first();
+    }
+
+    private function resolveChapterRequiredDifficultyId(MainlineChapter $chapter, MainlineNode $completionNode): string
+    {
+        $configuredDifficultyId = (string) ($chapter->required_previous_highest_difficulty ?? '');
+
+        if ($configuredDifficultyId !== '') {
+            return $configuredDifficultyId;
+        }
+
+        $highestDifficulty = MainlineDifficulty::query()
+            ->where('node_id', $completionNode->node_id)
+            ->orderByDesc('difficulty_order')
+            ->orderByDesc('difficulty_id')
+            ->first();
+
+        return (string) ($highestDifficulty?->difficulty_id ?? '');
+    }
+
+    /**
+     * @param  list<string>  $difficultyIds
+     */
+    private function resolveCurrentDifficultyId(PlayerProfile $playerProfile, string $nodeId, array $difficultyIds): string
+    {
+        foreach ($difficultyIds as $difficultyId) {
+            $progress = $this->playerRuntimeRepository->findStageProgress(
+                $playerProfile->player_id,
+                $nodeId,
+                (string) $difficultyId,
+            );
+
+            if ((int) ($progress?->clear_count ?? 0) <= 0) {
+                return (string) $difficultyId;
+            }
+        }
+
+        return (string) ($difficultyIds[count($difficultyIds) - 1] ?? '');
     }
 
     private function resolveNodeProgressState(PlayerProfile $playerProfile, string $nodeId, bool $isUnlocked, int $clearCount): string

@@ -17,7 +17,7 @@ class ListEquipment extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->label('新增装备'),
             Action::make('import_json')
                 ->label('导入 JSON')
                 ->icon('heroicon-o-arrow-down-tray')

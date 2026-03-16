@@ -73,11 +73,16 @@ class MainlineNodesTable
             return '-';
         }
 
-        $parts = ['level='.(string) data_get($state, 'level', '-')];
+        $parts = ['等级要求='.(string) data_get($state, 'level', '-')];
+        $clearNodeId = (string) data_get($state, 'clear_node_id', '');
+
+        if ($clearNodeId !== '') {
+            $parts[] = '前置节点='.$clearNodeId;
+        }
         $conditions = data_get($state, 'conditions');
 
         if (is_array($conditions) && $conditions !== []) {
-            $parts[] = 'conditions='.json_encode($conditions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $parts[] = '额外条件='.json_encode($conditions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
         return implode('; ', $parts);

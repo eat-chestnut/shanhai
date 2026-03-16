@@ -12,6 +12,8 @@ return new class extends Migration
             $table->id();
             $table->string('difficulty_id');
             $table->string('node_id');
+            $table->unsignedInteger('difficulty_order')->default(0);
+            $table->string('difficulty_name')->nullable();
             $table->unsignedInteger('recommended_power')->default(0);
             $table->string('first_clear_reward_group_id')->nullable()->index();
             $table->timestamps();

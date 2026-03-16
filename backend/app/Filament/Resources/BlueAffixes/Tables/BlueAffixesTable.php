@@ -17,16 +17,16 @@ class BlueAffixesTable
             ->defaultSort('affix_id')
             ->columns([
                 TextColumn::make('affix_id')
-                    ->label('affix_id')
+                    ->label('蓝词条ID')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
                 TextColumn::make('name')
-                    ->label('name')
+                    ->label('蓝词条名称')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('bonuses')
-                    ->label('bonuses')
+                    ->label('属性加成')
                     ->formatStateUsing(
                         static fn (mixed $state): string => self::formatBonuses($state),
                     )
@@ -36,12 +36,12 @@ class BlueAffixesTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()->label('编辑'),
+                DeleteAction::make()->label('删除'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->label('批量删除'),
                 ]),
             ]);
     }

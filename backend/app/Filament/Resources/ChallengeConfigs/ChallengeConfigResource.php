@@ -25,6 +25,11 @@ class ChallengeConfigResource extends Resource
         return '长线挑战';
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return '玩法配置';
+    }
+
     public static function getModelLabel(): string
     {
         return '长线挑战';

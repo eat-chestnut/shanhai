@@ -16,6 +16,8 @@ class ItemConfigResource extends Resource
 {
     protected static ?string $model = ItemConfig::class;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCube;
 
     protected static ?int $navigationSort = 60;

@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\Dungeons\Schemas;
 
+use App\Models\Item;
 use App\Models\MainlineNode;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section as FormSection;
@@ -57,10 +57,14 @@ class DungeonForm
                                     $node->node_id => "{$node->node_id} / {$node->node_name}",
                                 ])
                                 ->all()),
-                        TagsInput::make('main_rewards')
+                        Select::make('main_rewards')
                             ->label('主要奖励')
-                            ->reorderable()
-                            ->helperText('填写主要产出 item_id，客户端详情和运营校验会直接展示。')
+                            ->multiple()
+                            ->searchable()
+                            ->preload()
+                            ->native(false)
+                            ->options(fn (): array => Item::getEnabledItemOptions())
+                            ->helperText('统一从物品表选择主要产出，客户端详情和运营校验会直接展示。')
                             ->columnSpanFull(),
                     ]),
             ]);

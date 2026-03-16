@@ -6,12 +6,15 @@ const ShanhaiStyle = preload("res://scripts/core/shanhai_style.gd")
 signal start_battle
 
 const DIFFICULTY_CARD_SCENE := preload("res://scenes/components/difficulty_card.tscn")
+const ITEM_SLOT_SCENE := preload("res://scenes/components/item_slot.tscn")
 
 var _content: VBoxContainer
 var _dungeon_row: HBoxContainer
 var _difficulty_box: VBoxContainer
 var _summary_label: Label
 var _start_button: Button
+var _main_reward_box: FlowContainer
+var _first_clear_reward_box: FlowContainer
 
 func _ready() -> void:
 	_build_ui()
@@ -30,6 +33,7 @@ func refresh() -> void:
 	_rebuild_dungeons()
 	_rebuild_difficulties()
 	_update_summary()
+	_rebuild_reward_previews()
 
 func _sync_defaults() -> void:
 	if GameData.dungeons.is_empty():
@@ -86,14 +90,12 @@ func _update_summary() -> void:
 		if str(difficulty.get("difficulty_id", "")) == str(UiState.selection.get("difficulty_id", "")):
 			selected_difficulty = difficulty
 			break
-	_summary_label.text = "副本：%s\n说明：%s\n当前层级：%s\n主要产出：%s\n建议战力：%d\n建议：%s\n首通奖励：%s\n剩余次数：%d / %d%s" % [
+	_summary_label.text = "副本：%s\n说明：%s\n当前层级：%s\n建议战力：%d\n建议：%s\n剩余次数：%d / %d%s" % [
 		dungeon.get("dungeon_name", "未选择"),
 		dungeon.get("dungeon_desc", "暂无说明"),
 		selected_difficulty.get("tier_label", dungeon.get("current_tier", "未定")),
-		_main_reward_text(selected_difficulty.get("main_rewards", dungeon.get("main_rewards", []))),
 		int(selected_difficulty.get("recommended_power", 0)),
 		selected_difficulty.get("recommendation_text", dungeon.get("suggestion_text", "可尝试挑战")),
-		_reward_preview(str(selected_difficulty.get("first_clear_reward_group_id", ""))),
 		max(int(dungeon.get("daily_limit", 0)) - int(dungeon.get("daily_count", 0)), 0),
 		int(dungeon.get("daily_limit", 0)),
 		"\n%s" % GameData.last_runtime_error if not GameData.last_runtime_error.is_empty() else ""
@@ -103,6 +105,22 @@ func _update_summary() -> void:
 		or not bool(dungeon.get("is_unlocked", true)) \
 		or not bool(selected_difficulty.get("is_unlocked", true)) \
 		or int(dungeon.get("remaining_count", 1)) <= 0
+
+func _rebuild_reward_previews() -> void:
+	for child in _main_reward_box.get_children():
+		child.queue_free()
+	for child in _first_clear_reward_box.get_children():
+		child.queue_free()
+
+	var dungeon := GameData.get_dungeon(str(UiState.selection.get("dungeon_id", "")))
+	var selected_difficulty := {}
+	for difficulty in dungeon.get("difficulties", []):
+		if str(difficulty.get("difficulty_id", "")) == str(UiState.selection.get("difficulty_id", "")):
+			selected_difficulty = difficulty
+			break
+
+	_build_item_slots(_main_reward_box, _main_reward_entries(selected_difficulty.get("main_rewards", dungeon.get("main_rewards", []))), "当前副本暂无主要产出预览。")
+	_build_item_slots(_first_clear_reward_box, GameData.get_reward_group_items(str(selected_difficulty.get("first_clear_reward_group_id", ""))), "当前难度暂无首通奖励。")
 
 func _on_start_pressed() -> void:
 	var dungeon := GameData.get_dungeon(str(UiState.selection.get("dungeon_id", "")))
@@ -133,24 +151,28 @@ func _refresh_runtime_detail() -> void:
 		return
 	await GameData.load_dungeon_runtime_detail(dungeon_id)
 
-func _reward_preview(group_id: String) -> String:
-	var rewards := GameData.get_reward_group_items(group_id)
-	if rewards.is_empty():
-		return "暂无"
-	var labels: Array = []
-	for reward in rewards:
-		var definition := GameData.get_item_definition(str(reward.get("item_id", "")))
-		labels.append("%s x%d" % [definition.get("name", reward.get("item_id", "奖励")), int(reward.get("count", 0))])
-	return " / ".join(labels)
-
-func _main_reward_text(main_rewards: Array) -> String:
-	if main_rewards.is_empty():
-		return "暂无"
-	var labels: Array = []
+func _main_reward_entries(main_rewards: Array) -> Array:
+	var rewards: Array = []
 	for item_id in main_rewards:
-		var definition := GameData.get_item_definition(str(item_id))
-		labels.append(str(definition.get("name", item_id)))
-	return " / ".join(labels)
+		rewards.append({
+			"item_id": str(item_id),
+			"count": 1
+		})
+	return rewards
+
+func _build_item_slots(container: FlowContainer, rewards: Array, empty_text: String) -> void:
+	if rewards.is_empty():
+		var empty := Label.new()
+		empty.text = empty_text
+		ShanhaiStyle.apply_body(empty, true, 16)
+		container.add_child(empty)
+		return
+
+	for reward in rewards:
+		var slot = ITEM_SLOT_SCENE.instantiate()
+		slot.custom_minimum_size = Vector2(240, 88)
+		slot.configure(reward, int(reward.get("count", 0)))
+		container.add_child(slot)
 
 func _build_ui() -> void:
 	if get_child_count() > 0:
@@ -197,6 +219,26 @@ func _build_ui() -> void:
 	_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ShanhaiStyle.apply_body(_summary_label, false, 18)
 	_content.add_child(_summary_label)
+
+	var main_reward_heading := Label.new()
+	main_reward_heading.text = "主要产出"
+	ShanhaiStyle.apply_heading(main_reward_heading, 20)
+	_content.add_child(main_reward_heading)
+
+	_main_reward_box = FlowContainer.new()
+	_main_reward_box.add_theme_constant_override("h_separation", 10)
+	_main_reward_box.add_theme_constant_override("v_separation", 10)
+	_content.add_child(_main_reward_box)
+
+	var first_clear_heading := Label.new()
+	first_clear_heading.text = "首通奖励"
+	ShanhaiStyle.apply_heading(first_clear_heading, 20)
+	_content.add_child(first_clear_heading)
+
+	_first_clear_reward_box = FlowContainer.new()
+	_first_clear_reward_box.add_theme_constant_override("h_separation", 10)
+	_first_clear_reward_box.add_theme_constant_override("v_separation", 10)
+	_content.add_child(_first_clear_reward_box)
 
 	_start_button = Button.new()
 	_start_button.text = "进入副本战斗"

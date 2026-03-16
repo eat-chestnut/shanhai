@@ -10,10 +10,15 @@ class EditMainlineDifficulty extends EditRecord
 {
     protected static string $resource = MainlineDifficultyResource::class;
 
+    public function getTitle(): string
+    {
+        return '编辑主线难度';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()->label('删除'),
         ];
     }
 }

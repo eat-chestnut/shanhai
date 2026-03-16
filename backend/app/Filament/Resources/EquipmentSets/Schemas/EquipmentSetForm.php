@@ -20,54 +20,54 @@ class EquipmentSetForm
                     ->columns(2)
                     ->schema([
                         TextInput::make('set_id')
-                            ->label('set_id')
+                            ->label('套装ID')
                             ->required()
                             ->maxLength(100)
                             ->unique(ignoreRecord: true),
                         TextInput::make('level')
-                            ->label('level')
+                            ->label('套装等级')
                             ->required()
                             ->numeric()
                             ->minValue(1)
                             ->default(1),
                         TagsInput::make('pieces')
-                            ->label('pieces')
+                            ->label('套装部件')
                             ->required()
                             ->reorderable()
                             ->suggestions(fn (): array => Equipment::query()->orderBy('equip_id')->pluck('equip_id')->all())
                             ->columnSpanFull(),
                         Repeater::make('effects')
-                            ->label('effects')
+                            ->label('套装效果')
                             ->defaultItems(0)
                             ->reorderable()
                             ->schema([
                                 TextInput::make('count')
-                                    ->label('count')
+                                    ->label('件数')
                                     ->required()
                                     ->numeric()
                                     ->minValue(1),
                                 TextInput::make('bonus_atk')
-                                    ->label('bonus_atk')
+                                    ->label('攻击加成')
                                     ->numeric()
                                     ->default(0),
                                 TextInput::make('bonus_def')
-                                    ->label('bonus_def')
+                                    ->label('防御加成')
                                     ->numeric()
                                     ->default(0),
                                 TextInput::make('bonus_hp')
-                                    ->label('bonus_hp')
+                                    ->label('生命加成')
                                     ->numeric()
                                     ->default(0),
                                 TextInput::make('bonus_boss_dmg')
-                                    ->label('bonus_boss_dmg')
+                                    ->label('Boss伤害加成')
                                     ->numeric()
                                     ->default(0),
                                 TextInput::make('bonus_attack_speed')
-                                    ->label('bonus_attack_speed')
+                                    ->label('攻速加成')
                                     ->numeric()
                                     ->default(0),
                                 TextInput::make('bonus_damage_ratio')
-                                    ->label('bonus_damage_ratio')
+                                    ->label('伤害倍率加成')
                                     ->numeric()
                                     ->default(0),
                             ])

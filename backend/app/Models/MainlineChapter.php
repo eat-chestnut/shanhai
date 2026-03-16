@@ -16,6 +16,17 @@ class MainlineChapter extends Model
         'required_previous_highest_difficulty',
     ];
 
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'unlock_level' => 'integer',
+            'sort_order' => 'integer',
+        ];
+    }
+
     public function nodes(): HasMany
     {
         return $this->hasMany(MainlineNode::class, 'chapter_id', 'chapter_id');

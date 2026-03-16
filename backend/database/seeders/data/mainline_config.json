@@ -14,7 +14,7 @@
       "unlock_level": 1,
       "sort_order": 1,
       "required_previous_chapter": "prologue",
-      "required_previous_highest_difficulty": "easy"
+      "required_previous_highest_difficulty": "normal"
     },
     {
       "chapter_id": "chapter_02",
@@ -22,7 +22,7 @@
       "unlock_level": 20,
       "sort_order": 2,
       "required_previous_chapter": "chapter_01",
-      "required_previous_highest_difficulty": "normal"
+      "required_previous_highest_difficulty": "nightmare"
     },
     {
       "chapter_id": "chapter_03",
@@ -30,7 +30,7 @@
       "unlock_level": 34,
       "sort_order": 3,
       "required_previous_chapter": "chapter_02",
-      "required_previous_highest_difficulty": "normal"
+      "required_previous_highest_difficulty": "nightmare"
     },
     {
       "chapter_id": "chapter_04",
@@ -38,7 +38,7 @@
       "unlock_level": 48,
       "sort_order": 4,
       "required_previous_chapter": "chapter_03",
-      "required_previous_highest_difficulty": "hard"
+      "required_previous_highest_difficulty": "nightmare"
     },
     {
       "chapter_id": "chapter_05",
@@ -46,7 +46,7 @@
       "unlock_level": 62,
       "sort_order": 5,
       "required_previous_chapter": "chapter_04",
-      "required_previous_highest_difficulty": "hard"
+      "required_previous_highest_difficulty": "nightmare"
     },
     {
       "chapter_id": "chapter_06",
@@ -54,7 +54,7 @@
       "unlock_level": 76,
       "sort_order": 6,
       "required_previous_chapter": "chapter_05",
-      "required_previous_highest_difficulty": "hard"
+      "required_previous_highest_difficulty": "nightmare"
     },
     {
       "chapter_id": "chapter_07",

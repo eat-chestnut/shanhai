@@ -2,6 +2,7 @@ extends ScrollContainer
 class_name IdlePage
 
 const ShanhaiStyle = preload("res://scripts/core/shanhai_style.gd")
+const ITEM_SLOT_SCENE := preload("res://scenes/components/item_slot.tscn")
 
 var _content: VBoxContainer
 var _status_label: Label
@@ -44,11 +45,10 @@ func refresh() -> void:
 		return
 
 	for reward in rewards:
-		var label := Label.new()
-		var definition := GameData.get_item_definition(str(reward.get("item_id", "")))
-		label.text = "%s x%d" % [definition.get("name", reward.get("item_id", "奖励")), int(reward.get("count", 0))]
-		ShanhaiStyle.apply_body(label, false, 18)
-		_reward_box.add_child(label)
+		var slot = ITEM_SLOT_SCENE.instantiate()
+		slot.custom_minimum_size = Vector2(240, 88)
+		slot.configure(reward, int(reward.get("count", 0)))
+		_reward_box.add_child(slot)
 
 func _on_claim_pressed() -> void:
 	await GameData.claim_idle_rewards()

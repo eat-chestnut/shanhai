@@ -13,7 +13,7 @@ class ListItemConfigs extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->label('创建物品配置'),
         ];
     }
 }

@@ -17,38 +17,38 @@ class EquipmentTable
             ->defaultSort('equip_id')
             ->columns([
                 TextColumn::make('equip_id')
-                    ->label('equip_id')
+                    ->label('装备ID')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
                 TextColumn::make('name')
-                    ->label('name')
+                    ->label('装备名称')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('type')
-                    ->label('type')
+                    ->label('装备类型')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('level')
-                    ->label('level')
+                    ->label('等级')
                     ->sortable(),
                 TextColumn::make('base_atk')
-                    ->label('base_atk')
+                    ->label('基础攻击')
                     ->sortable(),
                 TextColumn::make('base_def')
-                    ->label('base_def')
+                    ->label('基础防御')
                     ->sortable(),
             ])
             ->filters([
                 //
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()->label('编辑'),
+                DeleteAction::make()->label('删除'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->label('批量删除'),
                 ]),
             ]);
     }

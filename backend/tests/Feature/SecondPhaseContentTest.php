@@ -88,7 +88,7 @@ class SecondPhaseContentTest extends TestCase
             ->assertOk()
             ->assertJsonFragment([
                 'chapter_id' => 'chapter_03',
-                'chapter_name' => '符火照夜',
+                'chapter_name' => '第三章：符火照夜',
             ]);
     }
 
@@ -256,15 +256,19 @@ class SecondPhaseContentTest extends TestCase
 
     private function unlockDungeonNewForPlayer(): void
     {
-        $this->app['db']->table('player_stage_progress')->insert([
-            'player_id' => 10001,
-            'chapter_id' => 'chapter_02',
-            'node_id' => 'node_06',
-            'difficulty_id' => 'hard',
-            'is_first_clear' => true,
-            'clear_count' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $this->app['db']->table('player_stage_progress')->updateOrInsert(
+            [
+                'player_id' => 10001,
+                'node_id' => 'node_06',
+                'difficulty_id' => 'hard',
+            ],
+            [
+                'chapter_id' => 'chapter_02',
+                'is_first_clear' => true,
+                'clear_count' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        );
     }
 }

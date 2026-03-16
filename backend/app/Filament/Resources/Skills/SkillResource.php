@@ -25,6 +25,11 @@ class SkillResource extends Resource
         return '技能管理';
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return '角色配置';
+    }
+
     public static function getModelLabel(): string
     {
         return '技能';

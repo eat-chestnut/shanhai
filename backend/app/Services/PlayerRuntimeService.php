@@ -39,6 +39,7 @@ class PlayerRuntimeService
                 $isNewPlayer = true;
                 $playerProfile = $this->repository->createProfile($this->buildStarterProfile($playerId, $nickname));
                 $this->repository->syncInventory($playerId, $this->buildStarterInventoryRows($playerId));
+                $this->repository->syncStageProgress($playerId, $this->buildStarterStageProgressRows($playerId));
             }
 
             $playerProfile = $this->repository->updateProfile($playerProfile, [
@@ -673,6 +674,31 @@ class PlayerRuntimeService
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
             ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function buildStarterStageProgressRows(int $playerId): array
+    {
+        $starter = config('game_runtime.starter_player.stage_progress', []);
+        $timestamp = Carbon::now();
+
+        return collect(is_array($starter) ? $starter : [])
+            ->filter(static fn (mixed $entry): bool => is_array($entry))
+            ->map(static fn (array $entry): array => [
+                'player_id' => $playerId,
+                'chapter_id' => (string) ($entry['chapter_id'] ?? ''),
+                'node_id' => (string) ($entry['node_id'] ?? ''),
+                'difficulty_id' => (string) ($entry['difficulty_id'] ?? ''),
+                'is_first_clear' => (bool) ($entry['is_first_clear'] ?? true),
+                'clear_count' => max((int) ($entry['clear_count'] ?? 1), 1),
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ])
+            ->filter(static fn (array $entry): bool => $entry['chapter_id'] !== '' && $entry['node_id'] !== '' && $entry['difficulty_id'] !== '')
             ->values()
             ->all();
     }

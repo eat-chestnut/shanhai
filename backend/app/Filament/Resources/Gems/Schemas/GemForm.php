@@ -17,25 +17,25 @@ class GemForm
                     ->columns(2)
                     ->schema([
                         TextInput::make('gem_id')
-                            ->label('gem_id')
+                            ->label('宝石ID')
                             ->required()
                             ->maxLength(100)
                             ->unique(ignoreRecord: true),
                         TextInput::make('name')
-                            ->label('name')
+                            ->label('宝石名称')
                             ->required()
                             ->maxLength(100),
                         TextInput::make('type')
-                            ->label('type')
+                            ->label('宝石类型')
                             ->required()
                             ->maxLength(100)
                             ->placeholder('attribute'),
                         TextInput::make('bonus_atk')
-                            ->label('bonus_atk')
+                            ->label('攻击加成')
                             ->numeric()
                             ->default(0),
                         TextInput::make('bonus_boss_dmg')
-                            ->label('bonus_boss_dmg')
+                            ->label('Boss伤害加成')
                             ->numeric()
                             ->default(0),
                     ]),

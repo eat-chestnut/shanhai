@@ -54,18 +54,24 @@ class MainlineConfigService
                 'chapter_config.*.chapter_id' => ['required', 'string', 'max:100', 'distinct'],
                 'chapter_config.*.chapter_name' => ['required', 'string', 'max:100'],
                 'chapter_config.*.unlock_level' => ['required', 'integer', 'min:1'],
+                'chapter_config.*.sort_order' => ['nullable', 'integer', 'min:0'],
+                'chapter_config.*.required_previous_chapter' => ['nullable', 'string', 'max:100'],
+                'chapter_config.*.required_previous_highest_difficulty' => ['nullable', 'string', 'max:100'],
                 'node_config' => ['required', 'array', 'min:1'],
                 'node_config.*.node_id' => ['required', 'string', 'max:100', 'distinct'],
                 'node_config.*.chapter_id' => ['required', 'string', 'max:100'],
                 'node_config.*.node_name' => ['required', 'string', 'max:100'],
                 'node_config.*.unlock_condition' => ['required', 'array'],
                 'node_config.*.unlock_condition.level' => ['required', 'integer', 'min:1'],
+                'node_config.*.unlock_condition.clear_node_id' => ['nullable', 'string', 'max:100'],
                 'node_config.*.unlock_condition.conditions' => ['nullable', 'array'],
                 'node_config.*.difficulty_ids' => ['required', 'array', 'min:1'],
                 'node_config.*.difficulty_ids.*' => ['required', 'string', 'max:100'],
                 'difficulty_config' => ['required', 'array', 'min:1'],
                 'difficulty_config.*.difficulty_id' => ['required', 'string', 'max:100'],
                 'difficulty_config.*.node_id' => ['required', 'string', 'max:100'],
+                'difficulty_config.*.difficulty_order' => ['nullable', 'integer', 'min:0'],
+                'difficulty_config.*.difficulty_name' => ['nullable', 'string', 'max:100'],
                 'difficulty_config.*.recommended_power' => ['required', 'integer', 'min:0'],
                 'difficulty_config.*.first_clear_reward_group_id' => ['nullable', 'string', 'max:100'],
             ],
@@ -83,6 +89,7 @@ class MainlineConfigService
             }
 
             $nodeIds = [];
+            $difficultyOrdersByNode = [];
             $expectedDifficultyIdsByNode = [];
 
             foreach ($nodes as $index => $node) {
@@ -95,6 +102,7 @@ class MainlineConfigService
 
                 $nodeIds[$nodeId] = true;
                 $expectedDifficultyIdsByNode[$nodeId] = array_values(array_unique($node['difficulty_ids'] ?? []));
+                $difficultyOrdersByNode[$nodeId] = array_flip($expectedDifficultyIdsByNode[$nodeId]);
             }
 
             $difficultyIdsByNode = [];
@@ -115,6 +123,13 @@ class MainlineConfigService
 
                 $difficultyKeys[$compositeKey] = true;
                 $difficultyIdsByNode[$nodeId][] = $difficultyId;
+
+                $expectedOrder = $difficultyOrdersByNode[$nodeId][$difficultyId] ?? null;
+                $providedOrder = $difficulty['difficulty_order'] ?? null;
+
+                if (($providedOrder !== null) && ($expectedOrder !== null) && ((int) $providedOrder !== (int) $expectedOrder)) {
+                    $validator->errors()->add("difficulty_config.{$index}.difficulty_order", 'difficulty_order 必须与节点 difficulty_ids 的顺序保持一致。');
+                }
             }
 
             foreach ($expectedDifficultyIdsByNode as $nodeId => $difficultyIds) {
@@ -164,15 +179,28 @@ class MainlineConfigService
             },
             $validated['node_config'],
         );
+        $difficultyOrderLookup = collect($validated['node_config'])
+            ->mapWithKeys(static fn (array $node): array => [
+                (string) $node['node_id'] => array_flip(array_values(array_unique($node['difficulty_ids']))),
+            ]);
         $difficultyRows = array_map(
-            static fn (array $difficulty): array => [
-                'difficulty_id' => $difficulty['difficulty_id'],
-                'node_id' => $difficulty['node_id'],
-                'recommended_power' => (int) $difficulty['recommended_power'],
-                'first_clear_reward_group_id' => $difficulty['first_clear_reward_group_id'] ?? null,
-                'created_at' => $timestamp,
-                'updated_at' => $timestamp,
-            ],
+            static function (array $difficulty) use ($difficultyOrderLookup, $timestamp): array {
+                $nodeId = (string) $difficulty['node_id'];
+                $difficultyId = (string) $difficulty['difficulty_id'];
+                $difficultyOrder = $difficulty['difficulty_order']
+                    ?? data_get($difficultyOrderLookup->get($nodeId, []), $difficultyId, MainlineDifficulty::defaultDifficultyOrder($difficultyId));
+
+                return [
+                    'difficulty_id' => $difficultyId,
+                    'node_id' => $nodeId,
+                    'difficulty_order' => (int) $difficultyOrder,
+                    'difficulty_name' => (string) ($difficulty['difficulty_name'] ?? MainlineDifficulty::defaultDifficultyName($difficultyId)),
+                    'recommended_power' => (int) $difficulty['recommended_power'],
+                    'first_clear_reward_group_id' => $difficulty['first_clear_reward_group_id'] ?? null,
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ];
+            },
             $validated['difficulty_config'],
         );
 
@@ -204,6 +232,9 @@ class MainlineConfigService
                 'chapter_id' => $chapter->chapter_id,
                 'chapter_name' => $chapter->chapter_name,
                 'unlock_level' => (int) $chapter->unlock_level,
+                'sort_order' => (int) $chapter->sort_order,
+                'required_previous_chapter' => $chapter->required_previous_chapter,
+                'required_previous_highest_difficulty' => $chapter->required_previous_highest_difficulty,
             ])
             ->all();
 
@@ -217,21 +248,12 @@ class MainlineConfigService
             ])
             ->all();
 
-        $difficultyOrderMap = $this->repository->getAllNodes()
-            ->mapWithKeys(static fn (MainlineNode $node): array => [
-                $node->node_id => array_flip($node->difficulty_ids ?? []),
-            ]);
-
         $difficulties = $this->repository->getAllDifficulties()
-            ->sortBy(static function (MainlineDifficulty $difficulty) use ($difficultyOrderMap): string {
-                $position = $difficultyOrderMap[$difficulty->node_id][$difficulty->difficulty_id] ?? 9999;
-
-                return $difficulty->node_id.'-'.str_pad((string) $position, 4, '0', STR_PAD_LEFT).'-'.$difficulty->difficulty_id;
-            })
-            ->values()
             ->map(static fn (MainlineDifficulty $difficulty): array => [
                 'difficulty_id' => $difficulty->difficulty_id,
                 'node_id' => $difficulty->node_id,
+                'difficulty_order' => (int) $difficulty->difficulty_order,
+                'difficulty_name' => $difficulty->difficulty_name ?: MainlineDifficulty::defaultDifficultyName($difficulty->difficulty_id),
                 'recommended_power' => (int) $difficulty->recommended_power,
                 'first_clear_reward_group_id' => $difficulty->first_clear_reward_group_id,
             ])
@@ -277,6 +299,12 @@ class MainlineConfigService
         $normalized = [
             'level' => (int) ($unlockCondition['level'] ?? 1),
         ];
+
+        $clearNodeId = $unlockCondition['clear_node_id'] ?? null;
+
+        if (filled($clearNodeId)) {
+            $normalized['clear_node_id'] = (string) $clearNodeId;
+        }
 
         if (isset($unlockCondition['conditions']) && is_array($unlockCondition['conditions']) && $unlockCondition['conditions'] !== []) {
             $normalized['conditions'] = $unlockCondition['conditions'];

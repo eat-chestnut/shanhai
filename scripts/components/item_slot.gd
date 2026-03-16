@@ -16,12 +16,13 @@ func configure(item: Dictionary, count: int = 0, subtitle: String = "") -> void:
 	if _title_label == null:
 		_build_ui()
 	var definition: Dictionary = item.get("definition", item)
-	_title_label.text = str(definition.get("name", item.get("item_id", "未知道具")))
-	_type_label.text = subtitle if not subtitle.is_empty() else str(definition.get("type", "loot"))
+	_title_label.text = GameData.get_item_display_name(definition)
+	var item_type := str(definition.get("item_type", definition.get("type", "loot")))
+	_type_label.text = subtitle if not subtitle.is_empty() else GameData.get_item_type_label(item_type)
 	_count_label.text = "x%d" % max(count, int(item.get("count", 0)))
 	
 	# 应用稀有度样式
-	var rarity: String = definition.get("rarity", "common")
+	var rarity: String = str(definition.get("rarity", "common"))
 	_apply_rarity_style(rarity)
 
 func _apply_rarity_style(rarity: String) -> void:

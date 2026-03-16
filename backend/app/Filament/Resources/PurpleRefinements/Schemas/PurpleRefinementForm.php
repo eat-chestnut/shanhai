@@ -18,16 +18,16 @@ class PurpleRefinementForm
                     ->columns(2)
                     ->schema([
                         TextInput::make('refinement_id')
-                            ->label('refinement_id')
+                            ->label('紫炼化ID')
                             ->required()
                             ->maxLength(100)
                             ->unique(ignoreRecord: true),
                         TextInput::make('name')
-                            ->label('name')
+                            ->label('紫炼化名称')
                             ->required()
                             ->maxLength(100),
                         KeyValue::make('bonuses')
-                            ->label('bonuses')
+                            ->label('属性加成')
                             ->keyLabel('属性键')
                             ->valueLabel('属性值')
                             ->default([])

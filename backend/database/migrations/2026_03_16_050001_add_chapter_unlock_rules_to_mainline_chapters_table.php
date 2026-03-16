@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('mainline_chapters', function (Blueprint $table) {
             $table->unsignedInteger('sort_order')->default(0)->after('unlock_level')->comment('排序');
             $table->string('required_previous_chapter')->nullable()->after('sort_order')->comment('需要的前置章节ID');
-            $table->unsignedInteger('required_previous_highest_difficulty')->nullable()->after('required_previous_chapter')->comment('需要前置章节的最高难度通关');
+            $table->string('required_previous_highest_difficulty')->nullable()->after('required_previous_chapter')->comment('需要前置章节的最高难度 difficulty_id');
         });
     }
 
