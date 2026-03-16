@@ -43,13 +43,23 @@ func _apply_rarity_style(rarity: String) -> void:
 		_type_label.modulate = Color.from_string(rarity_config.get("text_color", "#FFFFFF"), Color.WHITE)
 
 func _get_rarity_config(rarity: String) -> Dictionary:
-	# 这里应该从GameData获取稀有度配置，暂时返回默认配置
+	var config = GameData.get_rarity_config(rarity)
+	if not config.is_empty():
+		return config
+	
+	# 如果没有找到配置，返回默认配置
 	match rarity:
 		"common":
 			return {
 				"text_color": "#FFFFFF",
 				"bg_color": "#2F2F2F", 
 				"border_color": "#7A7A7A"
+			}
+		"uncommon":
+			return {
+				"text_color": "#D8F3FF",
+				"bg_color": "#163A59",
+				"border_color": "#4DB3FF"
 			}
 		"rare":
 			return {

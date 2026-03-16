@@ -22,6 +22,7 @@ var purple_refinements: Array = []
 var task_configs: Array = []
 var shop_items: Array = []
 var items: Array = []
+var rarity_configs: Array = []
 var reward_groups: Dictionary = {}
 var encounters: Dictionary = {}
 var runtime_auth: Dictionary = {}
@@ -494,6 +495,9 @@ func get_monster(monster_id: String) -> Dictionary:
 func get_item(item_id: String) -> Dictionary:
 	return _find_first(items, "item_id", item_id)
 
+func get_rarity_config(rarity_key: String) -> Dictionary:
+	return _find_first(rarity_configs, "rarity_key", rarity_key)
+
 func get_equipment(equip_id: String) -> Dictionary:
 	return _find_first(equipment, "equip_id", equip_id)
 
@@ -572,7 +576,7 @@ func get_selected_equipment_runtime() -> Dictionary:
 
 func get_item_definition(item_id: String) -> Dictionary:
 	if item_id == "gold" or item_id == "jade" or item_id == "contribution":
-		return {"item_id": item_id, "name": item_labels.get(item_id, item_id), "type": "currency"}
+		return {"item_id": item_id, "name": item_labels.get(item_id, item_id), "type": "currency", "rarity": "common"}
 
 	var item_data := get_item(item_id)
 	if not item_data.is_empty():
@@ -580,11 +584,11 @@ func get_item_definition(item_id: String) -> Dictionary:
 
 	var equipment_data := get_equipment(item_id)
 	if not equipment_data.is_empty():
-		return {"item_id": item_id, "name": equipment_data.get("name", item_id), "type": equipment_data.get("type", "equipment")}
+		return {"item_id": item_id, "name": equipment_data.get("name", item_id), "type": equipment_data.get("type", "equipment"), "rarity": equipment_data.get("rarity", "common")}
 
 	var gem_data := get_gem(item_id)
 	if not gem_data.is_empty():
-		return {"item_id": item_id, "name": gem_data.get("name", item_id), "type": "gem"}
+		return {"item_id": item_id, "name": gem_data.get("name", item_id), "type": "gem", "rarity": gem_data.get("rarity", "uncommon")}
 
 	var affix_data := get_blue_affix(item_id)
 	if not affix_data.is_empty():
@@ -676,6 +680,10 @@ func _merge_remote_bundle(remote_bundle: Dictionary) -> void:
 		gems = equipment_payload.get("gem_config", equipment_payload.get("gems", gems)).duplicate(true)
 		blue_affixes = equipment_payload.get("blue_affix_config", equipment_payload.get("blue_affixes", blue_affixes)).duplicate(true)
 		purple_refinements = equipment_payload.get("purple_refinement_config", equipment_payload.get("purple_refinements", purple_refinements)).duplicate(true)
+	if remote_bundle.has("items"):
+		items = remote_bundle.get("items", []).duplicate(true)
+	if remote_bundle.has("rarity_configs"):
+		rarity_configs = remote_bundle.get("rarity_configs", []).duplicate(true)
 	_fill_default_content()
 
 func _apply_runtime_player_init(payload: Dictionary) -> void:

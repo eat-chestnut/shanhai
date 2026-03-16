@@ -12,8 +12,10 @@ use App\Http\Controllers\Api\EquipmentRuntimeController;
 use App\Http\Controllers\Api\HallFeatureController;
 use App\Http\Controllers\Api\IdleRuntimeController;
 use App\Http\Controllers\Api\InventoryRuntimeController;
+use App\Http\Controllers\Api\ItemsController;
 use App\Http\Controllers\Api\MainlineConfigController;
 use App\Http\Controllers\Api\PlayerRuntimeController;
+use App\Http\Controllers\Api\RarityConfigsController;
 use App\Http\Controllers\Api\ShopRuntimeController;
 use App\Http\Controllers\Api\SkillController;
 use App\Http\Controllers\Api\StageRuntimeController;
@@ -28,6 +30,8 @@ Route::prefix('v1')->group(function (): void {
     Route::get('equipment-config', EquipmentConfigController::class);
     Route::apiResource('hall-features', HallFeatureController::class);
     Route::get('mainline-config', MainlineConfigController::class);
+    Route::get('items/list', [ItemsController::class, 'list']);
+    Route::get('rarity-configs/list', [RarityConfigsController::class, 'list']);
     Route::apiResource('skills', SkillController::class);
 
     Route::middleware('player.auth')->group(function (): void {

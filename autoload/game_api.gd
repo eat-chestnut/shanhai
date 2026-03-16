@@ -37,6 +37,8 @@ func fetch_runtime_bundle(local_fallback: Dictionary) -> Dictionary:
 	bundle["mainline_config"] = await fetch_mainline_config(local_fallback)
 	bundle["dungeon_content_config"] = await fetch_dungeon_content_config(local_fallback)
 	bundle["equipment_config"] = await fetch_equipment_config(local_fallback)
+	bundle["items"] = await fetch_items(local_fallback.get("items", []))
+	bundle["rarity_configs"] = await fetch_rarity_configs(local_fallback.get("rarity_configs", []))
 	return bundle
 
 func login(player_fallback: Dictionary) -> Dictionary:
@@ -366,3 +368,17 @@ func _build_url(path: String) -> String:
 	var normalized_base := base_url.rstrip("/")
 	var normalized_path := path if path.begins_with("/") else "/%s" % path
 	return "%s%s" % [normalized_base, normalized_path]
+
+func fetch_items(fallback: Array) -> Array:
+	var data := await _request_api_data("/items/list", HTTPClient.METHOD_GET, {}, true)
+	var items = data.get("items", [])
+	if items is Array:
+		return items.duplicate(true)
+	return fallback.duplicate(true)
+
+func fetch_rarity_configs(fallback: Array) -> Array:
+	var data := await _request_api_data("/rarity-configs/list", HTTPClient.METHOD_GET, {}, true)
+	var configs = data.get("rarity_configs", [])
+	if configs is Array:
+		return configs.duplicate(true)
+	return fallback.duplicate(true)
