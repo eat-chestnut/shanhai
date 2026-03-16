@@ -7,6 +7,7 @@ use App\Models\Equipment;
 use App\Models\EquipmentSet;
 use App\Models\Gem;
 use App\Models\PurpleRefinement;
+use App\Repositories\Contracts\EquipmentConfigRepositoryInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -16,6 +17,10 @@ use JsonException;
 
 class EquipmentConfigService
 {
+    public function __construct(
+        private readonly EquipmentConfigRepositoryInterface $repository,
+    ) {}
+
     /**
      * @return array{equipment:int,sets:int,gems:int,blue_affixes:int,purple_refinements:int}
      */
@@ -89,100 +94,88 @@ class EquipmentConfigService
         $blueAffixRows = $validated['blue_affix_config'] ?? [];
         $purpleRefinementRows = $validated['purple_refinement_config'] ?? [];
         $timestamp = Carbon::now();
-
-        DB::transaction(function () use ($blueAffixRows, $equipmentRows, $gemRows, $purpleRefinementRows, $setRows, $timestamp): void {
-            PurpleRefinement::query()->delete();
-            BlueAffix::query()->delete();
-            Gem::query()->delete();
-            EquipmentSet::query()->delete();
-            Equipment::query()->delete();
-
-            Equipment::query()->insert(array_map(
-                static fn (array $equipment): array => [
-                    'equip_id' => $equipment['equip_id'],
-                    'name' => $equipment['name'],
-                    'type' => $equipment['type'],
-                    'level' => (int) $equipment['level'],
-                    'base_atk' => (int) ($equipment['base_atk'] ?? 0),
-                    'base_def' => (int) ($equipment['base_def'] ?? 0),
+        $equipmentInsertRows = array_map(
+            static fn (array $equipment): array => [
+                'equip_id' => $equipment['equip_id'],
+                'name' => $equipment['name'],
+                'type' => $equipment['type'],
+                'level' => (int) $equipment['level'],
+                'base_atk' => (int) ($equipment['base_atk'] ?? 0),
+                'base_def' => (int) ($equipment['base_def'] ?? 0),
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ],
+            $equipmentRows,
+        );
+        $setInsertRows = array_map(
+            function (array $set) use ($timestamp): array {
+                return [
+                    'set_id' => $set['set_id'],
+                    'level' => (int) $set['level'],
+                    'pieces' => json_encode(
+                        array_values(array_unique($set['pieces'])),
+                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                    ),
+                    'effects' => json_encode(
+                        array_values(array_map([$this, 'normalizeSetEffect'], $set['effects'])),
+                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                    ),
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
-                ],
-                $equipmentRows,
-            ));
+                ];
+            },
+            $setRows,
+        );
+        $gemInsertRows = array_map(
+            static fn (array $gem): array => [
+                'gem_id' => $gem['gem_id'],
+                'name' => $gem['name'],
+                'type' => $gem['type'],
+                'bonus_atk' => (int) ($gem['bonus_atk'] ?? 0),
+                'bonus_boss_dmg' => (int) ($gem['bonus_boss_dmg'] ?? 0),
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ],
+            $gemRows,
+        );
+        $blueAffixInsertRows = array_map(
+            function (array $affix) use ($timestamp): array {
+                return [
+                    'affix_id' => $affix['affix_id'],
+                    'name' => $affix['name'],
+                    'bonuses' => json_encode(
+                        $this->normalizeBonuses($affix['bonuses'] ?? []),
+                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                    ),
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ];
+            },
+            $blueAffixRows,
+        );
+        $purpleRefinementInsertRows = array_map(
+            function (array $refinement) use ($timestamp): array {
+                return [
+                    'refinement_id' => $refinement['refinement_id'],
+                    'name' => $refinement['name'],
+                    'bonuses' => json_encode(
+                        $this->normalizeBonuses($refinement['bonuses'] ?? []),
+                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                    ),
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ];
+            },
+            $purpleRefinementRows,
+        );
 
-            if ($setRows !== []) {
-                EquipmentSet::query()->insert(array_map(
-                    function (array $set) use ($timestamp): array {
-                        return [
-                            'set_id' => $set['set_id'],
-                            'level' => (int) $set['level'],
-                            'pieces' => json_encode(
-                                array_values(array_unique($set['pieces'])),
-                                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
-                            ),
-                            'effects' => json_encode(
-                                array_values(array_map([$this, 'normalizeSetEffect'], $set['effects'])),
-                                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
-                            ),
-                            'created_at' => $timestamp,
-                            'updated_at' => $timestamp,
-                        ];
-                    },
-                    $setRows,
-                ));
-            }
-
-            if ($gemRows !== []) {
-                Gem::query()->insert(array_map(
-                    static fn (array $gem): array => [
-                        'gem_id' => $gem['gem_id'],
-                        'name' => $gem['name'],
-                        'type' => $gem['type'],
-                        'bonus_atk' => (int) ($gem['bonus_atk'] ?? 0),
-                        'bonus_boss_dmg' => (int) ($gem['bonus_boss_dmg'] ?? 0),
-                        'created_at' => $timestamp,
-                        'updated_at' => $timestamp,
-                    ],
-                    $gemRows,
-                ));
-            }
-
-            if ($blueAffixRows !== []) {
-                BlueAffix::query()->insert(array_map(
-                    function (array $affix) use ($timestamp): array {
-                        return [
-                            'affix_id' => $affix['affix_id'],
-                            'name' => $affix['name'],
-                            'bonuses' => json_encode(
-                                $this->normalizeBonuses($affix['bonuses'] ?? []),
-                                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
-                            ),
-                            'created_at' => $timestamp,
-                            'updated_at' => $timestamp,
-                        ];
-                    },
-                    $blueAffixRows,
-                ));
-            }
-
-            if ($purpleRefinementRows !== []) {
-                PurpleRefinement::query()->insert(array_map(
-                    function (array $refinement) use ($timestamp): array {
-                        return [
-                            'refinement_id' => $refinement['refinement_id'],
-                            'name' => $refinement['name'],
-                            'bonuses' => json_encode(
-                                $this->normalizeBonuses($refinement['bonuses'] ?? []),
-                                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
-                            ),
-                            'created_at' => $timestamp,
-                            'updated_at' => $timestamp,
-                        ];
-                    },
-                    $purpleRefinementRows,
-                ));
-            }
+        DB::transaction(function () use ($blueAffixInsertRows, $equipmentInsertRows, $gemInsertRows, $purpleRefinementInsertRows, $setInsertRows): void {
+            $this->repository->truncateAll();
+            $this->repository->insertEquipment($equipmentInsertRows);
+            $this->repository->insertSets($setInsertRows);
+            $this->repository->insertGems($gemInsertRows);
+            $this->repository->insertBlueAffixes($blueAffixInsertRows);
+            $this->repository->insertPurpleRefinements($purpleRefinementInsertRows);
         });
 
         return [
@@ -200,9 +193,7 @@ class EquipmentConfigService
     public function exportToArray(): array
     {
         return [
-            'equipment_config' => Equipment::query()
-                ->orderBy('equip_id')
-                ->get()
+            'equipment_config' => $this->repository->getOrderedEquipment()
                 ->map(static fn (Equipment $equipment): array => [
                     'equip_id' => $equipment->equip_id,
                     'name' => $equipment->name,
@@ -212,9 +203,7 @@ class EquipmentConfigService
                     'base_def' => (int) $equipment->base_def,
                 ])
                 ->all(),
-            'equipment_set_config' => EquipmentSet::query()
-                ->orderBy('set_id')
-                ->get()
+            'equipment_set_config' => $this->repository->getOrderedSets()
                 ->map(function (EquipmentSet $set): array {
                     return [
                         'set_id' => $set->set_id,
@@ -224,9 +213,7 @@ class EquipmentConfigService
                     ];
                 })
                 ->all(),
-            'gem_config' => Gem::query()
-                ->orderBy('gem_id')
-                ->get()
+            'gem_config' => $this->repository->getOrderedGems()
                 ->map(static fn (Gem $gem): array => [
                     'gem_id' => $gem->gem_id,
                     'name' => $gem->name,
@@ -235,9 +222,7 @@ class EquipmentConfigService
                     'bonus_boss_dmg' => (int) $gem->bonus_boss_dmg,
                 ])
                 ->all(),
-            'blue_affix_config' => BlueAffix::query()
-                ->orderBy('affix_id')
-                ->get()
+            'blue_affix_config' => $this->repository->getOrderedBlueAffixes()
                 ->map(function (BlueAffix $affix): array {
                     return [
                         'affix_id' => $affix->affix_id,
@@ -246,9 +231,7 @@ class EquipmentConfigService
                     ];
                 })
                 ->all(),
-            'purple_refinement_config' => PurpleRefinement::query()
-                ->orderBy('refinement_id')
-                ->get()
+            'purple_refinement_config' => $this->repository->getOrderedPurpleRefinements()
                 ->map(function (PurpleRefinement $refinement): array {
                     return [
                         'refinement_id' => $refinement->refinement_id,

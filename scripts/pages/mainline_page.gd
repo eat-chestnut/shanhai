@@ -89,11 +89,12 @@ func _update_summary() -> void:
 	var node := GameData.get_mainline_node(str(UiState.selection.get("node_id", "")))
 	var difficulty := GameData.get_difficulty_for_node(str(UiState.selection.get("node_id", "")), str(UiState.selection.get("difficulty_id", "")))
 	var recommended_power := int(difficulty.get("recommended_power", 0))
-	_summary_label.text = "当前章节：%s\n节点：%s\n建议战力：%d  当前战力：%d" % [
+	_summary_label.text = "当前章节：%s\n节点：%s\n建议战力：%d  当前战力：%d\n首通奖励：%s" % [
 		chapter.get("chapter_name", "未选章节"),
 		node.get("node_name", "未选节点"),
 		recommended_power,
-		PlayerState.get_power()
+		PlayerState.get_power(),
+		_reward_preview(str(difficulty.get("first_clear_reward_group_id", "")))
 	]
 	_start_button.disabled = node.is_empty() or difficulty.is_empty()
 
@@ -108,6 +109,16 @@ func _on_chapter_pressed(chapter_id: String) -> void:
 
 func _on_difficulty_pressed(difficulty_id: String) -> void:
 	UiState.set_selection("difficulty_id", difficulty_id)
+
+func _reward_preview(group_id: String) -> String:
+	var rewards := GameData.get_reward_group_items(group_id)
+	if rewards.is_empty():
+		return "暂无"
+	var labels: Array = []
+	for reward in rewards:
+		var definition := GameData.get_item_definition(str(reward.get("item_id", "")))
+		labels.append("%s x%d" % [definition.get("name", reward.get("item_id", "奖励")), int(reward.get("count", 0))])
+	return " / ".join(labels)
 
 func _on_start_pressed() -> void:
 	var chapter := GameData.get_chapter(str(UiState.selection.get("chapter_id", "")))

@@ -7,6 +7,7 @@ use App\Models\Dungeon;
 use App\Models\DungeonDifficulty;
 use App\Models\Monster;
 use App\Models\MonsterDrop;
+use App\Repositories\Contracts\DungeonContentConfigRepositoryInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -17,6 +18,10 @@ use JsonException;
 
 class DungeonContentConfigService
 {
+    public function __construct(
+        private readonly DungeonContentConfigRepositoryInterface $repository,
+    ) {}
+
     /**
      * @return array{dungeons:int,difficulties:int,monsters:int,drops:int}
      */
@@ -56,6 +61,7 @@ class DungeonContentConfigService
                 'dungeon_difficulty_config.*.difficulty_id' => ['required', 'string', 'max:100'],
                 'dungeon_difficulty_config.*.dungeon_id' => ['required', 'string', 'max:100'],
                 'dungeon_difficulty_config.*.recommended_power' => ['required', 'integer', 'min:0'],
+                'dungeon_difficulty_config.*.first_clear_reward_group_id' => ['nullable', 'string', 'max:100'],
                 'monster_config' => ['required', 'array', 'min:1'],
                 'monster_config.*.monster_id' => ['required', 'string', 'max:100', 'distinct'],
                 'monster_config.*.name' => ['required', 'string', 'max:100'],
@@ -144,70 +150,68 @@ class DungeonContentConfigService
         }
 
         $timestamp = Carbon::now();
+        $dungeonRows = array_map(
+            static fn (array $dungeon): array => [
+                'dungeon_id' => $dungeon['dungeon_id'],
+                'dungeon_name' => $dungeon['dungeon_name'],
+                'unlock_level' => (int) $dungeon['unlock_level'],
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ],
+            $validated['dungeon_config'],
+        );
+        $difficultyRows = array_map(
+            static fn (array $difficulty): array => [
+                'difficulty_id' => $difficulty['difficulty_id'],
+                'dungeon_id' => $difficulty['dungeon_id'],
+                'recommended_power' => (int) $difficulty['recommended_power'],
+                'first_clear_reward_group_id' => $difficulty['first_clear_reward_group_id'] ?? null,
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ],
+            $validated['dungeon_difficulty_config'],
+        );
+        $monsterRows = array_map(
+            static fn (array $monster): array => [
+                'monster_id' => $monster['monster_id'],
+                'name' => $monster['name'],
+                'base_hp' => (int) $monster['base_hp'],
+                'base_atk' => (int) $monster['base_atk'],
+                'is_boss' => (bool) $monster['is_boss'],
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ],
+            $validated['monster_config'],
+        );
+        $dropRows = array_map(
+            function (array $drop) use ($monsterBossMap, $timestamp): array {
+                $monsterId = $drop['monster_id'];
+                $dropRate = (float) $drop['drop_rate'];
+                $dropKind = $drop['drop_kind']
+                    ?? MonsterDropKind::infer(
+                        $monsterBossMap[$monsterId] ?? false,
+                        $drop['item_id'],
+                        $dropRate,
+                    )->value;
 
-        DB::transaction(function () use ($timestamp, $validated, $monsterBossMap): void {
-            MonsterDrop::query()->delete();
-            DungeonDifficulty::query()->delete();
-            Monster::query()->delete();
-            Dungeon::query()->delete();
-
-            Dungeon::query()->insert(array_map(
-                static fn (array $dungeon): array => [
-                    'dungeon_id' => $dungeon['dungeon_id'],
-                    'dungeon_name' => $dungeon['dungeon_name'],
-                    'unlock_level' => (int) $dungeon['unlock_level'],
+                return [
+                    'monster_id' => $monsterId,
+                    'item_id' => $drop['item_id'],
+                    'drop_rate' => $dropRate,
+                    'drop_kind' => $dropKind,
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
-                ],
-                $validated['dungeon_config'],
-            ));
+                ];
+            },
+            $validated['monster_drop_config'],
+        );
 
-            DungeonDifficulty::query()->insert(array_map(
-                static fn (array $difficulty): array => [
-                    'difficulty_id' => $difficulty['difficulty_id'],
-                    'dungeon_id' => $difficulty['dungeon_id'],
-                    'recommended_power' => (int) $difficulty['recommended_power'],
-                    'created_at' => $timestamp,
-                    'updated_at' => $timestamp,
-                ],
-                $validated['dungeon_difficulty_config'],
-            ));
-
-            Monster::query()->insert(array_map(
-                static fn (array $monster): array => [
-                    'monster_id' => $monster['monster_id'],
-                    'name' => $monster['name'],
-                    'base_hp' => (int) $monster['base_hp'],
-                    'base_atk' => (int) $monster['base_atk'],
-                    'is_boss' => (bool) $monster['is_boss'],
-                    'created_at' => $timestamp,
-                    'updated_at' => $timestamp,
-                ],
-                $validated['monster_config'],
-            ));
-
-            MonsterDrop::query()->insert(array_map(
-                function (array $drop) use ($monsterBossMap, $timestamp): array {
-                    $monsterId = $drop['monster_id'];
-                    $dropRate = (float) $drop['drop_rate'];
-                    $dropKind = $drop['drop_kind']
-                        ?? MonsterDropKind::infer(
-                            $monsterBossMap[$monsterId] ?? false,
-                            $drop['item_id'],
-                            $dropRate,
-                        )->value;
-
-                    return [
-                        'monster_id' => $monsterId,
-                        'item_id' => $drop['item_id'],
-                        'drop_rate' => $dropRate,
-                        'drop_kind' => $dropKind,
-                        'created_at' => $timestamp,
-                        'updated_at' => $timestamp,
-                    ];
-                },
-                $validated['monster_drop_config'],
-            ));
+        DB::transaction(function () use ($difficultyRows, $dropRows, $dungeonRows, $monsterRows): void {
+            $this->repository->truncateAll();
+            $this->repository->insertDungeons($dungeonRows);
+            $this->repository->insertDifficulties($difficultyRows);
+            $this->repository->insertMonsters($monsterRows);
+            $this->repository->insertDrops($dropRows);
         });
 
         return [
@@ -223,9 +227,7 @@ class DungeonContentConfigService
      */
     public function exportToArray(): array
     {
-        $dungeons = Dungeon::query()
-            ->orderBy('dungeon_id')
-            ->get()
+        $dungeons = $this->repository->getOrderedDungeons()
             ->map(static fn (Dungeon $dungeon): array => [
                 'dungeon_id' => $dungeon->dungeon_id,
                 'dungeon_name' => $dungeon->dungeon_name,
@@ -233,20 +235,16 @@ class DungeonContentConfigService
             ])
             ->all();
 
-        $difficulties = DungeonDifficulty::query()
-            ->orderBy('dungeon_id')
-            ->orderBy('difficulty_id')
-            ->get()
+        $difficulties = $this->repository->getOrderedDifficulties()
             ->map(static fn (DungeonDifficulty $difficulty): array => [
                 'difficulty_id' => $difficulty->difficulty_id,
                 'dungeon_id' => $difficulty->dungeon_id,
                 'recommended_power' => (int) $difficulty->recommended_power,
+                'first_clear_reward_group_id' => $difficulty->first_clear_reward_group_id,
             ])
             ->all();
 
-        $monsters = Monster::query()
-            ->orderBy('monster_id')
-            ->get()
+        $monsters = $this->repository->getOrderedMonsters()
             ->map(static fn (Monster $monster): array => [
                 'monster_id' => $monster->monster_id,
                 'name' => $monster->name,
@@ -256,11 +254,7 @@ class DungeonContentConfigService
             ])
             ->all();
 
-        $drops = MonsterDrop::query()
-            ->orderBy('monster_id')
-            ->orderByRaw("CASE drop_kind WHEN 'boss_fixed' THEN 0 WHEN 'boss_core' THEN 1 ELSE 2 END")
-            ->orderBy('item_id')
-            ->get()
+        $drops = $this->repository->getOrderedDrops()
             ->map(static function (MonsterDrop $drop): array {
                 $payload = [
                     'monster_id' => $drop->monster_id,

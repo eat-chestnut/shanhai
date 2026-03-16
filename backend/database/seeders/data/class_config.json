@@ -3,23 +3,23 @@
     {
       "class_id": "class_jingang",
       "class_name": "金刚",
-      "class_desc": "近战职业",
+      "class_desc": "近战职业，擅长承伤与重击爆发。",
       "role_type": "melee",
       "is_open": true
     },
     {
       "class_id": "class_lingyu",
       "class_name": "灵羽",
-      "class_desc": "远程职业",
+      "class_desc": "远程职业，箭雨压制并擅长持续穿刺伤害。",
       "role_type": "ranged",
-      "is_open": false
+      "is_open": true
     },
     {
       "class_id": "class_fulu",
       "class_name": "符箓",
-      "class_desc": "法术职业",
+      "class_desc": "法术职业，兼具控制与持续回复能力。",
       "role_type": "magic",
-      "is_open": false
+      "is_open": true
     }
   ]
 }

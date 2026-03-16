@@ -37,7 +37,11 @@ func refresh() -> void:
 		body.add_child(title)
 
 		var desc := Label.new()
-		desc.text = str(class_data.get("class_desc", ""))
+		var skill_names := GameData.get_skills_for_class(class_id).map(func(entry: Dictionary) -> String: return str(entry.get("skill_name", entry.get("skill_id", ""))))
+		desc.text = "%s\n专属技能：%s" % [
+			str(class_data.get("class_desc", "")),
+			" / ".join(skill_names) if not skill_names.is_empty() else "待补充"
+		]
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		ShanhaiStyle.apply_body(desc, false, 18)
 		body.add_child(desc)
@@ -78,7 +82,7 @@ func _build_ui() -> void:
 	header.add_child(title)
 
 	var body := Label.new()
-	body.text = "首版客户端仅开放金刚，其他职业保留入口与后续扩展位。"
+	body.text = "山海宗门现已开放金刚、灵羽、符箓三系命格，不同职业会带来完全不同的技能轮转与战斗节奏。"
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ShanhaiStyle.apply_body(body, true, 18)
 	header.add_child(body)

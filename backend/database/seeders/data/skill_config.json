@@ -1,0 +1,166 @@
+{
+  "skills": [
+    {
+      "skill_id": "skill_jingang_smash",
+      "class_id": "class_jingang",
+      "skill_name": "镇岳重击",
+      "skill_desc": "挥动重兵单点爆发，适合近身开怪与斩杀。",
+      "type": "active",
+      "effect_type": "damage",
+      "target_type": "single",
+      "cooldown": 3,
+      "cost": 20,
+      "unlock_level": 1,
+      "max_level": 5,
+      "power_base": 150,
+      "power_per_level": 25,
+      "duration": 0,
+      "effect_payload": {
+        "target_count": 1
+      },
+      "is_open": true
+    },
+    {
+      "skill_id": "skill_jingang_guard",
+      "class_id": "class_jingang",
+      "skill_name": "金刚护体",
+      "skill_desc": "被动提升防御与气血，强化前线承伤能力。",
+      "type": "passive",
+      "effect_type": "attribute",
+      "target_type": "passive",
+      "cooldown": 0,
+      "cost": 0,
+      "unlock_level": 1,
+      "max_level": 5,
+      "power_base": 0,
+      "power_per_level": 0,
+      "duration": 0,
+      "stat_bonuses": {
+        "bonus_def": 10,
+        "bonus_hp": 60
+      },
+      "is_open": true
+    },
+    {
+      "skill_id": "skill_lingyu_arrow",
+      "class_id": "class_lingyu",
+      "skill_name": "穿风箭雨",
+      "skill_desc": "向前方多目标攒射，并施加持续流血。",
+      "type": "active",
+      "effect_type": "damage",
+      "target_type": "multi",
+      "cooldown": 2,
+      "cost": 18,
+      "unlock_level": 1,
+      "max_level": 5,
+      "power_base": 120,
+      "power_per_level": 20,
+      "duration": 3,
+      "effect_payload": {
+        "target_count": 3,
+        "status_name": "裂羽",
+        "status_type": "dot",
+        "status_duration": 3,
+        "status_tick_interval": 1,
+        "status_power_ratio": 0.18
+      },
+      "is_open": true
+    },
+    {
+      "skill_id": "skill_lingyu_focus",
+      "class_id": "class_lingyu",
+      "skill_name": "鹰目追猎",
+      "skill_desc": "被动触发额外追击，并追加短时穿刺伤害。",
+      "type": "passive",
+      "effect_type": "trigger",
+      "target_type": "passive",
+      "cooldown": 0,
+      "cost": 0,
+      "unlock_level": 1,
+      "max_level": 5,
+      "power_base": 0,
+      "power_per_level": 0,
+      "duration": 2,
+      "chance": 0.35,
+      "effect_payload": {
+        "trigger": "on_hit",
+        "extra_damage_ratio": 0.45,
+        "status_name": "穿风",
+        "status_type": "dot",
+        "status_duration": 2,
+        "status_tick_interval": 1,
+        "status_power_ratio": 0.12
+      },
+      "is_open": true
+    },
+    {
+      "skill_id": "skill_fulu_seal",
+      "class_id": "class_fulu",
+      "skill_name": "镇魂灵符",
+      "skill_desc": "单体法术攻击并短暂控制目标，适合打断 Boss 节奏。",
+      "type": "active",
+      "effect_type": "control",
+      "target_type": "single",
+      "cooldown": 4,
+      "cost": 24,
+      "unlock_level": 1,
+      "max_level": 5,
+      "power_base": 90,
+      "power_per_level": 15,
+      "duration": 2,
+      "effect_payload": {
+        "status_name": "镇魂符",
+        "status_type": "control",
+        "status_duration": 2,
+        "move_locked": 1,
+        "attack_locked": 1
+      },
+      "is_open": true
+    },
+    {
+      "skill_id": "skill_fulu_rejuvenation",
+      "class_id": "class_fulu",
+      "skill_name": "回灵符阵",
+      "skill_desc": "为自身持续回复气血，延长作战续航。",
+      "type": "active",
+      "effect_type": "hot",
+      "target_type": "self",
+      "cooldown": 5,
+      "cost": 22,
+      "unlock_level": 1,
+      "max_level": 5,
+      "power_base": 55,
+      "power_per_level": 10,
+      "duration": 4,
+      "effect_payload": {
+        "status_name": "回灵",
+        "status_type": "hot",
+        "status_duration": 4,
+        "status_tick_interval": 1,
+        "status_power_ratio": 0.22
+      },
+      "is_open": true
+    },
+    {
+      "skill_id": "skill_fulu_mastery",
+      "class_id": "class_fulu",
+      "skill_name": "符意通玄",
+      "skill_desc": "被动提升攻击与 Boss 增伤，强化法术爆发。",
+      "type": "passive",
+      "effect_type": "attribute",
+      "target_type": "passive",
+      "cooldown": 0,
+      "cost": 0,
+      "unlock_level": 1,
+      "max_level": 5,
+      "power_base": 0,
+      "power_per_level": 0,
+      "duration": 0,
+      "stat_bonuses": {
+        "bonus_atk": 6,
+        "bonus_boss_dmg": 3
+      },
+      "is_open": true
+    }
+  ]
+}

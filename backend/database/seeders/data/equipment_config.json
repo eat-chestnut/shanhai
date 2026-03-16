@@ -1,6 +1,22 @@
 {
   "equipment_config": [
     {
+      "equip_id": "equip_bow_01",
+      "name": "长弓",
+      "type": "weapon",
+      "level": 5,
+      "base_atk": 25,
+      "base_def": 0
+    },
+    {
+      "equip_id": "equip_staff_01",
+      "name": "法杖",
+      "type": "weapon",
+      "level": 5,
+      "base_atk": 30,
+      "base_def": 0
+    },
+    {
       "equip_id": "equip_sword_01",
       "name": "铜剑",
       "type": "weapon",
@@ -37,6 +53,24 @@
           "bonus_def": 10
         }
       ]
+    },
+    {
+      "set_id": "set_warrior_40",
+      "level": 40,
+      "pieces": [
+        "equip_sword_01",
+        "equip_armor_01"
+      ],
+      "effects": [
+        {
+          "count": 2,
+          "bonus_atk": 10
+        },
+        {
+          "count": 4,
+          "bonus_def": 15
+        }
+      ]
     }
   ],
   "gem_config": [
@@ -53,6 +87,20 @@
       "type": "boss_core",
       "bonus_atk": 0,
       "bonus_boss_dmg": 10
+    },
+    {
+      "gem_id": "gem_yellow",
+      "name": "黄宝石",
+      "type": "attribute",
+      "bonus_atk": 5,
+      "bonus_boss_dmg": 0
+    },
+    {
+      "gem_id": "gem_purple",
+      "name": "紫宝石",
+      "type": "boss_core",
+      "bonus_atk": 0,
+      "bonus_boss_dmg": 15
     }
   ],
   "blue_affix_config": [
@@ -62,6 +110,14 @@
       "bonuses": {
         "bonus_atk": 5
       }
+    },
+    {
+      "affix_id": "blue_hp_guard",
+      "name": "蓝词条-护体",
+      "bonuses": {
+        "bonus_def": 4,
+        "bonus_hp": 45
+      }
     }
   ],
   "purple_refinement_config": [
@@ -70,6 +126,14 @@
       "name": "紫洗练-Boss伤害",
       "bonuses": {
         "bonus_boss_dmg": 8
+      }
+    },
+    {
+      "refinement_id": "purple_refine_atk",
+      "name": "紫洗练-攻击",
+      "bonuses": {
+        "bonus_atk": 10,
+        "bonus_hp": 30
       }
     }
   ]

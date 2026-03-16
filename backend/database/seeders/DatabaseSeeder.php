@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminUserSeeder::class,
             CharacterClassSeeder::class,
+            SkillSeeder::class,
             HallFeatureSeeder::class,
             MainlineConfigSeeder::class,
             DungeonContentConfigSeeder::class,

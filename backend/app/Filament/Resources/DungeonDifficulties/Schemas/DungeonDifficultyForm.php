@@ -50,6 +50,11 @@ class DungeonDifficultyForm
                             ->required()
                             ->numeric()
                             ->minValue(0),
+                        TextInput::make('first_clear_reward_group_id')
+                            ->label('first_clear_reward_group_id')
+                            ->maxLength(100)
+                            ->placeholder('reward_dungeon_gem_easy')
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

@@ -30,7 +30,12 @@ func start_dungeon(dungeon: Dictionary, difficulty: Dictionary) -> void:
 		"dungeon_name": dungeon.get("dungeon_name", ""),
 		"difficulty_id": difficulty.get("difficulty_id", ""),
 		"recommended_power": int(difficulty.get("recommended_power", 0)),
-		"first_clear_reward_group_id": "reward_%s_%s" % [dungeon.get("dungeon_id", ""), difficulty.get("difficulty_id", "")]
+		"first_clear_reward_group_id": str(
+			difficulty.get(
+				"first_clear_reward_group_id",
+				"reward_%s_%s" % [dungeon.get("dungeon_id", ""), difficulty.get("difficulty_id", "")],
+			),
+		)
 	})
 
 func set_context(context: Dictionary) -> void:

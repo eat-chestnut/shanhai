@@ -11,6 +11,7 @@ class DungeonDifficulty extends Model
         'difficulty_id',
         'dungeon_id',
         'recommended_power',
+        'first_clear_reward_group_id',
     ];
 
     public function dungeon(): BelongsTo

@@ -15,6 +15,7 @@ func fetch_runtime_bundle(local_fallback: Dictionary) -> Dictionary:
 	var bundle := local_fallback.duplicate(true)
 	bundle["character_classes"] = await fetch_character_classes(local_fallback.get("character_classes", []))
 	bundle["hall_features"] = await fetch_hall_features(local_fallback.get("hall_features", []))
+	bundle["skills"] = await fetch_skills(local_fallback.get("skills", []))
 	bundle["mainline_config"] = await fetch_mainline_config(local_fallback)
 	bundle["dungeon_content_config"] = await fetch_dungeon_content_config(local_fallback)
 	bundle["equipment_config"] = await fetch_equipment_config(local_fallback)
@@ -28,6 +29,12 @@ func fetch_character_classes(fallback: Array) -> Array:
 
 func fetch_hall_features(fallback: Array) -> Array:
 	var payload := await _request_json("/hall-features?per_page=50")
+	if payload.is_empty():
+		return fallback.duplicate(true)
+	return _extract_resource_list(payload, fallback)
+
+func fetch_skills(fallback: Array) -> Array:
+	var payload := await _request_json("/skills?per_page=100&sort_by=class_id&sort_direction=asc")
 	if payload.is_empty():
 		return fallback.duplicate(true)
 	return _extract_resource_list(payload, fallback)

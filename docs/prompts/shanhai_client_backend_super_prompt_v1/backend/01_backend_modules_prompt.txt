@@ -1,0 +1,1 @@
+Codex Prompt for Backend Modules: Controller/Service/Repository/Seeder for profession, hall, chapters, nodes, dungeon, monsters, equipment.

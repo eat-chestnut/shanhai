@@ -8,6 +8,7 @@ const LOCAL_BOOTSTRAP_PATH := "res://data/bootstrap_state.json"
 var raw_bootstrap: Dictionary = {}
 var character_classes: Array = []
 var hall_features: Array = []
+var skills: Array = []
 var chapters: Array = []
 var dungeons: Array = []
 var dungeon_difficulties: Array = []
@@ -18,11 +19,16 @@ var equipment_sets: Array = []
 var gems: Array = []
 var blue_affixes: Array = []
 var purple_refinements: Array = []
+var items: Array = []
 var reward_groups: Dictionary = {}
 var encounters: Dictionary = {}
 var item_labels := {
 	"gold": "灵石",
-	"boss_core_qingqiu": "青丘妖核"
+	"boss_core_qingqiu": "青丘妖核",
+	"boss_core_thunder": "雷鸣核心",
+	"material_star_stone": "升星石",
+	"material_refine_sand": "洗练砂",
+	"skill_book_thunder": "雷系技能书"
 }
 
 var _loaded_once := false
@@ -59,6 +65,24 @@ func get_character_class_name(class_id: String) -> String:
 	var data := get_character_class(class_id)
 	return str(data.get("class_name", _label_from_id(class_id)))
 
+func get_skill(skill_id: String) -> Dictionary:
+	return _find_first(skills, "skill_id", skill_id)
+
+func get_skills_for_class(class_id: String, include_closed: bool = false) -> Array:
+	var filtered := skills.filter(func(entry: Dictionary) -> bool:
+		return str(entry.get("class_id", "")) == class_id and (include_closed or bool(entry.get("is_open", true)))
+	)
+	filtered.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var type_weight_a := 0 if str(a.get("type", "")) == "active" else 1
+		var type_weight_b := 0 if str(b.get("type", "")) == "active" else 1
+		if type_weight_a != type_weight_b:
+			return type_weight_a < type_weight_b
+		if int(a.get("unlock_level", 1)) != int(b.get("unlock_level", 1)):
+			return int(a.get("unlock_level", 1)) < int(b.get("unlock_level", 1))
+		return str(a.get("skill_id", "")) < str(b.get("skill_id", ""))
+	)
+	return filtered
+
 func get_chapter(chapter_id: String) -> Dictionary:
 	return _find_first(chapters, "chapter_id", chapter_id)
 
@@ -93,6 +117,9 @@ func get_difficulties_for_dungeon(dungeon_id: String) -> Array:
 func get_monster(monster_id: String) -> Dictionary:
 	return _find_first(monsters, "monster_id", monster_id)
 
+func get_item(item_id: String) -> Dictionary:
+	return _find_first(items, "item_id", item_id)
+
 func get_equipment(equip_id: String) -> Dictionary:
 	return _find_first(equipment, "equip_id", equip_id)
 
@@ -111,6 +138,10 @@ func get_set(set_id: String) -> Dictionary:
 func get_item_definition(item_id: String) -> Dictionary:
 	if item_id == "gold":
 		return {"item_id": "gold", "name": item_labels["gold"], "type": "currency"}
+
+	var item_data := get_item(item_id)
+	if not item_data.is_empty():
+		return item_data.duplicate(true)
 
 	var equipment_data := get_equipment(item_id)
 	if not equipment_data.is_empty():
@@ -159,6 +190,7 @@ func _load_local_bootstrap() -> Dictionary:
 func _apply_bootstrap(source: Dictionary) -> void:
 	character_classes = source.get("character_classes", []).duplicate(true)
 	hall_features = source.get("hall_features", []).duplicate(true)
+	skills = source.get("skills", []).duplicate(true)
 	chapters = source.get("chapters", []).duplicate(true)
 	dungeons = source.get("dungeons", []).duplicate(true)
 	dungeon_difficulties = source.get("dungeon_difficulties", []).duplicate(true)
@@ -169,6 +201,7 @@ func _apply_bootstrap(source: Dictionary) -> void:
 	gems = source.get("gems", []).duplicate(true)
 	blue_affixes = source.get("blue_affixes", []).duplicate(true)
 	purple_refinements = source.get("purple_refinements", []).duplicate(true)
+	items = source.get("items", []).duplicate(true)
 	reward_groups = source.get("reward_groups", {}).duplicate(true)
 	encounters = source.get("encounters", {}).duplicate(true)
 	_fill_default_content()
@@ -178,6 +211,8 @@ func _merge_remote_bundle(remote_bundle: Dictionary) -> void:
 		character_classes = remote_bundle.get("character_classes", []).duplicate(true)
 	if remote_bundle.has("hall_features"):
 		hall_features = remote_bundle.get("hall_features", []).duplicate(true)
+	if remote_bundle.has("skills"):
+		skills = remote_bundle.get("skills", []).duplicate(true)
 	if remote_bundle.has("mainline_config"):
 		chapters = _normalize_mainline(remote_bundle.get("mainline_config", {}), chapters)
 	if remote_bundle.has("dungeon_content_config"):
@@ -291,6 +326,8 @@ func _difficulty_order(difficulty_id: String) -> int:
 			return 1
 		"hard":
 			return 2
+		"nightmare":
+			return 3
 		_:
 			return 99
 

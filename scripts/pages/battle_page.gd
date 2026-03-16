@@ -13,6 +13,8 @@ var _arena_root: Node2D
 var _context_label: Label
 var _power_label: Label
 var _timer_label: Label
+var _resource_label: Label
+var _skill_label: Label
 var _log_label: RichTextLabel
 var _player
 var _enemies: Array = []
@@ -77,11 +79,18 @@ func _start_battle() -> void:
 		"attack_interval": 1.0,
 		"is_player": true,
 		"boss_damage_bonus": float(player_stats.get("boss_dmg", 0)),
-		"arena_bounds": arena_bounds
+		"attack_speed_bonus": float(player_stats.get("attack_speed_bonus", 0.0)),
+		"arena_bounds": arena_bounds,
+		"class_id": str(PlayerState.player.get("class_id", "")),
+		"resource_name": PlayerState.get_resource_name(),
+		"resource_max": float(PlayerState.get_max_energy()),
+		"active_skills": PlayerState.get_runtime_skills("active"),
+		"passive_skills": PlayerState.get_runtime_skills("passive")
 	})
 	_player.attacked.connect(_on_actor_attacked)
 	_player.combat_event.connect(_append_log)
 	_player.died.connect(_on_actor_died)
+	_player.skill_state_changed.connect(_on_skill_state_changed)
 
 	var enemy_ids := BattleState.build_monster_ids()
 	for index in enemy_ids.size():
@@ -103,7 +112,8 @@ func _start_battle() -> void:
 			"attack_interval": 1.45 if bool(monster_data.get("is_boss", false)) else 1.7,
 			"aggro_range": 230.0 if bool(monster_data.get("is_boss", false)) else 190.0,
 			"is_boss": bool(monster_data.get("is_boss", false)),
-			"arena_bounds": arena_bounds
+			"arena_bounds": arena_bounds,
+			"skill_profile": _boss_skill_profile(monster_data)
 		})
 		enemy.player_actor = _player
 		enemy.attacked.connect(_on_actor_attacked)
@@ -114,6 +124,7 @@ func _start_battle() -> void:
 
 	_player.enemies = _enemies
 	_power_label.text = "当前战力 %d / 建议 %d" % [PlayerState.get_power(), int(context.get("recommended_power", 0))]
+	_on_skill_state_changed([], float(PlayerState.get_max_energy()), float(PlayerState.get_max_energy()), PlayerState.get_resource_name())
 
 func _finish_battle(victory: bool) -> void:
 	if _battle_over:
@@ -154,6 +165,10 @@ func _clear_battle() -> void:
 	_player = null
 	if _log_label != null:
 		_log_label.clear()
+	if _resource_label != null:
+		_resource_label.text = ""
+	if _skill_label != null:
+		_skill_label.text = ""
 	if _arena_root != null:
 		for child in _arena_root.get_children():
 			child.queue_free()
@@ -166,6 +181,8 @@ func _difficulty_multiplier(difficulty_id: String) -> float:
 			return 1.35
 		"hard":
 			return 1.75
+		"nightmare":
+			return 2.15
 		_:
 			return 1.0
 
@@ -173,6 +190,52 @@ func _context_text(context: Dictionary) -> String:
 	if str(context.get("mode", "")) == "mainline":
 		return "%s / %s / %s" % [context.get("chapter_name", "主线"), context.get("node_name", "节点"), context.get("difficulty_id", "")]
 	return "%s / %s" % [context.get("dungeon_name", "副本"), context.get("difficulty_id", "")]
+
+func _on_skill_state_changed(skill_states: Array, current_resource: float, max_resource: float, resource_name: String) -> void:
+	if _resource_label == null or _skill_label == null:
+		return
+	_resource_label.text = "%s %.0f / %.0f" % [resource_name, current_resource, max_resource]
+	if skill_states.is_empty():
+		_skill_label.text = "主动技能：战斗加载中"
+		return
+	var parts: Array = []
+	for state in skill_states:
+		var cd := float(state.get("cooldown_left", 0.0))
+		var suffix := "冷却 %.1fs" % cd if cd > 0.0 else "就绪"
+		parts.append("%s Lv.%d [%s]" % [
+			state.get("skill_name", state.get("skill_id", "技能")),
+			int(state.get("level", 1)),
+			suffix
+		])
+	_skill_label.text = "主动技能：%s" % " / ".join(parts)
+
+func _boss_skill_profile(monster_data: Dictionary) -> Dictionary:
+	var monster_id := str(monster_data.get("monster_id", ""))
+	if monster_id == "mon_new_boss":
+		return {
+			"name": "雷狱震落",
+			"cooldown": 5.5,
+			"burst_ratio": 0.4,
+			"control_name": "雷缚",
+			"control_duration": 1.6,
+			"dot_name": "感电",
+			"dot_ratio": 0.24,
+			"dot_duration": 4.0,
+			"self_hot_name": "雷兽回潮",
+			"self_hot_ratio": 0.08
+		}
+	if bool(monster_data.get("is_boss", false)):
+		return {
+			"name": "狐火震慑",
+			"cooldown": 6.0,
+			"burst_ratio": 0.22,
+			"control_name": "震慑",
+			"control_duration": 1.2,
+			"dot_name": "妖火",
+			"dot_ratio": 0.2,
+			"dot_duration": 4.0
+		}
+	return {}
 
 func _build_ui() -> void:
 	if get_child_count() > 0:
@@ -232,10 +295,19 @@ func _build_ui() -> void:
 	footer.add_child(footer_box)
 
 	var hint := Label.new()
-	hint.text = "战斗机制：自动普攻、Boss追击、灼烧/回春/控制状态会在战斗中持续结算。"
+	hint.text = "战斗机制：自动普攻与职业技能会轮流施放，Boss 具备独立技能，DOT/HOT/控制与 Buff/Debuff 会持续结算。"
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ShanhaiStyle.apply_body(hint, true, 16)
 	footer_box.add_child(hint)
+
+	_resource_label = Label.new()
+	ShanhaiStyle.apply_heading(_resource_label, 18)
+	footer_box.add_child(_resource_label)
+
+	_skill_label = Label.new()
+	_skill_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ShanhaiStyle.apply_body(_skill_label, false, 16)
+	footer_box.add_child(_skill_label)
 
 	_log_label = RichTextLabel.new()
 	_log_label.size_flags_vertical = Control.SIZE_EXPAND_FILL

@@ -34,6 +34,10 @@ class DungeonDifficultiesTable
                     ->label('recommended_power')
                     ->numeric()
                     ->sortable(),
+                TextColumn::make('first_clear_reward_group_id')
+                    ->label('first_clear_reward_group_id')
+                    ->searchable()
+                    ->toggleable(),
             ])
             ->filters([
                 SelectFilter::make('dungeon_id')

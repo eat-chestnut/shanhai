@@ -25,7 +25,7 @@ func refresh() -> void:
 		PlayerState.get_player_name(),
 		int(stats.get("power", 0))
 	]
-	_gold_label.text = "灵石 %d" % PlayerState.get_gold()
+	_gold_label.text = "灵石 %d  技能点 %d" % [PlayerState.get_gold(), PlayerState.get_skill_points()]
 
 func _build_ui() -> void:
 	if get_child_count() > 0:

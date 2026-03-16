@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\MainlineChapter;
 use App\Models\MainlineDifficulty;
 use App\Models\MainlineNode;
+use App\Repositories\Contracts\MainlineConfigRepositoryInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -14,6 +15,10 @@ use JsonException;
 
 class MainlineConfigService
 {
+    public function __construct(
+        private readonly MainlineConfigRepositoryInterface $repository,
+    ) {}
+
     /**
      * @return array{chapters:int,nodes:int,difficulties:int}
      */
@@ -126,58 +131,56 @@ class MainlineConfigService
 
         $validated = $validator->validate();
         $timestamp = Carbon::now();
-
-        DB::transaction(function () use ($timestamp, $validated): void {
-            MainlineDifficulty::query()->delete();
-            MainlineNode::query()->delete();
-            MainlineChapter::query()->delete();
-
-            MainlineChapter::query()->insert(array_map(
-                static fn (array $chapter): array => [
-                    'chapter_id' => $chapter['chapter_id'],
-                    'chapter_name' => $chapter['chapter_name'],
-                    'unlock_level' => (int) $chapter['unlock_level'],
+        $chapterRows = array_map(
+            static fn (array $chapter): array => [
+                'chapter_id' => $chapter['chapter_id'],
+                'chapter_name' => $chapter['chapter_name'],
+                'unlock_level' => (int) $chapter['unlock_level'],
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ],
+            $validated['chapter_config'],
+        );
+        $nodeRows = array_map(
+            function (array $node) use ($timestamp): array {
+                return [
+                    'node_id' => $node['node_id'],
+                    'chapter_id' => $node['chapter_id'],
+                    'node_name' => $node['node_name'],
+                    'unlock_condition' => json_encode(
+                        $this->normalizeUnlockCondition($node['unlock_condition']),
+                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                    ),
+                    'difficulty_ids' => json_encode(
+                        array_values(array_unique($node['difficulty_ids'])),
+                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                    ),
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
-                ],
-                $validated['chapter_config'],
-            ));
+                ];
+            },
+            $validated['node_config'],
+        );
+        $difficultyRows = array_map(
+            static fn (array $difficulty): array => [
+                'difficulty_id' => $difficulty['difficulty_id'],
+                'node_id' => $difficulty['node_id'],
+                'recommended_power' => (int) $difficulty['recommended_power'],
+                'first_clear_reward_group_id' => $difficulty['first_clear_reward_group_id'] ?? null,
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ],
+            $validated['difficulty_config'],
+        );
 
-            MainlineNode::query()->insert(array_map(
-                function (array $node) use ($timestamp): array {
-                    return [
-                        'node_id' => $node['node_id'],
-                        'chapter_id' => $node['chapter_id'],
-                        'node_name' => $node['node_name'],
-                        'unlock_condition' => json_encode(
-                            $this->normalizeUnlockCondition($node['unlock_condition']),
-                            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
-                        ),
-                        'difficulty_ids' => json_encode(
-                            array_values(array_unique($node['difficulty_ids'])),
-                            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
-                        ),
-                        'created_at' => $timestamp,
-                        'updated_at' => $timestamp,
-                    ];
-                },
-                $validated['node_config'],
-            ));
-
-            MainlineDifficulty::query()->insert(array_map(
-                static fn (array $difficulty): array => [
-                    'difficulty_id' => $difficulty['difficulty_id'],
-                    'node_id' => $difficulty['node_id'],
-                    'recommended_power' => (int) $difficulty['recommended_power'],
-                    'first_clear_reward_group_id' => $difficulty['first_clear_reward_group_id'] ?? null,
-                    'created_at' => $timestamp,
-                    'updated_at' => $timestamp,
-                ],
-                $validated['difficulty_config'],
-            ));
+        DB::transaction(function () use ($chapterRows, $difficultyRows, $nodeRows): void {
+            $this->repository->truncateAll();
+            $this->repository->insertChapters($chapterRows);
+            $this->repository->insertNodes($nodeRows);
+            $this->repository->insertDifficulties($difficultyRows);
         });
 
-        MainlineNode::syncAllDifficultyIds();
+        $this->repository->syncDifficultyIds();
 
         return [
             'chapters' => count($validated['chapter_config']),
@@ -191,11 +194,9 @@ class MainlineConfigService
      */
     public function exportToArray(): array
     {
-        MainlineNode::syncAllDifficultyIds();
+        $this->repository->syncDifficultyIds();
 
-        $chapters = MainlineChapter::query()
-            ->orderBy('chapter_id')
-            ->get()
+        $chapters = $this->repository->getOrderedChapters()
             ->map(static fn (MainlineChapter $chapter): array => [
                 'chapter_id' => $chapter->chapter_id,
                 'chapter_name' => $chapter->chapter_name,
@@ -203,10 +204,7 @@ class MainlineConfigService
             ])
             ->all();
 
-        $nodes = MainlineNode::query()
-            ->orderBy('chapter_id')
-            ->orderBy('node_id')
-            ->get()
+        $nodes = $this->repository->getOrderedNodes()
             ->map(static fn (MainlineNode $node): array => [
                 'node_id' => $node->node_id,
                 'chapter_id' => $node->chapter_id,
@@ -216,14 +214,12 @@ class MainlineConfigService
             ])
             ->all();
 
-        $difficultyOrderMap = MainlineNode::query()
-            ->get()
+        $difficultyOrderMap = $this->repository->getAllNodes()
             ->mapWithKeys(static fn (MainlineNode $node): array => [
                 $node->node_id => array_flip($node->difficulty_ids ?? []),
             ]);
 
-        $difficulties = MainlineDifficulty::query()
-            ->get()
+        $difficulties = $this->repository->getAllDifficulties()
             ->sortBy(static function (MainlineDifficulty $difficulty) use ($difficultyOrderMap): string {
                 $position = $difficultyOrderMap[$difficulty->node_id][$difficulty->difficulty_id] ?? 9999;
 

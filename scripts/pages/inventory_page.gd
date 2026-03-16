@@ -22,6 +22,7 @@ func refresh() -> void:
 		child.queue_free()
 
 	_content.add_child(_build_player_summary())
+	_content.add_child(_build_skill_section())
 	_content.add_child(_build_equipment_section())
 	_content.add_child(_build_enhancement_section())
 	_content.add_child(_build_inventory_section())
@@ -41,19 +42,75 @@ func _build_player_summary() -> Control:
 
 	var stats := PlayerState.get_total_stats()
 	var desc := Label.new()
-	desc.text = "%s  Lv.%d\n生命 %d  攻击 %d  防御 %d  Boss增伤 %d%%" % [
+	desc.text = "%s  Lv.%d\n生命 %d  攻击 %d  防御 %d  Boss增伤 %d%%\n%s上限 %d  技能点 %d" % [
 		GameData.get_character_class_name(str(PlayerState.player.get("class_id", ""))),
 		PlayerState.get_level(),
 		int(stats.get("max_hp", 0)),
 		int(stats.get("atk", 0)),
 		int(stats.get("def", 0)),
-		int(stats.get("boss_dmg", 0))
+		int(stats.get("boss_dmg", 0)),
+		PlayerState.get_resource_name(),
+		PlayerState.get_max_energy(),
+		PlayerState.get_skill_points()
 	]
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ShanhaiStyle.apply_body(desc, false, 18)
 	content.add_child(desc)
 
 	return panel
+
+func _build_skill_section() -> Control:
+	var section := VBoxContainer.new()
+	section.add_theme_constant_override("separation", 10)
+
+	var heading := Label.new()
+	heading.text = "职业技能"
+	ShanhaiStyle.apply_heading(heading, 24)
+	section.add_child(heading)
+
+	var runtime_skills := PlayerState.get_runtime_skills()
+	if runtime_skills.is_empty():
+		var empty := Label.new()
+		empty.text = "当前职业暂无技能。"
+		ShanhaiStyle.apply_body(empty, true, 18)
+		section.add_child(empty)
+		return section
+
+	for skill in runtime_skills:
+		var panel := PanelContainer.new()
+		ShanhaiStyle.apply_panel(panel)
+		section.add_child(panel)
+
+		var content := VBoxContainer.new()
+		content.add_theme_constant_override("separation", 8)
+		panel.add_child(content)
+
+		var title := Label.new()
+		title.text = "%s  Lv.%d  [%s]" % [
+			skill.get("skill_name", skill.get("skill_id", "技能")),
+			int(skill.get("skill_level", 1)),
+			"主动" if str(skill.get("type", "")) == "active" else "被动"
+		]
+		ShanhaiStyle.apply_heading(title, 20)
+		content.add_child(title)
+
+		var desc := Label.new()
+		desc.text = "%s\n%s" % [
+			str(skill.get("skill_desc", "暂无说明")),
+			_skill_meta_text(skill)
+		]
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		ShanhaiStyle.apply_body(desc, false, 16)
+		content.add_child(desc)
+
+		var upgrade_button := Button.new()
+		upgrade_button.text = "升级技能"
+		upgrade_button.disabled = not PlayerState.can_upgrade_skill(str(skill.get("skill_id", "")))
+		ShanhaiStyle.apply_button(upgrade_button, not upgrade_button.disabled)
+		upgrade_button.pressed.connect(_on_upgrade_skill.bind(str(skill.get("skill_id", ""))))
+		content.add_child(upgrade_button)
+
+	return section
 
 func _build_equipment_section() -> Control:
 	var section := VBoxContainer.new()
@@ -111,6 +168,16 @@ func _build_enhancement_section() -> Control:
 	ShanhaiStyle.apply_body(refinement_line, false, 18)
 	content.add_child(refinement_line)
 
+	var talisman_line := Label.new()
+	talisman_line.text = "护符星链：%s" % _talisman_summary()
+	ShanhaiStyle.apply_body(talisman_line, false, 18)
+	content.add_child(talisman_line)
+
+	var core_line := Label.new()
+	core_line.text = "Boss核心：%s" % _names_from_ids(PlayerState.get_equipped_boss_core_ids(), func(id: String) -> Dictionary: return GameData.get_item_definition(id))
+	ShanhaiStyle.apply_body(core_line, false, 18)
+	content.add_child(core_line)
+
 	return panel
 
 func _build_inventory_section() -> Control:
@@ -143,6 +210,31 @@ func _names_from_ids(ids: Array, resolver: Callable) -> String:
 		var data: Dictionary = resolver.call(str(raw_id))
 		names.append(str(data.get("name", raw_id)))
 	return ", ".join(names) if not names.is_empty() else "未挂载"
+
+func _talisman_summary() -> String:
+	var entries: Array = []
+	for link in PlayerState.get_talisman_star_links():
+		var talisman := GameData.get_item_definition(str(link.get("talisman_id", "")))
+		entries.append("%s ★%d" % [talisman.get("name", link.get("talisman_id", "护符")), int(link.get("stars", 0))])
+	return ", ".join(entries) if not entries.is_empty() else "未挂载"
+
+func _skill_meta_text(skill: Dictionary) -> String:
+	var lines: Array = []
+	if str(skill.get("type", "")) == "active":
+		lines.append("冷却 %ss  消耗 %d%s" % [
+			str(skill.get("cooldown", 0)),
+			int(skill.get("cost", 0)),
+			PlayerState.get_resource_name()
+		])
+		lines.append("技能强度 %d  持续 %ds" % [int(skill.get("scaled_power", 0)), int(skill.get("duration", 0))])
+	else:
+		lines.append("被动效果：%s" % [JSON.stringify(skill.get("stat_bonuses", {})) if not skill.get("stat_bonuses", {}).is_empty() else "触发型被动"])
+	if not skill.get("effect_payload", {}).is_empty():
+		lines.append("扩展：%s" % JSON.stringify(skill.get("effect_payload", {})))
+	return "\n".join(lines)
+
+func _on_upgrade_skill(skill_id: String) -> void:
+	PlayerState.upgrade_skill(skill_id)
 
 func _build_ui() -> void:
 	if get_child_count() > 0:

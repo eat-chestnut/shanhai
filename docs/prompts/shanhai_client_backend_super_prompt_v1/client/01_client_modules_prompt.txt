@@ -1,0 +1,1 @@
+Codex Prompt for Client Modules: Godot scenes, UI components, status management, battle minimal loop, reward display.

@@ -14,15 +14,21 @@ func load_from_dict(source: Dictionary) -> void:
 		"hp": int(source.get("hp", 850)),
 		"max_hp": int(source.get("max_hp", 850)),
 		"gold": int(source.get("gold", 500)),
+		"max_energy": int(source.get("max_energy", 100)),
+		"skill_points": int(source.get("skill_points", 0)),
+		"skill_levels": _normalize_skill_levels(source.get("skill_levels", {})),
 		"equipment_summary": source.get("equipment_summary", {}).duplicate(true)
 	}
 	_inventory_counts.clear()
 	for entry in source.get("inventory", []):
 		add_item(str(entry.get("item_id", "")), int(entry.get("count", 0)), false)
+	_prime_skill_levels(player.get("class_id", ""))
 	emit_signal("changed")
 
 func select_class(class_id: String) -> void:
 	player["class_id"] = class_id
+	_prime_skill_levels(class_id)
+	restore_hp()
 	emit_signal("changed")
 
 func get_level() -> int:
@@ -30,6 +36,23 @@ func get_level() -> int:
 
 func get_gold() -> int:
 	return int(player.get("gold", 0))
+
+func get_max_energy() -> int:
+	return int(player.get("max_energy", 100))
+
+func get_skill_points() -> int:
+	return int(player.get("skill_points", 0))
+
+func get_resource_name() -> String:
+	match str(player.get("class_id", "")):
+		"class_jingang":
+			return "罡气"
+		"class_lingyu":
+			return "灵羽"
+		"class_fulu":
+			return "符炁"
+		_:
+			return "灵力"
 
 func get_player_name() -> String:
 	return "巡厄弟子 %s" % str(player.get("player_id", 10001))
@@ -49,11 +72,59 @@ func get_blue_affix_ids() -> Array:
 func get_purple_refinement_ids() -> Array:
 	return get_equipment_summary().get("purple_refinement_ids", []).duplicate(true)
 
+func get_talisman_star_links() -> Array:
+	return get_equipment_summary().get("talisman_star_links", []).duplicate(true)
+
+func get_equipped_boss_core_ids() -> Array:
+	return get_equipment_summary().get("equipped_boss_core_ids", []).duplicate(true)
+
+func get_skill_level(skill_id: String) -> int:
+	var skill_levels: Dictionary = player.get("skill_levels", {})
+	return max(int(skill_levels.get(skill_id, 1)), 1)
+
+func get_runtime_skills(type_filter: String = "") -> Array:
+	var runtime_skills: Array = []
+	for skill in GameData.get_skills_for_class(str(player.get("class_id", ""))):
+		if int(skill.get("unlock_level", 1)) > get_level():
+			continue
+		if type_filter != "" and str(skill.get("type", "")) != type_filter:
+			continue
+		var entry: Dictionary = skill.duplicate(true)
+		var level := get_skill_level(str(entry.get("skill_id", "")))
+		entry["skill_level"] = level
+		entry["scaled_power"] = int(entry.get("power_base", 0)) + max(level - 1, 0) * int(entry.get("power_per_level", 0))
+		runtime_skills.append(entry)
+	runtime_skills.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if int(a.get("unlock_level", 1)) != int(b.get("unlock_level", 1)):
+			return int(a.get("unlock_level", 1)) < int(b.get("unlock_level", 1))
+		return str(a.get("skill_id", "")) < str(b.get("skill_id", ""))
+	)
+	return runtime_skills
+
+func can_upgrade_skill(skill_id: String) -> bool:
+	var skill := GameData.get_skill(skill_id)
+	if skill.is_empty():
+		return false
+	return get_skill_points() > 0 and get_skill_level(skill_id) < int(skill.get("max_level", 1))
+
+func upgrade_skill(skill_id: String) -> bool:
+	if not can_upgrade_skill(skill_id):
+		return false
+	var skill_levels: Dictionary = player.get("skill_levels", {})
+	skill_levels[skill_id] = get_skill_level(skill_id) + 1
+	player["skill_levels"] = skill_levels
+	player["skill_points"] = max(get_skill_points() - 1, 0)
+	restore_hp()
+	emit_signal("changed")
+	return true
+
 func get_total_stats() -> Dictionary:
 	var base_atk := 28 + (get_level() - 1) * 4
 	var base_def := 18 + (get_level() - 1) * 3
 	var bonus_hp := 0
 	var bonus_boss_dmg := 0
+	var bonus_attack_speed := 0.0
+	var bonus_damage_ratio := 0.0
 
 	for equip_id in get_equipped_item_ids():
 		var equipment_data := GameData.get_equipment(str(equip_id))
@@ -90,13 +161,25 @@ func get_total_stats() -> Dictionary:
 			bonus_hp += int(effect.get("bonus_hp", 0))
 			bonus_boss_dmg += int(effect.get("bonus_boss_dmg", 0))
 
+	for skill in get_runtime_skills("passive"):
+		var skill_level := int(skill.get("skill_level", 1))
+		var bonuses: Dictionary = skill.get("stat_bonuses", {})
+		base_atk += int(bonuses.get("bonus_atk", 0)) * skill_level
+		base_def += int(bonuses.get("bonus_def", 0)) * skill_level
+		bonus_hp += int(bonuses.get("bonus_hp", 0)) * skill_level
+		bonus_boss_dmg += int(bonuses.get("bonus_boss_dmg", 0)) * skill_level
+		bonus_attack_speed += float(bonuses.get("bonus_attack_speed", 0.0)) * skill_level
+		bonus_damage_ratio += float(bonuses.get("bonus_damage_ratio", 0.0)) * skill_level
+
 	var max_hp := int(player.get("max_hp", 850)) + bonus_hp
 	return {
 		"atk": base_atk,
 		"def": base_def,
 		"max_hp": max_hp,
 		"boss_dmg": bonus_boss_dmg,
-		"power": int(base_atk * 2.2 + base_def * 1.8 + max_hp * 0.2 + bonus_boss_dmg * 3.0)
+		"attack_speed_bonus": bonus_attack_speed,
+		"damage_ratio_bonus": bonus_damage_ratio,
+		"power": int(base_atk * 2.2 + base_def * 1.8 + max_hp * 0.2 + bonus_boss_dmg * 3.0 + bonus_attack_speed * 80.0 + bonus_damage_ratio * 120.0)
 	}
 
 func get_power() -> int:
@@ -115,6 +198,8 @@ func apply_rewards(rewards: Array) -> void:
 		var count := int(reward.get("count", 0))
 		if item_id == "gold":
 			player["gold"] = int(player.get("gold", 0)) + count
+		elif item_id == "skill_point":
+			player["skill_points"] = get_skill_points() + count
 		else:
 			add_item(item_id, count, false)
 	restore_hp()
@@ -139,3 +224,17 @@ func get_inventory_entries() -> Array:
 func is_feature_unlocked(feature: Dictionary) -> bool:
 	var unlock_condition: Dictionary = feature.get("unlock_condition", {})
 	return get_level() >= int(unlock_condition.get("level", 1))
+
+func _normalize_skill_levels(source: Variant) -> Dictionary:
+	if source is Dictionary:
+		return source.duplicate(true)
+	return {}
+
+func _prime_skill_levels(class_id: String) -> void:
+	var skill_levels: Dictionary = player.get("skill_levels", {})
+	for skill in GameData.get_skills_for_class(class_id, true):
+		var skill_id := str(skill.get("skill_id", ""))
+		if skill_id.is_empty() or skill_levels.has(skill_id):
+			continue
+		skill_levels[skill_id] = 1
+	player["skill_levels"] = skill_levels

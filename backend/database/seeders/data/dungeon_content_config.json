@@ -9,18 +9,78 @@
       "dungeon_id": "dungeon_seal",
       "dungeon_name": "灵印副本",
       "unlock_level": 10
+    },
+    {
+      "dungeon_id": "dungeon_refine",
+      "dungeon_name": "淬灵副本",
+      "unlock_level": 15
+    },
+    {
+      "dungeon_id": "dungeon_new",
+      "dungeon_name": "雷鸣谷",
+      "unlock_level": 20
     }
   ],
   "dungeon_difficulty_config": [
     {
       "difficulty_id": "easy",
       "dungeon_id": "dungeon_gem",
-      "recommended_power": 100
+      "recommended_power": 100,
+      "first_clear_reward_group_id": "reward_dungeon_gem_easy"
     },
     {
       "difficulty_id": "normal",
       "dungeon_id": "dungeon_gem",
-      "recommended_power": 200
+      "recommended_power": 200,
+      "first_clear_reward_group_id": "reward_dungeon_gem_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "dungeon_id": "dungeon_gem",
+      "recommended_power": 360,
+      "first_clear_reward_group_id": "reward_dungeon_gem_hard"
+    },
+    {
+      "difficulty_id": "easy",
+      "dungeon_id": "dungeon_seal",
+      "recommended_power": 180,
+      "first_clear_reward_group_id": "reward_dungeon_seal_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "dungeon_id": "dungeon_seal",
+      "recommended_power": 320,
+      "first_clear_reward_group_id": "reward_dungeon_seal_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "dungeon_id": "dungeon_refine",
+      "recommended_power": 460,
+      "first_clear_reward_group_id": "reward_dungeon_refine_hard"
+    },
+    {
+      "difficulty_id": "nightmare",
+      "dungeon_id": "dungeon_refine",
+      "recommended_power": 720,
+      "first_clear_reward_group_id": "reward_dungeon_refine_nightmare"
+    },
+    {
+      "difficulty_id": "easy",
+      "dungeon_id": "dungeon_new",
+      "recommended_power": 200,
+      "first_clear_reward_group_id": "reward_dungeon_new_easy"
+    },
+    {
+      "difficulty_id": "normal",
+      "dungeon_id": "dungeon_new",
+      "recommended_power": 400,
+      "first_clear_reward_group_id": "reward_dungeon_new_normal"
+    },
+    {
+      "difficulty_id": "hard",
+      "dungeon_id": "dungeon_new",
+      "recommended_power": 800,
+      "first_clear_reward_group_id": "reward_dungeon_new_hard"
     }
   ],
   "monster_config": [
@@ -36,6 +96,20 @@
       "name": "青丘九尾狐",
       "base_hp": 3000,
       "base_atk": 120,
+      "is_boss": true
+    },
+    {
+      "monster_id": "mon_new_guard",
+      "name": "雷鸣护卫",
+      "base_hp": 600,
+      "base_atk": 50,
+      "is_boss": false
+    },
+    {
+      "monster_id": "mon_new_boss",
+      "name": "雷鸣灵兽",
+      "base_hp": 3500,
+      "base_atk": 180,
       "is_boss": true
     }
   ],
@@ -54,6 +128,38 @@
     {
       "monster_id": "mon_qingqiu_boss",
       "item_id": "boss_core_qingqiu",
+      "drop_rate": 0.05,
+      "drop_kind": "boss_core"
+    },
+    {
+      "monster_id": "mon_new_guard",
+      "item_id": "gem_yellow",
+      "drop_rate": 0.6
+    },
+    {
+      "monster_id": "mon_new_guard",
+      "item_id": "material_star_stone",
+      "drop_rate": 0.35
+    },
+    {
+      "monster_id": "mon_new_boss",
+      "item_id": "gem_purple",
+      "drop_rate": 1.0,
+      "drop_kind": "boss_fixed"
+    },
+    {
+      "monster_id": "mon_new_boss",
+      "item_id": "skill_book_thunder",
+      "drop_rate": 0.3
+    },
+    {
+      "monster_id": "mon_new_boss",
+      "item_id": "talisman_cloud",
+      "drop_rate": 0.18
+    },
+    {
+      "monster_id": "mon_new_boss",
+      "item_id": "boss_core_thunder",
       "drop_rate": 0.05,
       "drop_kind": "boss_core"
     }

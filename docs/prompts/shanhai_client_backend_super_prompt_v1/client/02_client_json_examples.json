@@ -1,0 +1,6 @@
+{
+  "player":{"player_id":10001,"class_id":"class_jingang","level":1,"hp":850,"max_hp":850,"gold":500},
+  "chapters":[{"chapter_id":"chapter_01","chapter_name":"奉命巡山"}],
+  "dungeons":[{"dungeon_id":"dungeon_gem","dungeon_name":"灵玉副本","unlock_level":5}],
+  "monsters":[{"monster_id":"mon_qingqiu_guard","name":"青丘守卫","base_hp":500,"base_atk":40,"is_boss":false}]
+}
