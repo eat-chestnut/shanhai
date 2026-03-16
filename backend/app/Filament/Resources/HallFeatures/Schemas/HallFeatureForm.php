@@ -23,11 +23,11 @@ class HallFeatureForm
                             ->maxLength(100)
                             ->unique(ignoreRecord: true),
                         TextInput::make('feature_name')
-                            ->label('feature_name')
+                            ->label('功能名称')
                             ->required()
                             ->maxLength(100),
                         TextInput::make('feature_type')
-                            ->label('feature_type')
+                            ->label('功能类型')
                             ->required()
                             ->maxLength(100)
                             ->placeholder('daily_task'),

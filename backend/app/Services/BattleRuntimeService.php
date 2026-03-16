@@ -44,7 +44,7 @@ class BattleRuntimeService
         $sourceContext = $this->resolveSourceContext($playerProfile, $sourceType, $sourceId, $difficultyId);
         $playerSnapshot = $this->playerRuntimeService->buildPlayerSnapshot($playerProfile);
         $battleSeed = random_int(100000, 99999999);
-        $enemyGroupSnapshot = $this->buildEnemyGroupSnapshot($sourceType, $sourceId, $difficultyId);
+        $enemyGroupSnapshot = $this->buildEnemyGroupSnapshot($playerProfile, $sourceType, $sourceId, $difficultyId);
         $battleId = (string) Str::uuid();
         $battleMapId = sprintf('map_%s_%s', $sourceType, $sourceId);
 
@@ -220,7 +220,7 @@ class BattleRuntimeService
     /**
      * @return array<string, mixed>
      */
-    private function buildEnemyGroupSnapshot(string $sourceType, string $sourceId, string $difficultyId): array
+    private function buildEnemyGroupSnapshot(PlayerProfile $playerProfile, string $sourceType, string $sourceId, string $difficultyId): array
     {
         $encounter = $this->resolveEncounterDefinition($sourceType, $sourceId, $difficultyId);
         $monsterIds = $encounter['monster_ids'];
@@ -251,10 +251,22 @@ class BattleRuntimeService
             ];
         }
 
-        return [
+        $snapshot = [
             'monster_group_id' => (string) ($encounter['monster_group_id'] ?? sprintf('%s_%s_%s', $sourceType, $sourceId, $difficultyId)),
             'monsters' => $monsters,
         ];
+
+        // 如果是副本，添加刷怪规则
+        if ($sourceType === 'dungeon') {
+            $spawnRules = $this->dungeonRuntimeService->getDungeonSpawnRules(
+                $playerProfile,
+                $sourceId,
+                $difficultyId
+            );
+            $snapshot['spawn_rules'] = $spawnRules;
+        }
+
+        return $snapshot;
     }
 
     /**

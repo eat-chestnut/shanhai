@@ -21,32 +21,32 @@ class DungeonForm
                     ->columns(2)
                     ->schema([
                         TextInput::make('dungeon_id')
-                            ->label('dungeon_id')
+                            ->label('副本ID')
                             ->required()
                             ->maxLength(100)
                             ->unique(ignoreRecord: true),
                         TextInput::make('dungeon_name')
-                            ->label('dungeon_name')
+                            ->label('副本名称')
                             ->required()
                             ->maxLength(100),
                         Textarea::make('dungeon_desc')
-                            ->label('dungeon_desc')
+                            ->label('副本描述')
                             ->rows(3)
                             ->columnSpanFull(),
                         TextInput::make('unlock_level')
-                            ->label('unlock_level')
+                            ->label('开启等级')
                             ->required()
                             ->numeric()
                             ->minValue(1)
                             ->default(1),
                         TextInput::make('daily_limit')
-                            ->label('daily_limit')
+                            ->label('每日限制次数')
                             ->required()
                             ->numeric()
                             ->minValue(1)
                             ->default(3),
                         Select::make('unlock_stage_node_id')
-                            ->label('unlock_stage_node_id')
+                            ->label('解锁关卡节点ID')
                             ->searchable()
                             ->preload()
                             ->native(false)
@@ -58,7 +58,7 @@ class DungeonForm
                                 ])
                                 ->all()),
                         TagsInput::make('main_rewards')
-                            ->label('main_rewards')
+                            ->label('主要奖励')
                             ->reorderable()
                             ->helperText('填写主要产出 item_id，客户端详情和运营校验会直接展示。')
                             ->columnSpanFull(),

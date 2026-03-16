@@ -19,27 +19,27 @@ class HallFeaturesTable
             ->defaultSort('feature_id')
             ->columns([
                 TextColumn::make('feature_id')
-                    ->label('feature_id')
+                    ->label('id')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
                 TextColumn::make('feature_name')
-                    ->label('feature_name')
+                    ->label('功能名称')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('feature_type')
-                    ->label('feature_type')
+                    ->label('功能类型')
                     ->badge()
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('unlock_condition')
-                    ->label('unlock_condition')
+                    ->label('解锁条件')
                     ->formatStateUsing(
                         static fn (mixed $state): string => self::formatUnlockCondition($state),
                     )
                     ->wrap(),
                 TextColumn::make('jump_target')
-                    ->label('jump_target')
+                    ->label('跳转目标')
                     ->formatStateUsing(
                         static fn (mixed $state): string => self::formatJumpTarget($state),
                     )
@@ -47,7 +47,7 @@ class HallFeaturesTable
             ])
             ->filters([
                 SelectFilter::make('feature_type')
-                    ->label('feature_type')
+                    ->label('功能类型')
                     ->options(fn (): array => self::featureTypeOptions()),
             ])
             ->recordActions([

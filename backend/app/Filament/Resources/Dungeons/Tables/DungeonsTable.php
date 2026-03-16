@@ -17,31 +17,31 @@ class DungeonsTable
             ->defaultSort('dungeon_id')
             ->columns([
                 TextColumn::make('dungeon_id')
-                    ->label('dungeon_id')
+                    ->label('副本ID')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
                 TextColumn::make('dungeon_name')
-                    ->label('dungeon_name')
+                    ->label('副本名称')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('dungeon_desc')
-                    ->label('dungeon_desc')
+                    ->label('副本描述')
                     ->limit(32)
                     ->toggleable(),
                 TextColumn::make('unlock_level')
-                    ->label('unlock_level')
+                    ->label('开启等级')
                     ->sortable(),
                 TextColumn::make('daily_limit')
-                    ->label('daily_limit')
+                    ->label('每日限制')
                     ->sortable(),
                 TextColumn::make('main_rewards')
-                    ->label('main_rewards')
+                    ->label('主要奖励')
                     ->formatStateUsing(static fn (mixed $state): string => is_array($state) ? implode(', ', $state) : (string) $state)
                     ->wrap()
                     ->toggleable(),
                 TextColumn::make('unlock_stage_node_id')
-                    ->label('unlock_stage_node_id')
+                    ->label('解锁节点')
                     ->toggleable(),
             ])
             ->filters([

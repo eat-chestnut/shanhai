@@ -22,27 +22,27 @@ class CharacterClassForm
                     ->columns(2)
                     ->schema([
                         TextInput::make('class_id')
-                            ->label('class_id')
+                            ->label('职业ID')
                             ->required()
                             ->maxLength(100)
                             ->unique(ignoreRecord: true),
                         TextInput::make('class_name')
-                            ->label('class_name')
+                            ->label('职业名称')
                             ->required()
                             ->maxLength(100),
                         Select::make('role_type')
-                            ->label('role_type')
+                            ->label('角色类型')
                             ->required()
                             ->options(RoleType::options())
                             ->native(false)
                             ->rules([Rule::in(RoleType::values())]),
                         Toggle::make('is_open')
-                            ->label('is_open')
+                            ->label('是否开启')
                             ->required()
                             ->default(false)
                             ->inline(false),
                         Textarea::make('class_desc')
-                            ->label('class_desc')
+                            ->label('职业描述')
                             ->rows(4)
                             ->columnSpanFull(),
                     ]),

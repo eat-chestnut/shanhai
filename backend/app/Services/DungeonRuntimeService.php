@@ -95,6 +95,34 @@ class DungeonRuntimeService
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function getDungeonSpawnRules(PlayerProfile $playerProfile, string $dungeonId, string $difficultyId): array
+    {
+        $difficulty = DungeonDifficulty::query()
+            ->where('dungeon_id', $dungeonId)
+            ->where('difficulty_id', $difficultyId)
+            ->first();
+
+        if (! $difficulty) {
+            throw new ApiException('难度不存在', 40422, 404);
+        }
+
+        return [
+            'normal_monster_pool' => $difficulty->normal_monster_pool ?? [],
+            'elite_monster_pool' => $difficulty->elite_monster_pool ?? [],
+            'boss_monster_pool' => $difficulty->boss_monster_pool ?? [],
+            'normal_spawn_interval' => (int) ($difficulty->normal_spawn_interval ?? 5),
+            'normal_spawn_count' => (int) ($difficulty->normal_spawn_count ?? 1),
+            'max_normal_on_screen' => (int) ($difficulty->max_normal_on_screen ?? 5),
+            'elite_trigger_kills' => (int) ($difficulty->elite_trigger_kills ?? 10),
+            'boss_trigger_elite_kills' => (int) ($difficulty->boss_trigger_elite_kills ?? 3),
+            'stop_spawning_after_boss' => (bool) ($difficulty->stop_spawning_after_boss ?? true),
+            'clear_dungeon_after_boss' => (bool) ($difficulty->clear_dungeon_after_boss ?? true),
+        ];
+    }
+
     public function assertDungeonSettlementAvailable(PlayerProfile $playerProfile, string $dungeonId): void
     {
         $detail = $this->getDungeonDetail($playerProfile, $dungeonId);

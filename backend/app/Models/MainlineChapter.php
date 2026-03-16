@@ -11,6 +11,9 @@ class MainlineChapter extends Model
         'chapter_id',
         'chapter_name',
         'unlock_level',
+        'sort_order',
+        'required_previous_chapter',
+        'required_previous_highest_difficulty',
     ];
 
     public function nodes(): HasMany
