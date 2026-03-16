@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EquipmentSets\Tables;
 
+use App\Models\EquipmentSet;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -62,21 +63,44 @@ class EquipmentSetsTable
             return filled($effects) ? (string) $effects : '-';
         }
 
-        if ($effects === null || $effects === []) {
+        $normalizedEffects = EquipmentSet::normalizeEffectsPayload($effects);
+
+        if ($normalizedEffects === []) {
             return '-';
         }
 
-        return collect($effects)
+        return collect($normalizedEffects)
             ->map(static function (array $effect): string {
                 $parts = [];
 
-                foreach (['bonus_atk', 'bonus_def', 'bonus_hp', 'bonus_boss_dmg'] as $field) {
-                    if (filled($effect[$field] ?? null) && (int) $effect[$field] !== 0) {
-                        $parts[] = "{$field}+{$effect[$field]}";
+                $labels = [
+                    'bonus_atk' => '攻击',
+                    'bonus_def' => '防御',
+                    'bonus_hp' => '生命',
+                    'bonus_boss_dmg' => 'Boss伤害',
+                    'bonus_attack_speed' => '攻速',
+                    'bonus_damage_ratio' => '伤害倍率',
+                ];
+
+                foreach ($labels as $field => $label) {
+                    $value = $effect[$field] ?? null;
+
+                    if (! filled($value)) {
+                        continue;
                     }
+
+                    if ((float) $value == 0.0) {
+                        continue;
+                    }
+
+                    $parts[] = "{$label}+{$value}";
                 }
 
-                return "{$effect['count']}件: ".implode(', ', $parts);
+                $prefix = (int) ($effect['count'] ?? 0) > 0
+                    ? "{$effect['count']}件"
+                    : '未设置件数';
+
+                return $parts === [] ? $prefix : "{$prefix}: ".implode(', ', $parts);
             })
             ->implode(' | ');
     }

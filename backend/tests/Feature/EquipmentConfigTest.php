@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\EquipmentSet;
 use Database\Seeders\EquipmentConfigSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -68,5 +69,34 @@ class EquipmentConfigTest extends TestCase
         $this->assertContains('set_warrior_40', array_column($payload['equipment_set_config'], 'set_id'));
         $this->assertContains('blue_atk_flat', array_column($payload['blue_affix_config'], 'affix_id'));
         $this->assertContains('purple_refine_boss', array_column($payload['purple_refinement_config'], 'refinement_id'));
+    }
+
+    public function test_it_normalizes_legacy_equipment_set_effect_shape_when_exporting(): void
+    {
+        $this->seed(EquipmentConfigSeeder::class);
+
+        EquipmentSet::query()
+            ->where('set_id', 'set_zhaoyao_20')
+            ->update([
+                'effects' => json_encode([
+                    'count' => 2,
+                    'bonus_atk' => 5,
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            ]);
+
+        $response = $this->getJson('/api/v1/equipment-config');
+
+        $response->assertOk();
+
+        $set = collect($response->json('equipment_set_config'))
+            ->firstWhere('set_id', 'set_zhaoyao_20');
+
+        $this->assertIsArray($set);
+        $this->assertSame([
+            [
+                'count' => 2,
+                'bonus_atk' => 5,
+            ],
+        ], $set['effects']);
     }
 }

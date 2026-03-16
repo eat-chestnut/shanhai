@@ -211,7 +211,7 @@ class EquipmentConfigService
                         'set_id' => $set->set_id,
                         'level' => (int) $set->level,
                         'pieces' => $set->pieces ?? [],
-                        'effects' => array_values(array_map([$this, 'normalizeSetEffect'], $set->effects ?? [])),
+                        'effects' => $set->normalizedEffects(),
                     ];
                 })
                 ->all(),

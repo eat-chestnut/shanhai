@@ -319,7 +319,7 @@ class PlayerRuntimeService
                 continue;
             }
 
-            foreach ($equipmentSet->effects ?? [] as $effect) {
+            foreach ($equipmentSet->normalizedEffects() as $effect) {
                 if ($equippedCount < (int) ($effect['count'] ?? 0)) {
                     continue;
                 }
