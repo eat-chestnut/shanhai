@@ -10,6 +10,8 @@ const PAGE_SCENES := {
 	UiState.SCREEN_HALL: preload("res://scenes/pages/hall_page.tscn"),
 	UiState.SCREEN_MAINLINE: preload("res://scenes/pages/mainline_page.tscn"),
 	UiState.SCREEN_DUNGEON: preload("res://scenes/pages/dungeon_page.tscn"),
+	UiState.SCREEN_TASK: preload("res://scenes/pages/task_page.tscn"),
+	UiState.SCREEN_SHOP: preload("res://scenes/pages/shop_page.tscn"),
 	UiState.SCREEN_INVENTORY: preload("res://scenes/pages/inventory_page.tscn"),
 	UiState.SCREEN_BATTLE: preload("res://scenes/pages/battle_page.tscn"),
 	UiState.SCREEN_BATTLE_RESULT: preload("res://scenes/pages/battle_result_page.tscn")

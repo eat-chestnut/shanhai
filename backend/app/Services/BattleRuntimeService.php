@@ -24,6 +24,7 @@ class BattleRuntimeService
         private readonly PlayerRuntimeService $playerRuntimeService,
         private readonly StageRuntimeService $stageRuntimeService,
         private readonly DungeonRuntimeService $dungeonRuntimeService,
+        private readonly InventoryService $inventoryService,
     ) {}
 
     /**
@@ -97,6 +98,14 @@ class BattleRuntimeService
 
             $normalizedResult = $this->normalizeBattleResult((string) $payload['result']);
             $isVictory = $normalizedResult === 'victory';
+
+            if ($battleRecord->source_type === 'dungeon') {
+                $this->dungeonRuntimeService->assertDungeonSettlementAvailable(
+                    $lockedProfile,
+                    (string) ($battleRecord->request_snapshot['dungeon_id'] ?? ''),
+                );
+            }
+
             $normalRewards = $isVictory
                 ? $this->rollMonsterDrops($battleRecord)
                 : [];
@@ -105,7 +114,7 @@ class BattleRuntimeService
             unset($progressUpdate['first_clear_rewards']);
 
             $allRewards = $this->mergeRewards(array_merge($normalRewards, $firstClearRewards));
-            $rewardApplyResult = $this->applyRewards($lockedProfile, $allRewards);
+            $rewardApplyResult = $this->inventoryService->applyRewards($lockedProfile, $allRewards);
             $updatedProfile = $rewardApplyResult['player_profile'];
             $initPayload = $this->playerRuntimeService->getInitPayload($updatedProfile);
 
@@ -346,6 +355,7 @@ class BattleRuntimeService
                 'is_first_clear' => $isVictory ? true : (bool) ($existing?->is_first_clear ?? false),
                 'clear_count' => $clearCount,
                 'daily_count' => $dailyCount,
+                'daily_reset_at' => Carbon::now()->startOfDay(),
             ],
         );
 
@@ -359,54 +369,6 @@ class BattleRuntimeService
             'first_clear_rewards' => $isFirstClearNow
                 ? $this->resolveRewardGroupItems((string) ($battleRecord->request_snapshot['first_clear_reward_group_id'] ?? ''))
                 : [],
-        ];
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $rewards
-     * @return array<string, mixed>
-     */
-    private function applyRewards(PlayerProfile $playerProfile, array $rewards): array
-    {
-        $currencyDelta = [
-            'gold' => 0,
-            'jade' => 0,
-            'contribution' => 0,
-        ];
-        $itemRewards = [];
-
-        foreach ($rewards as $reward) {
-            $itemId = (string) ($reward['item_id'] ?? '');
-            $count = max((int) ($reward['count'] ?? 0), 0);
-
-            if ($itemId === '' || $count <= 0) {
-                continue;
-            }
-
-            if (array_key_exists($itemId, $currencyDelta)) {
-                $currencyDelta[$itemId] += $count;
-
-                continue;
-            }
-
-            $this->playerRuntimeRepository->incrementItemCount($playerProfile->player_id, $itemId, $count);
-            $itemRewards[] = [
-                'item_id' => $itemId,
-                'count' => $count,
-            ];
-        }
-
-        $playerProfile = $this->playerRuntimeRepository->updateProfile($playerProfile, [
-            'gold' => (int) $playerProfile->gold + $currencyDelta['gold'],
-            'jade' => (int) $playerProfile->jade + $currencyDelta['jade'],
-            'contribution' => (int) $playerProfile->contribution + $currencyDelta['contribution'],
-        ]);
-        $playerProfile = $this->playerRuntimeService->syncComputedFields($playerProfile);
-
-        return [
-            'player_profile' => $playerProfile,
-            'item_rewards' => $itemRewards,
-            'currency_delta' => $currencyDelta,
         ];
     }
 

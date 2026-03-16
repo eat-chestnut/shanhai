@@ -1,0 +1,91 @@
+{
+  "task_config": [
+    {
+      "task_id": "task_mainline_node01_easy",
+      "task_type": "mainline",
+      "task_name": "奉命巡山",
+      "task_desc": "通关主线节点 鹤山将启·简单",
+      "target_type": "stage_clear",
+      "target": 1,
+      "conditions": {
+        "node_id": "node_01",
+        "difficulty_id": "easy"
+      },
+      "rewards": [
+        {
+          "item_id": "gold",
+          "count": 300
+        },
+        {
+          "item_id": "material_star_stone",
+          "count": 2
+        }
+      ],
+      "sort": 10,
+      "is_open": true
+    },
+    {
+      "task_id": "task_mainline_level20",
+      "task_type": "mainline",
+      "task_name": "精进修行",
+      "task_desc": "角色等级达到 20 级",
+      "target_type": "level_reach",
+      "target": 20,
+      "conditions": {},
+      "rewards": [
+        {
+          "item_id": "contribution",
+          "count": 120
+        },
+        {
+          "item_id": "material_seal_essence",
+          "count": 2
+        }
+      ],
+      "sort": 20,
+      "is_open": true
+    },
+    {
+      "task_id": "task_daily_battle_3",
+      "task_type": "daily",
+      "task_name": "今日巡战",
+      "task_desc": "完成 3 场战斗",
+      "target_type": "battle_complete",
+      "target": 3,
+      "conditions": {},
+      "rewards": [
+        {
+          "item_id": "gold",
+          "count": 180
+        },
+        {
+          "item_id": "material_refine_sand",
+          "count": 1
+        }
+      ],
+      "sort": 110,
+      "is_open": true
+    },
+    {
+      "task_id": "task_daily_dungeon_2",
+      "task_type": "daily",
+      "task_name": "宗门试炼",
+      "task_desc": "完成 2 次副本战斗",
+      "target_type": "dungeon_clear",
+      "target": 2,
+      "conditions": {},
+      "rewards": [
+        {
+          "item_id": "contribution",
+          "count": 80
+        },
+        {
+          "item_id": "material_seal_essence",
+          "count": 1
+        }
+      ],
+      "sort": 120,
+      "is_open": true
+    }
+  ]
+}

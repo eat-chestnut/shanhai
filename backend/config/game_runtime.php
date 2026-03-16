@@ -38,6 +38,7 @@ return [
             ['item_id' => 'gem_purple', 'count' => 1],
             ['item_id' => 'blue_atk_flat', 'count' => 1],
             ['item_id' => 'purple_refine_boss', 'count' => 1],
+            ['item_id' => 'material_seal_essence', 'count' => 4],
             ['item_id' => 'material_star_stone', 'count' => 8],
             ['item_id' => 'material_refine_sand', 'count' => 5],
             ['item_id' => 'skill_book_thunder', 'count' => 2],
@@ -72,19 +73,19 @@ return [
         ],
         'reward_dungeon_seal_easy' => [
             ['item_id' => 'gold', 'count' => 180],
-            ['item_id' => 'material_refine_sand', 'count' => 2],
+            ['item_id' => 'material_seal_essence', 'count' => 2],
         ],
         'reward_dungeon_seal_normal' => [
             ['item_id' => 'gold', 'count' => 260],
-            ['item_id' => 'material_refine_sand', 'count' => 4],
+            ['item_id' => 'material_seal_essence', 'count' => 4],
         ],
         'reward_dungeon_refine_hard' => [
             ['item_id' => 'gold', 'count' => 320],
-            ['item_id' => 'material_star_stone', 'count' => 3],
+            ['item_id' => 'material_refine_sand', 'count' => 3],
         ],
         'reward_dungeon_refine_nightmare' => [
             ['item_id' => 'gold', 'count' => 480],
-            ['item_id' => 'material_star_stone', 'count' => 5],
+            ['item_id' => 'material_refine_sand', 'count' => 5],
         ],
         'reward_dungeon_new_easy' => [
             ['item_id' => 'gold', 'count' => 260],
@@ -113,5 +114,38 @@ return [
             'dungeon_new' => ['mon_new_guard', 'mon_new_guard', 'mon_new_boss'],
         ],
     ],
-    'daily_dungeon_limit' => 99,
+    'daily_dungeon_limit' => 3,
+    'dungeon_runtime' => [
+        'dungeon_gem' => [
+            'dungeon_desc' => '宗门灵脉孕玉之地，首版正式循环中作为宝石核心来源。',
+            'main_rewards' => ['gem_green', 'gem_yellow', 'gem_purple'],
+            'daily_limit' => 3,
+        ],
+        'dungeon_seal' => [
+            'dungeon_desc' => '灵印试炼可稳定产出蓝词条提取所需材料。',
+            'main_rewards' => ['material_seal_essence'],
+            'daily_limit' => 3,
+        ],
+        'dungeon_refine' => [
+            'dungeon_desc' => '淬灵秘境掉落紫洗练消耗材料，是成长循环的重要一环。',
+            'main_rewards' => ['material_refine_sand'],
+            'daily_limit' => 2,
+        ],
+        'dungeon_new' => [
+            'dungeon_desc' => '雷鸣谷作为进阶试炼，会额外掉落升星石与 Boss 核心占位奖励。',
+            'main_rewards' => ['material_star_stone', 'boss_core_thunder', 'gem_purple'],
+            'daily_limit' => 2,
+        ],
+    ],
+    'equipment_runtime' => [
+        'slot_layouts' => [
+            'weapon' => ['attribute', 'boss_core'],
+            'armor' => ['attribute'],
+            'default' => ['attribute'],
+        ],
+        'star_up_item_id' => 'material_star_stone',
+        'star_up_cost_base' => 1,
+        'blue_extract_item_id' => 'material_seal_essence',
+        'purple_refine_item_id' => 'material_refine_sand',
+    ],
 ];

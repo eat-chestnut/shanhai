@@ -1,0 +1,56 @@
+{
+  "shop_item_config": [
+    {
+      "shop_item_id": "common_star_stone",
+      "shop_type": "common",
+      "item_id": "material_star_stone",
+      "item_name": "升星石",
+      "count": 2,
+      "cost_type": "gold",
+      "cost_value": 240,
+      "buy_limit": 3,
+      "cycle_type": "daily",
+      "sort": 10,
+      "is_open": true
+    },
+    {
+      "shop_item_id": "common_gem_green",
+      "shop_type": "common",
+      "item_id": "gem_green",
+      "item_name": "绿宝石",
+      "count": 1,
+      "cost_type": "gold",
+      "cost_value": 160,
+      "buy_limit": 2,
+      "cycle_type": "daily",
+      "sort": 20,
+      "is_open": true
+    },
+    {
+      "shop_item_id": "sect_seal_essence",
+      "shop_type": "sect",
+      "item_id": "material_seal_essence",
+      "item_name": "灵印精华",
+      "count": 2,
+      "cost_type": "contribution",
+      "cost_value": 150,
+      "buy_limit": 2,
+      "cycle_type": "daily",
+      "sort": 10,
+      "is_open": true
+    },
+    {
+      "shop_item_id": "sect_refine_sand",
+      "shop_type": "sect",
+      "item_id": "material_refine_sand",
+      "item_name": "淬灵砂",
+      "count": 2,
+      "cost_type": "contribution",
+      "cost_value": 180,
+      "buy_limit": 2,
+      "cycle_type": "daily",
+      "sort": 20,
+      "is_open": true
+    }
+  ]
+}

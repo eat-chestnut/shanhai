@@ -6,6 +6,7 @@ const DEFAULT_BASE_URL := "http://127.0.0.1:8000/api/v1"
 
 var base_url := DEFAULT_BASE_URL
 var auth_token := ""
+var last_api_error: Dictionary = {}
 
 func _ready() -> void:
 	var env_base := OS.get_environment("SHANHAI_API_URL").strip_edges()
@@ -14,6 +15,19 @@ func _ready() -> void:
 
 func reset_auth() -> void:
 	auth_token = ""
+	last_api_error = {}
+
+func clear_last_error() -> void:
+	last_api_error = {}
+
+func get_last_error_message() -> String:
+	return str(last_api_error.get("msg", ""))
+
+func is_business_error() -> bool:
+	return str(last_api_error.get("type", "")) == "business"
+
+func can_use_transport_fallback() -> bool:
+	return str(last_api_error.get("type", "")) == "transport"
 
 func fetch_runtime_bundle(local_fallback: Dictionary) -> Dictionary:
 	var bundle := local_fallback.duplicate(true)
@@ -97,6 +111,80 @@ func fetch_dungeon_detail(dungeon_id: String) -> Dictionary:
 func fetch_inventory() -> Dictionary:
 	return await _request_api_data("/inventory/list", HTTPClient.METHOD_GET, {}, true)
 
+func fetch_equipment_detail(equipment_uid: String = "") -> Dictionary:
+	var path := "/equipment/detail"
+	if not equipment_uid.is_empty():
+		path += "?equipment_uid=%s" % equipment_uid.uri_encode()
+	return await _request_api_data(path, HTTPClient.METHOD_GET, {}, true)
+
+func equip_equipment(equipment_uid: String) -> Dictionary:
+	return await _request_api_data("/equipment/equip", HTTPClient.METHOD_POST, {"equipment_uid": equipment_uid}, true)
+
+func unequip_equipment(equipment_uid: String) -> Dictionary:
+	return await _request_api_data("/equipment/unequip", HTTPClient.METHOD_POST, {"equipment_uid": equipment_uid}, true)
+
+func star_up_equipment(equipment_uid: String) -> Dictionary:
+	return await _request_api_data("/equipment/star_up", HTTPClient.METHOD_POST, {"equipment_uid": equipment_uid}, true)
+
+func socket_gem(equipment_uid: String, gem_id: String, slot_index: int) -> Dictionary:
+	return await _request_api_data(
+		"/equipment/socket_gem",
+		HTTPClient.METHOD_POST,
+		{
+			"equipment_uid": equipment_uid,
+			"gem_id": gem_id,
+			"slot_index": slot_index
+		},
+		true
+	)
+
+func extract_blue_affix(equipment_uid: String) -> Dictionary:
+	return await _request_api_data(
+		"/equipment/extract_blue_affix",
+		HTTPClient.METHOD_POST,
+		{"equipment_uid": equipment_uid},
+		true
+	)
+
+func refine_purple_affix(equipment_uid: String) -> Dictionary:
+	return await _request_api_data(
+		"/equipment/refine_purple_affix",
+		HTTPClient.METHOD_POST,
+		{"equipment_uid": equipment_uid},
+		true
+	)
+
+func fetch_task_list() -> Dictionary:
+	return await _request_api_data("/task/list", HTTPClient.METHOD_GET, {}, true)
+
+func claim_task(task_id: String) -> Dictionary:
+	return await _request_api_data("/task/claim", HTTPClient.METHOD_POST, {"task_id": task_id}, true)
+
+func claim_all_tasks() -> Dictionary:
+	return await _request_api_data("/task/claim_all", HTTPClient.METHOD_POST, {}, true)
+
+func fetch_common_shop_list() -> Dictionary:
+	return await _request_api_data("/shop/common/list", HTTPClient.METHOD_GET, {}, true)
+
+func buy_common_shop_item(shop_item_id: String, count: int = 1) -> Dictionary:
+	return await _request_api_data(
+		"/shop/common/buy",
+		HTTPClient.METHOD_POST,
+		{"shop_item_id": shop_item_id, "count": count},
+		true
+	)
+
+func fetch_sect_shop_list() -> Dictionary:
+	return await _request_api_data("/shop/sect/list", HTTPClient.METHOD_GET, {}, true)
+
+func buy_sect_shop_item(shop_item_id: String, count: int = 1) -> Dictionary:
+	return await _request_api_data(
+		"/shop/sect/buy",
+		HTTPClient.METHOD_POST,
+		{"shop_item_id": shop_item_id, "count": count},
+		true
+	)
+
 func battle_prepare(source_type: String, source_id: String, difficulty_id: String) -> Dictionary:
 	return await _request_api_data(
 		"/battle/prepare",
@@ -168,10 +256,17 @@ func _extract_resource_list(payload: Dictionary, fallback: Array) -> Array:
 	return fallback.duplicate(true)
 
 func _request_api_data(path: String, method: int, body: Dictionary = {}, requires_auth: bool = false) -> Dictionary:
+	last_api_error = {}
 	var payload := await _request_json_raw(path, method, body, requires_auth)
 	if payload.is_empty():
 		return {}
 	if int(payload.get("code", -1)) != 0:
+		last_api_error = {
+			"type": "business",
+			"path": path,
+			"code": int(payload.get("code", -1)),
+			"msg": str(payload.get("msg", "unknown"))
+		}
 		emit_signal("request_log", "API business error for %s: %s" % [path, str(payload.get("msg", "unknown"))])
 		return {}
 	var data = payload.get("data", {})
@@ -195,6 +290,12 @@ func _request_json_raw(path: String, method: int = HTTPClient.METHOD_GET, body: 
 
 	var error := http.request(_build_url(path), headers, method, payload_body)
 	if error != OK:
+		last_api_error = {
+			"type": "transport",
+			"path": path,
+			"code": error,
+			"msg": "接口请求失败"
+		}
 		emit_signal("request_log", "API request skipped for %s (%s)." % [path, error])
 		remove_child(http)
 		http.call_deferred("free")
@@ -205,6 +306,12 @@ func _request_json_raw(path: String, method: int = HTTPClient.METHOD_GET, body: 
 	http.call_deferred("free")
 
 	if response.size() < 4:
+		last_api_error = {
+			"type": "transport",
+			"path": path,
+			"code": -2,
+			"msg": "接口响应格式异常"
+		}
 		emit_signal("request_log", "API response malformed for %s." % path)
 		return {}
 
@@ -213,6 +320,12 @@ func _request_json_raw(path: String, method: int = HTTPClient.METHOD_GET, body: 
 	var body_bytes: PackedByteArray = response[3]
 
 	if result_code != HTTPRequest.RESULT_SUCCESS or status_code < 200 or status_code >= 300:
+		last_api_error = {
+			"type": "transport",
+			"path": path,
+			"code": status_code,
+			"msg": "接口请求失败"
+		}
 		emit_signal("request_log", "API request failed for %s (%s/%s)." % [path, result_code, status_code])
 		return {}
 
@@ -220,6 +333,12 @@ func _request_json_raw(path: String, method: int = HTTPClient.METHOD_GET, body: 
 	if parsed is Dictionary:
 		return parsed
 
+	last_api_error = {
+		"type": "transport",
+		"path": path,
+		"code": -3,
+		"msg": "接口返回不是 JSON"
+	}
 	emit_signal("request_log", "API payload for %s is not a JSON object." % path)
 	return {}
 

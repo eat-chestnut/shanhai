@@ -7,12 +7,15 @@ use App\Http\Controllers\Api\ClassSelectionController;
 use App\Http\Controllers\Api\DungeonContentConfigController;
 use App\Http\Controllers\Api\DungeonRuntimeController;
 use App\Http\Controllers\Api\EquipmentConfigController;
+use App\Http\Controllers\Api\EquipmentRuntimeController;
 use App\Http\Controllers\Api\HallFeatureController;
 use App\Http\Controllers\Api\InventoryRuntimeController;
 use App\Http\Controllers\Api\MainlineConfigController;
 use App\Http\Controllers\Api\PlayerRuntimeController;
+use App\Http\Controllers\Api\ShopRuntimeController;
 use App\Http\Controllers\Api\SkillController;
 use App\Http\Controllers\Api\StageRuntimeController;
+use App\Http\Controllers\Api\TaskRuntimeController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -34,6 +37,20 @@ Route::prefix('v1')->group(function (): void {
         Route::get('dungeon/list', [DungeonRuntimeController::class, 'list']);
         Route::get('dungeon/detail', [DungeonRuntimeController::class, 'detail']);
         Route::get('inventory/list', [InventoryRuntimeController::class, 'index']);
+        Route::get('equipment/detail', [EquipmentRuntimeController::class, 'detail']);
+        Route::post('equipment/equip', [EquipmentRuntimeController::class, 'equip']);
+        Route::post('equipment/unequip', [EquipmentRuntimeController::class, 'unequip']);
+        Route::post('equipment/star_up', [EquipmentRuntimeController::class, 'starUp']);
+        Route::post('equipment/socket_gem', [EquipmentRuntimeController::class, 'socketGem']);
+        Route::post('equipment/extract_blue_affix', [EquipmentRuntimeController::class, 'extractBlueAffix']);
+        Route::post('equipment/refine_purple_affix', [EquipmentRuntimeController::class, 'refinePurpleAffix']);
+        Route::get('task/list', [TaskRuntimeController::class, 'list']);
+        Route::post('task/claim', [TaskRuntimeController::class, 'claim']);
+        Route::post('task/claim_all', [TaskRuntimeController::class, 'claimAll']);
+        Route::get('shop/common/list', [ShopRuntimeController::class, 'commonList']);
+        Route::post('shop/common/buy', [ShopRuntimeController::class, 'commonBuy']);
+        Route::get('shop/sect/list', [ShopRuntimeController::class, 'sectList']);
+        Route::post('shop/sect/buy', [ShopRuntimeController::class, 'sectBuy']);
         Route::post('battle/prepare', [BattleRuntimeController::class, 'prepare']);
         Route::post('battle/settle', [BattleRuntimeController::class, 'settle']);
     });

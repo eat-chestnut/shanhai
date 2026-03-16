@@ -66,8 +66,17 @@ class PlayerRuntimeRepository implements PlayerRuntimeRepositoryInterface
     {
         return PlayerItem::query()
             ->where('player_id', $playerId)
+            ->where('count', '>', 0)
             ->orderBy('item_id')
             ->get();
+    }
+
+    public function findInventoryItem(int $playerId, string $itemId): ?PlayerItem
+    {
+        return PlayerItem::query()
+            ->where('player_id', $playerId)
+            ->where('item_id', $itemId)
+            ->first();
     }
 
     public function incrementItemCount(int $playerId, string $itemId, int $count): PlayerItem

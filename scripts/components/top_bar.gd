@@ -5,7 +5,7 @@ const ShanhaiStyle = preload("res://scripts/core/shanhai_style.gd")
 
 var _title_label: Label
 var _stats_label: Label
-var _gold_label: Label
+var _currency_label: Label
 
 func _ready() -> void:
 	_build_ui()
@@ -25,7 +25,12 @@ func refresh() -> void:
 		PlayerState.get_player_name(),
 		int(stats.get("power", 0))
 	]
-	_gold_label.text = "灵石 %d  技能点 %d" % [PlayerState.get_gold(), PlayerState.get_skill_points()]
+	_currency_label.text = "灵石 %d  灵玉 %d  贡献 %d  技能点 %d" % [
+		PlayerState.get_gold(),
+		PlayerState.get_jade(),
+		PlayerState.get_contribution(),
+		PlayerState.get_skill_points()
+	]
 
 func _build_ui() -> void:
 	if get_child_count() > 0:
@@ -52,9 +57,9 @@ func _build_ui() -> void:
 	_stats_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(_stats_label)
 
-	_gold_label = Label.new()
-	ShanhaiStyle.apply_heading(_gold_label, 20)
-	row.add_child(_gold_label)
+	_currency_label = Label.new()
+	ShanhaiStyle.apply_heading(_currency_label, 20)
+	row.add_child(_currency_label)
 
 func _on_title_changed(_title: String) -> void:
 	refresh()

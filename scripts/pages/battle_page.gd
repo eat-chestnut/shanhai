@@ -60,7 +60,7 @@ func _prepare_and_start_battle() -> void:
 
 	var battle_payload := await BattleState.prepare_current_battle()
 	if battle_payload.is_empty():
-		_append_log("战斗准备失败。")
+		_append_log("战斗准备失败：%s" % (GameData.last_runtime_error if not GameData.last_runtime_error.is_empty() else "请稍后重试"))
 		return
 
 	_battle_active = true
@@ -147,7 +147,13 @@ func _queue_finish(victory: bool) -> void:
 	call_deferred("_finish_battle_async", victory)
 
 func _finish_battle_async(victory: bool) -> void:
-	await BattleState.finish_battle(victory, _defeated_monsters, _elapsed)
+	var result := await BattleState.finish_battle(victory, _defeated_monsters, _elapsed)
+	if result.is_empty():
+		_append_log("结算失败：%s" % (GameData.last_runtime_error if not GameData.last_runtime_error.is_empty() else "请稍后重试"))
+		_battle_active = false
+		_battle_over = false
+		_battle_finishing = false
+		return
 	emit_signal("battle_finished")
 
 func _on_actor_attacked(attacker, target, damage: int) -> void:

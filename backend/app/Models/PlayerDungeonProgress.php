@@ -25,6 +25,7 @@ class PlayerDungeonProgress extends Model
             'is_first_clear' => 'boolean',
             'clear_count' => 'integer',
             'daily_count' => 'integer',
+            'daily_reset_at' => 'datetime',
         ];
     }
 }

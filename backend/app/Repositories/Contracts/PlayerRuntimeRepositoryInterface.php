@@ -26,6 +26,8 @@ interface PlayerRuntimeRepositoryInterface
 
     public function getInventory(int $playerId): Collection;
 
+    public function findInventoryItem(int $playerId, string $itemId): ?PlayerItem;
+
     public function incrementItemCount(int $playerId, string $itemId, int $count): PlayerItem;
 
     public function getStageProgress(int $playerId): Collection;

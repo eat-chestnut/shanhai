@@ -45,6 +45,12 @@ func get_level() -> int:
 func get_gold() -> int:
 	return int(player.get("gold", 0))
 
+func get_jade() -> int:
+	return int(player.get("jade", 0))
+
+func get_contribution() -> int:
+	return int(player.get("contribution", 0))
+
 func get_max_energy() -> int:
 	return int(player.get("max_energy", 100))
 

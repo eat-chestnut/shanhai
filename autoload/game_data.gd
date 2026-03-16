@@ -19,22 +19,32 @@ var equipment_sets: Array = []
 var gems: Array = []
 var blue_affixes: Array = []
 var purple_refinements: Array = []
+var task_configs: Array = []
+var shop_items: Array = []
 var items: Array = []
 var reward_groups: Dictionary = {}
 var encounters: Dictionary = {}
 var runtime_auth: Dictionary = {}
 var runtime_player_init: Dictionary = {}
 var runtime_inventory: Dictionary = {}
+var runtime_equipment_detail: Dictionary = {}
+var runtime_task_list: Dictionary = {}
+var runtime_common_shop: Dictionary = {}
+var runtime_sect_shop: Dictionary = {}
 var runtime_stage_chapters: Array = []
 var runtime_stage_nodes: Dictionary = {}
 var runtime_stage_difficulties: Dictionary = {}
 var runtime_dungeon_list: Array = []
 var runtime_dungeon_details: Dictionary = {}
 var using_runtime_backend := false
+var last_runtime_error := ""
 var item_labels := {
 	"gold": "灵石",
+	"jade": "灵玉",
+	"contribution": "贡献",
 	"boss_core_qingqiu": "青丘妖核",
 	"boss_core_thunder": "雷鸣核心",
+	"material_seal_essence": "灵印精华",
 	"material_star_stone": "升星石",
 	"material_refine_sand": "洗练砂",
 	"skill_book_thunder": "雷系技能书"
@@ -55,6 +65,7 @@ func load_all(force_reload: bool = false) -> void:
 	var local_bootstrap := _load_local_bootstrap()
 	raw_bootstrap = local_bootstrap.duplicate(true)
 	_apply_bootstrap(local_bootstrap)
+	_clear_runtime_error()
 	PlayerState.load_from_dict(local_bootstrap.get("player", {}))
 
 	var remote_bundle := await GameApi.fetch_runtime_bundle(local_bootstrap)
@@ -79,9 +90,11 @@ func refresh_runtime_state(emit_changed: bool = true) -> void:
 			emit_signal("changed")
 		return
 
+	_clear_runtime_error()
 	var init_payload := await GameApi.fetch_player_init()
 	if init_payload.is_empty():
 		# Fallback only: 运行态接口失败时继续保留本地状态，不覆盖现有可玩闭环。
+		_capture_api_error("玩家初始化失败")
 		if emit_changed:
 			emit_signal("changed")
 		return
@@ -122,8 +135,13 @@ func commit_class_selection(class_id: String) -> bool:
 			runtime_player_init = payload.duplicate(true)
 			_apply_runtime_player_init(payload)
 			await refresh_runtime_state(false)
+			_clear_runtime_error()
 			emit_signal("changed")
 			return true
+		if GameApi.is_business_error():
+			_capture_api_error("职业选择失败")
+			emit_signal("changed")
+			return false
 
 	# Fallback only: 正常正式态应以后端返回为准，本地仅作开发兜底。
 	PlayerState.select_class(class_id)
@@ -152,11 +170,175 @@ func load_dungeon_runtime_detail(dungeon_id: String) -> void:
 
 	var detail := await GameApi.fetch_dungeon_detail(dungeon_id)
 	if detail.is_empty():
+		_capture_api_error("副本详情读取失败")
 		return
 
 	runtime_dungeon_details[dungeon_id] = detail.duplicate(true)
 	_merge_runtime_dungeon_detail(detail)
+	_clear_runtime_error()
 	emit_signal("changed")
+
+func load_equipment_runtime_detail(equipment_uid: String = "") -> void:
+	if not using_runtime_backend:
+		return
+
+	var detail := await GameApi.fetch_equipment_detail(equipment_uid)
+	if detail.is_empty():
+		_capture_api_error("装备详情读取失败")
+		emit_signal("changed")
+		return
+
+	runtime_equipment_detail = detail.duplicate(true)
+	_clear_runtime_error()
+	emit_signal("changed")
+
+func run_equipment_action(action: String, payload: Dictionary) -> bool:
+	if not using_runtime_backend:
+		_capture_api_error("当前未连接正式运行态后端")
+		emit_signal("changed")
+		return false
+
+	var response := {}
+	match action:
+		"equip":
+			response = await GameApi.equip_equipment(str(payload.get("equipment_uid", "")))
+		"unequip":
+			response = await GameApi.unequip_equipment(str(payload.get("equipment_uid", "")))
+		"star_up":
+			response = await GameApi.star_up_equipment(str(payload.get("equipment_uid", "")))
+		"socket_gem":
+			response = await GameApi.socket_gem(
+				str(payload.get("equipment_uid", "")),
+				str(payload.get("gem_id", "")),
+				int(payload.get("slot_index", 0))
+			)
+		"extract_blue_affix":
+			response = await GameApi.extract_blue_affix(str(payload.get("equipment_uid", "")))
+		"refine_purple_affix":
+			response = await GameApi.refine_purple_affix(str(payload.get("equipment_uid", "")))
+		_:
+			return false
+
+	if response.is_empty():
+		_capture_api_error("装备操作失败")
+		emit_signal("changed")
+		return false
+
+	runtime_equipment_detail = response.duplicate(true)
+	_apply_runtime_player_from_payload(response.get("player", {}), response.get("inventory", []))
+	_clear_runtime_error()
+	emit_signal("changed")
+	return true
+
+func load_task_runtime() -> void:
+	if using_runtime_backend:
+		var payload := await GameApi.fetch_task_list()
+		if not payload.is_empty():
+			runtime_task_list = payload.duplicate(true)
+			_clear_runtime_error()
+			emit_signal("changed")
+			return
+		_capture_api_error("任务列表读取失败")
+
+	runtime_task_list = _build_fallback_task_payload()
+	emit_signal("changed")
+
+func claim_task(task_id: String) -> bool:
+	if not using_runtime_backend:
+		_capture_api_error("当前未连接正式运行态后端")
+		emit_signal("changed")
+		return false
+
+	var payload := await GameApi.claim_task(task_id)
+	if payload.is_empty():
+		_capture_api_error("任务领取失败")
+		emit_signal("changed")
+		return false
+
+	runtime_task_list = {
+		"tasks": payload.get("tasks", []).duplicate(true),
+		"has_claimable": _has_claimable_tasks(payload.get("tasks", []))
+	}
+	_apply_runtime_player_from_payload(payload.get("player", {}), payload.get("inventory", []))
+	_clear_runtime_error()
+	emit_signal("changed")
+	return true
+
+func claim_all_tasks() -> bool:
+	if not using_runtime_backend:
+		_capture_api_error("当前未连接正式运行态后端")
+		emit_signal("changed")
+		return false
+
+	var payload := await GameApi.claim_all_tasks()
+	if payload.is_empty():
+		_capture_api_error("任务一键领取失败")
+		emit_signal("changed")
+		return false
+
+	runtime_task_list = {
+		"tasks": payload.get("tasks", []).duplicate(true),
+		"has_claimable": _has_claimable_tasks(payload.get("tasks", []))
+	}
+	_apply_runtime_player_from_payload(payload.get("player", {}), payload.get("inventory", []))
+	_clear_runtime_error()
+	emit_signal("changed")
+	return true
+
+func load_shop_runtime(shop_type: String) -> void:
+	if using_runtime_backend:
+		var payload := {}
+		if shop_type == "sect":
+			payload = await GameApi.fetch_sect_shop_list()
+		else:
+			payload = await GameApi.fetch_common_shop_list()
+		if not payload.is_empty():
+			if shop_type == "sect":
+				runtime_sect_shop = payload.duplicate(true)
+			else:
+				runtime_common_shop = payload.duplicate(true)
+			_clear_runtime_error()
+			emit_signal("changed")
+			return
+		_capture_api_error("商店列表读取失败")
+
+	if shop_type == "sect":
+		runtime_sect_shop = _build_fallback_shop_payload("sect")
+	else:
+		runtime_common_shop = _build_fallback_shop_payload("common")
+	emit_signal("changed")
+
+func buy_shop_item(shop_type: String, shop_item_id: String, count: int = 1) -> bool:
+	if not using_runtime_backend:
+		_capture_api_error("当前未连接正式运行态后端")
+		emit_signal("changed")
+		return false
+
+	var payload := {}
+	if shop_type == "sect":
+		payload = await GameApi.buy_sect_shop_item(shop_item_id, count)
+	else:
+		payload = await GameApi.buy_common_shop_item(shop_item_id, count)
+
+	if payload.is_empty():
+		_capture_api_error("购买失败")
+		emit_signal("changed")
+		return false
+
+	if shop_type == "sect":
+		runtime_sect_shop = {
+			"items": payload.get("items", []).duplicate(true),
+			"shop_type": "sect"
+		}
+	else:
+		runtime_common_shop = {
+			"items": payload.get("items", []).duplicate(true),
+			"shop_type": "common"
+		}
+	_apply_runtime_player_from_payload(payload.get("player", {}), payload.get("inventory", []))
+	_clear_runtime_error()
+	emit_signal("changed")
+	return true
 
 func get_open_classes() -> Array:
 	return character_classes.filter(func(entry: Dictionary) -> bool: return bool(entry.get("is_open", false)))
@@ -242,9 +424,41 @@ func get_purple_refinement(refinement_id: String) -> Dictionary:
 func get_set(set_id: String) -> Dictionary:
 	return _find_first(equipment_sets, "set_id", set_id)
 
+func get_task_entries() -> Array:
+	var tasks = runtime_task_list.get("tasks", [])
+	if tasks is Array and not tasks.is_empty():
+		return tasks.duplicate(true)
+	if not task_configs.is_empty():
+		return _build_fallback_task_payload().get("tasks", []).duplicate(true)
+	return []
+
+func has_claimable_tasks() -> bool:
+	return _has_claimable_tasks(get_task_entries())
+
+func get_shop_entries(shop_type: String) -> Array:
+	var payload: Dictionary = runtime_sect_shop if shop_type == "sect" else runtime_common_shop
+	var items_payload = payload.get("items", [])
+	if items_payload is Array and not items_payload.is_empty():
+		return items_payload.duplicate(true)
+	if not shop_items.is_empty():
+		return _build_fallback_shop_payload(shop_type).get("items", []).duplicate(true)
+	return []
+
+func get_equipment_runtime_entries() -> Array:
+	var entries = runtime_equipment_detail.get("equipment_list", [])
+	if entries is Array:
+		return entries.duplicate(true)
+	return []
+
+func get_selected_equipment_runtime() -> Dictionary:
+	var selected = runtime_equipment_detail.get("selected_equipment", {})
+	if selected is Dictionary:
+		return selected.duplicate(true)
+	return {}
+
 func get_item_definition(item_id: String) -> Dictionary:
-	if item_id == "gold":
-		return {"item_id": "gold", "name": item_labels["gold"], "type": "currency"}
+	if item_id == "gold" or item_id == "jade" or item_id == "contribution":
+		return {"item_id": item_id, "name": item_labels.get(item_id, item_id), "type": "currency"}
 
 	var item_data := get_item(item_id)
 	if not item_data.is_empty():
@@ -308,11 +522,17 @@ func _apply_bootstrap(source: Dictionary) -> void:
 	gems = source.get("gems", []).duplicate(true)
 	blue_affixes = source.get("blue_affixes", []).duplicate(true)
 	purple_refinements = source.get("purple_refinements", []).duplicate(true)
+	task_configs = source.get("task_config", []).duplicate(true)
+	shop_items = source.get("shop_item_config", []).duplicate(true)
 	items = source.get("items", []).duplicate(true)
 	reward_groups = source.get("reward_groups", {}).duplicate(true)
 	encounters = source.get("encounters", {}).duplicate(true)
 	runtime_player_init.clear()
 	runtime_inventory.clear()
+	runtime_equipment_detail.clear()
+	runtime_task_list.clear()
+	runtime_common_shop.clear()
+	runtime_sect_shop.clear()
 	runtime_stage_chapters.clear()
 	runtime_stage_nodes.clear()
 	runtime_stage_difficulties.clear()
@@ -360,6 +580,24 @@ func _apply_runtime_inventory(payload: Dictionary) -> void:
 	merged_player["jade"] = int(currencies.get("jade", merged_player.get("jade", 0)))
 	merged_player["contribution"] = int(currencies.get("contribution", merged_player.get("contribution", 0)))
 	PlayerState.load_from_dict(merged_player)
+
+func _apply_runtime_player_from_payload(player_payload: Dictionary, inventory_items: Array) -> void:
+	if player_payload.is_empty():
+		return
+	var payload := {
+		"player": player_payload.duplicate(true),
+		"inventory": inventory_items.duplicate(true)
+	}
+	runtime_player_init = payload.duplicate(true)
+	_apply_runtime_player_init(payload)
+	runtime_inventory = {
+		"items": inventory_items.duplicate(true),
+		"currencies": {
+			"gold": int(player_payload.get("gold", 0)),
+			"jade": int(player_payload.get("jade", 0)),
+			"contribution": int(player_payload.get("contribution", 0))
+		}
+	}
 
 func _merge_runtime_stage_chapters(stage_chapters: Array) -> void:
 	var chapter_lookup := {}
@@ -571,6 +809,56 @@ func _default_dungeon_encounter(dungeon_id: String) -> Array:
 	if dungeon_id == "dungeon_refine" and monsters.size() >= 2:
 		return [monsters[1].get("monster_id", "")]
 	return _default_mainline_encounter("")
+
+func _build_fallback_task_payload() -> Dictionary:
+	var tasks: Array = []
+	for task in task_configs:
+		var entry: Dictionary = task.duplicate(true)
+		entry["progress"] = _fallback_task_progress(entry)
+		entry["target"] = int(entry.get("target", 1))
+		entry["can_claim"] = int(entry.get("progress", 0)) >= int(entry.get("target", 1))
+		entry["is_claimed"] = false
+		tasks.append(entry)
+	return {
+		"tasks": tasks,
+		"has_claimable": _has_claimable_tasks(tasks)
+	}
+
+func _build_fallback_shop_payload(shop_type: String) -> Dictionary:
+	var filtered := shop_items.filter(func(entry: Dictionary) -> bool:
+		return str(entry.get("shop_type", "common")) == shop_type
+	)
+	var items_payload: Array = []
+	for entry in filtered:
+		var item: Dictionary = entry.duplicate(true)
+		item["bought_count"] = 0
+		item["is_sold_out"] = false
+		items_payload.append(item)
+	return {
+		"shop_type": shop_type,
+		"items": items_payload
+	}
+
+func _fallback_task_progress(task: Dictionary) -> int:
+	match str(task.get("target_type", "")):
+		"level_reach":
+			return PlayerState.get_level()
+		_:
+			return 0
+
+func _has_claimable_tasks(tasks: Array) -> bool:
+	for task in tasks:
+		if bool(task.get("can_claim", false)):
+			return true
+	return false
+
+func _capture_api_error(default_message: String) -> void:
+	last_runtime_error = GameApi.get_last_error_message()
+	if last_runtime_error.is_empty():
+		last_runtime_error = default_message
+
+func _clear_runtime_error() -> void:
+	last_runtime_error = ""
 
 func _find_first(source: Array, key: String, value: String) -> Dictionary:
 	for entry in source:

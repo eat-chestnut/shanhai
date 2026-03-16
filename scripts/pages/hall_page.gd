@@ -87,6 +87,8 @@ func _build_quick_links() -> Control:
 	for entry in [
 		{"screen": UiState.SCREEN_MAINLINE, "label": "进入主线章节"},
 		{"screen": UiState.SCREEN_DUNGEON, "label": "进入宗门副本"},
+		{"screen": UiState.SCREEN_TASK, "label": "查看宗门任务"},
+		{"screen": UiState.SCREEN_SHOP, "label": "进入宗门商店"},
 		{"screen": UiState.SCREEN_INVENTORY, "label": "查看行囊与装备"}
 	]:
 		var screen := str(entry.get("screen", ""))
@@ -101,6 +103,10 @@ func _build_quick_links() -> Control:
 func _handle_feature(feature: Dictionary) -> void:
 	var page := str(feature.get("jump_target", {}).get("page", ""))
 	match page:
+		"trial":
+			emit_signal("navigate", UiState.SCREEN_TASK)
+		"shop":
+			emit_signal("navigate", UiState.SCREEN_SHOP)
 		"mainline":
 			emit_signal("navigate", UiState.SCREEN_MAINLINE)
 		"dungeon":

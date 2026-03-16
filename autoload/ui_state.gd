@@ -8,6 +8,8 @@ const SCREEN_CLASS_SELECT := "class_select"
 const SCREEN_HALL := "hall"
 const SCREEN_MAINLINE := "mainline"
 const SCREEN_DUNGEON := "dungeon"
+const SCREEN_TASK := "task"
+const SCREEN_SHOP := "shop"
 const SCREEN_INVENTORY := "inventory"
 const SCREEN_BATTLE := "battle"
 const SCREEN_BATTLE_RESULT := "battle_result"
@@ -48,6 +50,10 @@ func _update_title() -> void:
 			current_title = "主线巡厄"
 		SCREEN_DUNGEON:
 			current_title = "宗门副本"
+		SCREEN_TASK:
+			current_title = "宗门任务"
+		SCREEN_SHOP:
+			current_title = "宗门商店"
 		SCREEN_INVENTORY:
 			current_title = "行囊与装备"
 		SCREEN_BATTLE:

@@ -49,7 +49,12 @@ func _rebuild_dungeons() -> void:
 	for dungeon in GameData.dungeons:
 		var button := Button.new()
 		var dungeon_id := str(dungeon.get("dungeon_id", ""))
-		button.text = "%s\n解锁 Lv.%d" % [dungeon.get("dungeon_name", "副本"), int(dungeon.get("unlock_level", 1))]
+		button.text = "%s\n%s  剩余 %d/%d" % [
+			dungeon.get("dungeon_name", "副本"),
+			dungeon.get("unlock_text", "解锁 Lv.%d" % int(dungeon.get("unlock_level", 1))),
+			max(int(dungeon.get("daily_limit", 0)) - int(dungeon.get("daily_count", 0)), 0),
+			int(dungeon.get("daily_limit", 0))
+		]
 		button.disabled = not bool(dungeon.get("is_unlocked", PlayerState.get_level() >= int(dungeon.get("unlock_level", 1))))
 		ShanhaiStyle.apply_button(button, dungeon_id == str(UiState.selection.get("dungeon_id", "")))
 		button.pressed.connect(_on_dungeon_pressed.bind(dungeon_id))
@@ -80,12 +85,21 @@ func _update_summary() -> void:
 		if str(difficulty.get("difficulty_id", "")) == str(UiState.selection.get("difficulty_id", "")):
 			selected_difficulty = difficulty
 			break
-	_summary_label.text = "副本：%s\n建议战力：%d\n首通奖励：%s\n说明：首版闭环会基于怪物与掉落配置生成战斗与奖励。" % [
+	_summary_label.text = "副本：%s\n说明：%s\n主要产出：%s\n建议战力：%d\n首通奖励：%s\n剩余次数：%d / %d%s" % [
 		dungeon.get("dungeon_name", "未选择"),
+		dungeon.get("dungeon_desc", "暂无说明"),
+		_main_reward_text(dungeon.get("main_rewards", [])),
 		int(selected_difficulty.get("recommended_power", 0)),
-		_reward_preview(str(selected_difficulty.get("first_clear_reward_group_id", "")))
+		_reward_preview(str(selected_difficulty.get("first_clear_reward_group_id", ""))),
+		max(int(dungeon.get("daily_limit", 0)) - int(dungeon.get("daily_count", 0)), 0),
+		int(dungeon.get("daily_limit", 0)),
+		"\n%s" % GameData.last_runtime_error if not GameData.last_runtime_error.is_empty() else ""
 	]
-	_start_button.disabled = dungeon.is_empty() or selected_difficulty.is_empty() or not bool(dungeon.get("is_unlocked", true)) or not bool(selected_difficulty.get("is_unlocked", true))
+	_start_button.disabled = dungeon.is_empty() \
+		or selected_difficulty.is_empty() \
+		or not bool(dungeon.get("is_unlocked", true)) \
+		or not bool(selected_difficulty.get("is_unlocked", true)) \
+		or int(dungeon.get("remaining_count", 1)) <= 0
 
 func _on_start_pressed() -> void:
 	var dungeon := GameData.get_dungeon(str(UiState.selection.get("dungeon_id", "")))
@@ -124,6 +138,15 @@ func _reward_preview(group_id: String) -> String:
 	for reward in rewards:
 		var definition := GameData.get_item_definition(str(reward.get("item_id", "")))
 		labels.append("%s x%d" % [definition.get("name", reward.get("item_id", "奖励")), int(reward.get("count", 0))])
+	return " / ".join(labels)
+
+func _main_reward_text(main_rewards: Array) -> String:
+	if main_rewards.is_empty():
+		return "暂无"
+	var labels: Array = []
+	for item_id in main_rewards:
+		var definition := GameData.get_item_definition(str(item_id))
+		labels.append(str(definition.get("name", item_id)))
 	return " / ".join(labels)
 
 func _build_ui() -> void:

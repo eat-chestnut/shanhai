@@ -58,10 +58,16 @@ func prepare_current_battle() -> Dictionary:
 		if not payload.is_empty():
 			current_battle_payload = payload.duplicate(true)
 			return current_battle_payload
+		if GameApi.is_business_error():
+			GameData.last_runtime_error = GameApi.get_last_error_message()
+			return {}
 
 	# Fallback only: prepare 接口失败时继续保留本地可玩战斗闭环。
-	current_battle_payload = _build_local_prepare_payload(source_type, source_id, difficulty_id)
-	return current_battle_payload
+	if GameApi.can_use_transport_fallback() or not GameData.using_runtime_backend:
+		current_battle_payload = _build_local_prepare_payload(source_type, source_id, difficulty_id)
+		return current_battle_payload
+
+	return {}
 
 func finish_battle(victory: bool, defeated_monsters: Array, elapsed_seconds: float) -> Dictionary:
 	if GameData.using_runtime_backend and not current_battle_payload.is_empty() and not str(current_battle_payload.get("battle_id", "")).begins_with("local_"):
@@ -77,12 +83,20 @@ func finish_battle(victory: bool, defeated_monsters: Array, elapsed_seconds: flo
 		var server_result := await GameApi.battle_settle(settle_payload)
 		if not server_result.is_empty():
 			await GameData.refresh_runtime_state(false)
+			GameData.last_runtime_error = ""
 			last_result = _build_runtime_result(server_result, victory, defeated_monsters, elapsed_seconds)
 			emit_signal("result_ready", last_result)
 			return last_result
+		if GameApi.is_business_error():
+			GameData.last_runtime_error = GameApi.get_last_error_message()
+			last_result = {}
+			return {}
 
 	# Fallback only: 正式运行态结算失败时才允许本地发奖励、写首通和入包。
-	return _finish_battle_fallback(victory, defeated_monsters, elapsed_seconds)
+	if GameApi.can_use_transport_fallback() or not GameData.using_runtime_backend:
+		return _finish_battle_fallback(victory, defeated_monsters, elapsed_seconds)
+
+	return {}
 
 func get_context_key() -> String:
 	if current_context.is_empty():

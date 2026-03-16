@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             MainlineConfigSeeder::class,
             DungeonContentConfigSeeder::class,
             EquipmentConfigSeeder::class,
+            TaskConfigSeeder::class,
+            ShopItemConfigSeeder::class,
         ]);
     }
 }
