@@ -10,10 +10,15 @@ class EditMonster extends EditRecord
 {
     protected static string $resource = MonsterResource::class;
 
+    public function getTitle(): string
+    {
+        return '编辑怪物';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()->label('删除'),
         ];
     }
 }
