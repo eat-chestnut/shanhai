@@ -1,33 +1,113 @@
 {
   "chapter_config": [
     {
+      "chapter_id": "prologue",
+      "chapter_name": "序章：山海初醒",
+      "unlock_level": 1,
+      "sort_order": 0,
+      "required_previous_chapter": null,
+      "required_previous_highest_difficulty": null
+    },
+    {
       "chapter_id": "chapter_01",
-      "chapter_name": "奉命巡山",
-      "unlock_level": 1
+      "chapter_name": "第一章：奉命巡山",
+      "unlock_level": 1,
+      "sort_order": 1,
+      "required_previous_chapter": "prologue",
+      "required_previous_highest_difficulty": "easy"
     },
     {
       "chapter_id": "chapter_02",
-      "chapter_name": "雷谷问劫",
-      "unlock_level": 20
+      "chapter_name": "第二章：雷谷问劫",
+      "unlock_level": 20,
+      "sort_order": 2,
+      "required_previous_chapter": "chapter_01",
+      "required_previous_highest_difficulty": "normal"
     },
     {
       "chapter_id": "chapter_03",
-      "chapter_name": "符火照夜",
-      "unlock_level": 34
+      "chapter_name": "第三章：符火照夜",
+      "unlock_level": 34,
+      "sort_order": 3,
+      "required_previous_chapter": "chapter_02",
+      "required_previous_highest_difficulty": "normal"
     },
     {
       "chapter_id": "chapter_04",
-      "chapter_name": "玄渊封灾",
-      "unlock_level": 48
+      "chapter_name": "第四章：玄渊封灾",
+      "unlock_level": 48,
+      "sort_order": 4,
+      "required_previous_chapter": "chapter_03",
+      "required_previous_highest_difficulty": "hard"
+    },
+    {
+      "chapter_id": "chapter_05",
+      "chapter_name": "第五章：龙渊探秘",
+      "unlock_level": 62,
+      "sort_order": 5,
+      "required_previous_chapter": "chapter_04",
+      "required_previous_highest_difficulty": "hard"
+    },
+    {
+      "chapter_id": "chapter_06",
+      "chapter_name": "第六章：古阵重现",
+      "unlock_level": 76,
+      "sort_order": 6,
+      "required_previous_chapter": "chapter_05",
+      "required_previous_highest_difficulty": "hard"
+    },
+    {
+      "chapter_id": "chapter_07",
+      "chapter_name": "第七章：天劫降临",
+      "unlock_level": 90,
+      "sort_order": 7,
+      "required_previous_chapter": "chapter_06",
+      "required_previous_highest_difficulty": "nightmare"
+    },
+    {
+      "chapter_id": "chapter_08",
+      "chapter_name": "第八章：山海归一",
+      "unlock_level": 104,
+      "sort_order": 8,
+      "required_previous_chapter": "chapter_07",
+      "required_previous_highest_difficulty": "nightmare"
+    },
+    {
+      "chapter_id": "epilogue",
+      "chapter_name": "终章：天道轮回",
+      "unlock_level": 118,
+      "sort_order": 9,
+      "required_previous_chapter": "chapter_08",
+      "required_previous_highest_difficulty": "nightmare"
     }
   ],
   "node_config": [
+    {
+      "node_id": "prologue_node_01",
+      "chapter_id": "prologue",
+      "node_name": "初入山海",
+      "unlock_condition": {
+        "level": 1
+      },
+      "difficulty_ids": ["easy"]
+    },
+    {
+      "node_id": "prologue_node_02",
+      "chapter_id": "prologue",
+      "node_name": "巡厄令至",
+      "unlock_condition": {
+        "level": 3,
+        "clear_node_id": "prologue_node_01"
+      },
+      "difficulty_ids": ["easy", "normal"]
+    },
     {
       "node_id": "node_01",
       "chapter_id": "chapter_01",
       "node_name": "鹤山将启",
       "unlock_condition": {
-        "level": 1
+        "level": 1,
+        "clear_node_id": "prologue_node_02"
       },
       "difficulty_ids": ["easy", "normal", "hard"]
     },
@@ -140,9 +220,153 @@
         "clear_node_id": "node_11"
       },
       "difficulty_ids": ["nightmare"]
+    },
+    {
+      "node_id": "node_13",
+      "chapter_id": "chapter_05",
+      "node_name": "龙渊入口",
+      "unlock_condition": {
+        "level": 62,
+        "clear_node_id": "node_12"
+      },
+      "difficulty_ids": ["normal", "hard", "nightmare"]
+    },
+    {
+      "node_id": "node_14",
+      "chapter_id": "chapter_05",
+      "node_name": "深渊探秘",
+      "unlock_condition": {
+        "level": 68,
+        "clear_node_id": "node_13"
+      },
+      "difficulty_ids": ["hard", "nightmare"]
+    },
+    {
+      "node_id": "node_15",
+      "chapter_id": "chapter_05",
+      "node_name": "龙魂觉醒",
+      "unlock_condition": {
+        "level": 74,
+        "clear_node_id": "node_14"
+      },
+      "difficulty_ids": ["hard", "nightmare"]
+    },
+    {
+      "node_id": "node_16",
+      "chapter_id": "chapter_06",
+      "node_name": "古阵初现",
+      "unlock_condition": {
+        "level": 76,
+        "clear_node_id": "node_15"
+      },
+      "difficulty_ids": ["normal", "hard", "nightmare"]
+    },
+    {
+      "node_id": "node_17",
+      "chapter_id": "chapter_06",
+      "node_name": "阵法迷踪",
+      "unlock_condition": {
+        "level": 82,
+        "clear_node_id": "node_16"
+      },
+      "difficulty_ids": ["hard", "nightmare"]
+    },
+    {
+      "node_id": "node_18",
+      "chapter_id": "chapter_06",
+      "node_name": "破阵之时",
+      "unlock_condition": {
+        "level": 88,
+        "clear_node_id": "node_17"
+      },
+      "difficulty_ids": ["hard", "nightmare"]
+    },
+    {
+      "node_id": "node_19",
+      "chapter_id": "chapter_07",
+      "node_name": "天劫预兆",
+      "unlock_condition": {
+        "level": 90,
+        "clear_node_id": "node_18"
+      },
+      "difficulty_ids": ["hard", "nightmare"]
+    },
+    {
+      "node_id": "node_20",
+      "chapter_id": "chapter_07",
+      "node_name": "雷劫降临",
+      "unlock_condition": {
+        "level": 96,
+        "clear_node_id": "node_19"
+      },
+      "difficulty_ids": ["hard", "nightmare"]
+    },
+    {
+      "node_id": "node_21",
+      "chapter_id": "chapter_07",
+      "node_name": "渡劫成仙",
+      "unlock_condition": {
+        "level": 102,
+        "clear_node_id": "node_20"
+      },
+      "difficulty_ids": ["nightmare"]
+    },
+    {
+      "node_id": "node_22",
+      "chapter_id": "chapter_08",
+      "node_name": "山海归一",
+      "unlock_condition": {
+        "level": 104,
+        "clear_node_id": "node_21"
+      },
+      "difficulty_ids": ["hard", "nightmare"]
+    },
+    {
+      "node_id": "node_23",
+      "chapter_id": "chapter_08",
+      "node_name": "天道之门",
+      "unlock_condition": {
+        "level": 110,
+        "clear_node_id": "node_22"
+      },
+      "difficulty_ids": ["hard", "nightmare"]
+    },
+    {
+      "node_id": "node_24",
+      "chapter_id": "chapter_08",
+      "node_name": "终极试炼",
+      "unlock_condition": {
+        "level": 116,
+        "clear_node_id": "node_23"
+      },
+      "difficulty_ids": ["nightmare"]
+    },
+    {
+      "node_id": "epilogue_node_01",
+      "chapter_id": "epilogue",
+      "node_name": "轮回之初",
+      "unlock_condition": {
+        "level": 118,
+        "clear_node_id": "node_24"
+      },
+      "difficulty_ids": ["nightmare"]
+    },
+    {
+      "node_id": "epilogue_node_02",
+      "chapter_id": "epilogue",
+      "node_name": "天道轮回",
+      "unlock_condition": {
+        "level": 120,
+        "clear_node_id": "epilogue_node_01"
+      },
+      "difficulty_ids": ["nightmare"]
     }
   ],
   "difficulty_config": [
+    {"difficulty_id": "easy", "node_id": "prologue_node_01", "recommended_power": 50, "first_clear_reward_group_id": "reward_prologue01_easy"},
+    {"difficulty_id": "easy", "node_id": "prologue_node_02", "recommended_power": 80, "first_clear_reward_group_id": "reward_prologue02_easy"},
+    {"difficulty_id": "normal", "node_id": "prologue_node_02", "recommended_power": 120, "first_clear_reward_group_id": "reward_prologue02_normal"},
+
     {"difficulty_id": "easy", "node_id": "node_01", "recommended_power": 100, "first_clear_reward_group_id": "reward_node01_easy"},
     {"difficulty_id": "normal", "node_id": "node_01", "recommended_power": 220, "first_clear_reward_group_id": "reward_node01_normal"},
     {"difficulty_id": "hard", "node_id": "node_01", "recommended_power": 420, "first_clear_reward_group_id": "reward_node01_hard"},
@@ -184,6 +408,45 @@
     {"difficulty_id": "hard", "node_id": "node_11", "recommended_power": 6900, "first_clear_reward_group_id": "reward_node11_hard"},
     {"difficulty_id": "nightmare", "node_id": "node_11", "recommended_power": 7480, "first_clear_reward_group_id": "reward_node11_nightmare"},
 
-    {"difficulty_id": "nightmare", "node_id": "node_12", "recommended_power": 8200, "first_clear_reward_group_id": "reward_node12_nightmare"}
+    {"difficulty_id": "nightmare", "node_id": "node_12", "recommended_power": 8200, "first_clear_reward_group_id": "reward_node12_nightmare"},
+
+    {"difficulty_id": "normal", "node_id": "node_13", "recommended_power": 8500, "first_clear_reward_group_id": "reward_node13_normal"},
+    {"difficulty_id": "hard", "node_id": "node_13", "recommended_power": 9200, "first_clear_reward_group_id": "reward_node13_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_13", "recommended_power": 10000, "first_clear_reward_group_id": "reward_node13_nightmare"},
+
+    {"difficulty_id": "hard", "node_id": "node_14", "recommended_power": 10800, "first_clear_reward_group_id": "reward_node14_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_14", "recommended_power": 11600, "first_clear_reward_group_id": "reward_node14_nightmare"},
+
+    {"difficulty_id": "hard", "node_id": "node_15", "recommended_power": 12400, "first_clear_reward_group_id": "reward_node15_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_15", "recommended_power": 13200, "first_clear_reward_group_id": "reward_node15_nightmare"},
+
+    {"difficulty_id": "normal", "node_id": "node_16", "recommended_power": 13000, "first_clear_reward_group_id": "reward_node16_normal"},
+    {"difficulty_id": "hard", "node_id": "node_16", "recommended_power": 14000, "first_clear_reward_group_id": "reward_node16_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_16", "recommended_power": 15000, "first_clear_reward_group_id": "reward_node16_nightmare"},
+
+    {"difficulty_id": "hard", "node_id": "node_17", "recommended_power": 15800, "first_clear_reward_group_id": "reward_node17_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_17", "recommended_power": 16600, "first_clear_reward_group_id": "reward_node17_nightmare"},
+
+    {"difficulty_id": "hard", "node_id": "node_18", "recommended_power": 17400, "first_clear_reward_group_id": "reward_node18_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_18", "recommended_power": 18200, "first_clear_reward_group_id": "reward_node18_nightmare"},
+
+    {"difficulty_id": "hard", "node_id": "node_19", "recommended_power": 18600, "first_clear_reward_group_id": "reward_node19_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_19", "recommended_power": 19400, "first_clear_reward_group_id": "reward_node19_nightmare"},
+
+    {"difficulty_id": "hard", "node_id": "node_20", "recommended_power": 20200, "first_clear_reward_group_id": "reward_node20_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_20", "recommended_power": 21000, "first_clear_reward_group_id": "reward_node20_nightmare"},
+
+    {"difficulty_id": "nightmare", "node_id": "node_21", "recommended_power": 21800, "first_clear_reward_group_id": "reward_node21_nightmare"},
+
+    {"difficulty_id": "hard", "node_id": "node_22", "recommended_power": 22000, "first_clear_reward_group_id": "reward_node22_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_22", "recommended_power": 22800, "first_clear_reward_group_id": "reward_node22_nightmare"},
+
+    {"difficulty_id": "hard", "node_id": "node_23", "recommended_power": 23600, "first_clear_reward_group_id": "reward_node23_hard"},
+    {"difficulty_id": "nightmare", "node_id": "node_23", "recommended_power": 24400, "first_clear_reward_group_id": "reward_node23_nightmare"},
+
+    {"difficulty_id": "nightmare", "node_id": "node_24", "recommended_power": 25200, "first_clear_reward_group_id": "reward_node24_nightmare"},
+
+    {"difficulty_id": "nightmare", "node_id": "epilogue_node_01", "recommended_power": 26000, "first_clear_reward_group_id": "reward_epilogue01_nightmare"},
+    {"difficulty_id": "nightmare", "node_id": "epilogue_node_02", "recommended_power": 26800, "first_clear_reward_group_id": "reward_epilogue02_nightmare"}
   ]
 }
